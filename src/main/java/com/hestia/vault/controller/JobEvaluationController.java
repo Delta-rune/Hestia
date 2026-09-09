@@ -36,6 +36,10 @@ public class JobEvaluationController {
     @Value("${ollama.url:http://localhost:11434}")
     private String ollamaUrl;
 
+    @Value("${groq.apiKey:}")
+    private String groqApiKey;
+
+
     // Recognized accredited global & national universities list for verification
     private static final List<String> RECOGNIZED_UNIVERSITIES = Arrays.asList(
         "harvard university", "massachusetts institute of technology", "mit", "stanford university",
@@ -311,8 +315,66 @@ public class JobEvaluationController {
                 "\n\nUser Academic Profile: Degree in " + degree + " from " + inst + " with CGPA " + cgpa + ".\n" +
                 "Respond with maximum variety, deep emotional intelligence, sharp wits, and genuine natural conversation.";
 
+        // 0. Try Groq Cloud API (Ultra-fast, un-censored open source models: gemma2-9b-it / llama-3.1-8b-instant)
+        if (groqApiKey != null && !groqApiKey.isBlank() && !groqApiKey.startsWith("YOUR_")) {
+            try {
+                org.springframework.http.client.SimpleClientHttpRequestFactory requestFactory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+                requestFactory.setConnectTimeout(5000);
+                requestFactory.setReadTimeout(20000);
+                org.springframework.web.client.RestTemplate groqRest = new org.springframework.web.client.RestTemplate(requestFactory);
+
+                List<Map<String, String>> messagesList = new ArrayList<>();
+                messagesList.add(Map.of("role", "system", "content", systemPromptText));
+
+                if (history != null && !history.isEmpty()) {
+                    for (Map<String, String> turn : history) {
+                        String role = turn.getOrDefault("role", "user");
+                        String text = turn.getOrDefault("text", "");
+                        if (text != null && !text.isBlank()) {
+                            String cleanRole = (role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model")) ? "assistant" : "user";
+                            messagesList.add(Map.of("role", cleanRole, "content", text));
+                        }
+                    }
+                }
+                messagesList.add(Map.of("role", "user", "content", query));
+
+                String[] groqModels = new String[]{"gemma2-9b-it", "llama-3.1-8b-instant", "llama3-8b-8192"};
+                for (String groqModel : groqModels) {
+                    try {
+                        Map<String, Object> groqBody = Map.of(
+                            "model", groqModel,
+                            "messages", messagesList,
+                            "temperature", 0.95,
+                            "max_tokens", 1024
+                        );
+
+                        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+                        headers.set("Authorization", "Bearer " + groqApiKey.trim());
+                        headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+
+                        org.springframework.http.HttpEntity<Map<String, Object>> groqEntity = new org.springframework.http.HttpEntity<>(groqBody, headers);
+                        ResponseEntity<Map> groqRes = groqRest.postForEntity("https://api.groq.com/openai/v1/chat/completions", groqEntity, Map.class);
+                        if (groqRes.getStatusCode().is2xxSuccessful() && groqRes.getBody() != null) {
+                            List choices = (List) groqRes.getBody().get("choices");
+                            if (choices != null && !choices.isEmpty()) {
+                                Map firstChoice = (Map) choices.get(0);
+                                if (firstChoice != null && firstChoice.get("message") != null) {
+                                    Map msgObj = (Map) firstChoice.get("message");
+                                    String content = (String) msgObj.get("content");
+                                    if (content != null && !content.isBlank()) {
+                                        return content.trim();
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception innerEx) {}
+                }
+            } catch (Exception ex) {}
+        }
+
         // 1. Try Language Model via Ollama (local or external host)
         try {
+
             org.springframework.http.client.SimpleClientHttpRequestFactory requestFactory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
             requestFactory.setConnectTimeout(10000); // 10s connect timeout
             requestFactory.setReadTimeout(60000);    // 60s read timeout for GPU generation
