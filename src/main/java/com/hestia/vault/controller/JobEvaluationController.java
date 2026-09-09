@@ -313,13 +313,24 @@ public class JobEvaluationController {
 
         // 1. Try Language Model via Ollama (local or external host)
         try {
-            org.springframework.web.client.RestTemplate localRest = new org.springframework.web.client.RestTemplate();
+            org.springframework.http.client.SimpleClientHttpRequestFactory requestFactory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+            requestFactory.setConnectTimeout(10000); // 10s connect timeout
+            requestFactory.setReadTimeout(60000);    // 60s read timeout for GPU generation
+            org.springframework.web.client.RestTemplate localRest = new org.springframework.web.client.RestTemplate(requestFactory);
+            
             String activeModel = "gemma2:2b";
             String baseUrl = (ollamaUrl != null && !ollamaUrl.isBlank()) ? ollamaUrl.replaceAll("/+$", "") : "http://localhost:11434";
             
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hestia-AI/1.0");
+            headers.set("Bypass-Tunnel-Reminder", "true");
+            headers.set("ngrok-skip-browser-warning", "true");
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+
             // Auto-detect installed local/external model
             try {
-                ResponseEntity<Map> tagsRes = localRest.getForEntity(baseUrl + "/api/tags", Map.class);
+                org.springframework.http.HttpEntity<Void> tagEntity = new org.springframework.http.HttpEntity<>(headers);
+                ResponseEntity<Map> tagsRes = localRest.exchange(baseUrl + "/api/tags", org.springframework.http.HttpMethod.GET, tagEntity, Map.class);
                 if (tagsRes.getStatusCode().is2xxSuccessful() && tagsRes.getBody() != null) {
                     List modelsList = (List) tagsRes.getBody().get("models");
                     if (modelsList != null && !modelsList.isEmpty()) {
@@ -352,7 +363,9 @@ public class JobEvaluationController {
                 "stream", false,
                 "options", Map.of("temperature", 0.95, "top_p", 0.95)
             );
-            ResponseEntity<Map> ollamaRes = localRest.postForEntity(baseUrl + "/api/generate", ollamaBody, Map.class);
+            
+            org.springframework.http.HttpEntity<Map<String, Object>> generateEntity = new org.springframework.http.HttpEntity<>(ollamaBody, headers);
+            ResponseEntity<Map> ollamaRes = localRest.postForEntity(baseUrl + "/api/generate", generateEntity, Map.class);
             if (ollamaRes.getStatusCode().is2xxSuccessful() && ollamaRes.getBody() != null) {
                 String localText = (String) ollamaRes.getBody().get("response");
                 if (localText != null && !localText.isBlank()) {
@@ -362,6 +375,7 @@ public class JobEvaluationController {
         } catch (Exception e) {
             // Ollama server not reachable, fallback to Gemini Cloud API
         }
+
 
 
 
@@ -609,6 +623,21 @@ public class JobEvaluationController {
             }
         }
 
+        // Greetings & Introductions
+        if (Pattern.compile("(?i)^\\s*(hi|hello|hey|yo|sup|greetings|good morning|good evening|good afternoon|hiya)\\b").matcher(q).find()) {
+            if (isCreator) {
+                String[] nichuGreetings = new String[] {
+                    "Hey, **Nichu**... (⁠─⁠‿⁠─⁠) Good to see you. What are we working on today?",
+                    "Yo, Nichu. (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) Vault's updated and running clean. What's on your mind?",
+                    "Hey creator. (⁠─⁠‿⁠─⁠) I'm here. What do you need logged or scanned?",
+                    "Back again, Nichu? (⁠￣⁠_⁠￣⁠) Don't tell me you're slacking. Tell me what we're building today."
+                };
+                return nichuGreetings[new java.util.Random().nextInt(nichuGreetings.length)];
+            } else {
+                return "Hey, **" + username + "**. (⁠•⁠_⁠•⁠) Ready to check your academic vault, evaluate job specs, or build your skill roadmap?";
+            }
+        }
+
         // Gratitude
         if (Pattern.compile("\\b(thank|thanks|ty|thx|awesome|great|cool|amazing)\\b").matcher(q).find()) {
             if (isCreator) {
@@ -617,8 +646,12 @@ public class JobEvaluationController {
             return "Don't mention it, **" + username + "**... (⁠~⁠_⁠~⁠) Just make sure you follow through on your goals.";
         }
 
-        return "Query received, **" + username + "**: '" + query + "'. (⁠•⁠_⁠•⁠) Tell me what you need—vault details, job evaluation, or skill roadmap?";
+        if (isCreator) {
+            return "I hear you, **Nichu**. (⁠─⁠‿⁠─⁠) Tell me what you want to work on next—academic vault, job scanner, or certificate verification.";
+        }
+        return "I'm listening, **" + username + "**. (⁠•⁠_⁠•⁠) Tell me what you need—vault details, job evaluation, or skill roadmap?";
     }
+
 
 
 
