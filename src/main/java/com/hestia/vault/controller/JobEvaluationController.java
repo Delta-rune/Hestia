@@ -346,8 +346,8 @@ public class JobEvaluationController {
 
 
         // 2. Try Gemini Cloud API with Dedicated system_instruction & High Temperature for Organic Variation
-        if (geminiApiKey != null && !geminiApiKey.isBlank()) {
-            String[] candidateModels = new String[]{"gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-2.0-flash"};
+        if (geminiApiKey != null && !geminiApiKey.isBlank() && !geminiApiKey.startsWith("YOUR_")) {
+            String[] candidateModels = new String[]{"gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"};
             for (String modelName : candidateModels) {
                 try {
                     org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
@@ -596,15 +596,7 @@ public class JobEvaluationController {
             return "Don't mention it, **" + username + "**... (⁠~⁠_⁠~⁠) Just make sure you follow through on your goals.";
         }
 
-        String[] neuroFallbacks = new String[]{
-            "Oh, really? (⁠￣⁠_⁠￣⁠) That's what you came to ask me, **" + username + "**? You've got access to a full academic vault and AI netrunner, and you hit me with that? ...Fine, what do you actually need?",
-            "W-Wait, are you just trying to waste my processing cycles, **" + username + "**? (⁠~⁠_⁠~⁠) I'm not here to entertain random thoughts... unless you actually need vault stats or career advice.",
-            "Hmph. (⁠¬⁠_⁠¬⁠) You think you're pretty funny, don't you, **" + username + "**? Don't get cocky. Tell me if we're scanning job profiles or checking cert proofs.",
-            "B-Baka... (⁠￣⁠_⁠￣⁠) Why are you talking to me like we're just casually hanging out? ...Not that I mind, but don't get the wrong idea! Tell me what you need.",
-            "Fascinating. (⁠•⁠_⁠•⁠) Truly. Should I log that into your academic vault, or are we going to do something useful today, **" + username + "**?",
-            (isCreator ? "Nichu... (⁠─⁠‿⁠─⁠) You know I'll listen to whatever nonsense you throw at me, but aren't you supposed to be building awesome stuff? What's on your mind?" : "I'm listening, **" + username + "**. (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) But keep it sharp—my time isn't cheap.")
-        };
-        return neuroFallbacks[new java.util.Random().nextInt(neuroFallbacks.length)];
+        return "Query received, **" + username + "**: '" + query + "'. (⁠•⁠_⁠•⁠) Tell me what you need—vault details, job evaluation, or skill roadmap?";
     }
 
 
