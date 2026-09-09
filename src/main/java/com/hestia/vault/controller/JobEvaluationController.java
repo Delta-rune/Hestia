@@ -33,6 +33,9 @@ public class JobEvaluationController {
     @Value("${google.projectNumber:}")
     private String googleProjectNumber;
 
+    @Value("${ollama.url:http://localhost:11434}")
+    private String ollamaUrl;
+
     // Recognized accredited global & national universities list for verification
     private static final List<String> RECOGNIZED_UNIVERSITIES = Arrays.asList(
         "harvard university", "massachusetts institute of technology", "mit", "stanford university",
@@ -308,14 +311,15 @@ public class JobEvaluationController {
                 "\n\nUser Academic Profile: Degree in " + degree + " from " + inst + " with CGPA " + cgpa + ".\n" +
                 "Respond with maximum variety, deep emotional intelligence, sharp wits, and genuine natural conversation.";
 
-        // 1. Try Local Language Model (LLM/SLM) via Ollama (gemma2 / llama3.2) if running on port 11434
+        // 1. Try Language Model via Ollama (local or external host)
         try {
             org.springframework.web.client.RestTemplate localRest = new org.springframework.web.client.RestTemplate();
             String activeModel = "gemma2:2b";
+            String baseUrl = (ollamaUrl != null && !ollamaUrl.isBlank()) ? ollamaUrl.replaceAll("/+$", "") : "http://localhost:11434";
             
-            // Auto-detect installed local model (llama3.2 or gemma2)
+            // Auto-detect installed local/external model
             try {
-                ResponseEntity<Map> tagsRes = localRest.getForEntity("http://localhost:11434/api/tags", Map.class);
+                ResponseEntity<Map> tagsRes = localRest.getForEntity(baseUrl + "/api/tags", Map.class);
                 if (tagsRes.getStatusCode().is2xxSuccessful() && tagsRes.getBody() != null) {
                     List modelsList = (List) tagsRes.getBody().get("models");
                     if (modelsList != null && !modelsList.isEmpty()) {
@@ -327,13 +331,28 @@ public class JobEvaluationController {
                 }
             } catch(Exception ex) {}
 
+            // Build full multi-turn conversation memory into Ollama prompt
+            StringBuilder fullOllamaPrompt = new StringBuilder();
+            fullOllamaPrompt.append(systemPromptText).append("\n\n=== RECENT CONVERSATION HISTORY ===\n");
+            if (history != null && !history.isEmpty()) {
+                for (Map<String, String> turn : history) {
+                    String role = turn.getOrDefault("role", "user");
+                    String text = turn.getOrDefault("text", "");
+                    if (text != null && !text.isBlank()) {
+                        String label = (role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model")) ? "Hestia" : username;
+                        fullOllamaPrompt.append(label).append(": ").append(text).append("\n");
+                    }
+                }
+            }
+            fullOllamaPrompt.append(username).append(": ").append(query).append("\nHestia:");
+
             Map<String, Object> ollamaBody = Map.of(
                 "model", activeModel,
-                "prompt", systemPromptText + "\nUser: " + query + "\nHestia:",
+                "prompt", fullOllamaPrompt.toString(),
                 "stream", false,
                 "options", Map.of("temperature", 0.95, "top_p", 0.95)
             );
-            ResponseEntity<Map> ollamaRes = localRest.postForEntity("http://localhost:11434/api/generate", ollamaBody, Map.class);
+            ResponseEntity<Map> ollamaRes = localRest.postForEntity(baseUrl + "/api/generate", ollamaBody, Map.class);
             if (ollamaRes.getStatusCode().is2xxSuccessful() && ollamaRes.getBody() != null) {
                 String localText = (String) ollamaRes.getBody().get("response");
                 if (localText != null && !localText.isBlank()) {
@@ -341,8 +360,10 @@ public class JobEvaluationController {
                 }
             }
         } catch (Exception e) {
-            // Local Ollama server not running, fallback to Gemini Cloud API
+            // Ollama server not reachable, fallback to Gemini Cloud API
         }
+
+
 
 
         // 2. Try Gemini Cloud API with Dedicated system_instruction & High Temperature for Organic Variation
