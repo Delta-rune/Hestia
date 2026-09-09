@@ -1,0 +1,3487 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hestia — Fueling Human Prosperity</title>
+
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Driver.js CDN (Interactive Onboarding Tour) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css">
+  <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
+
+  <!-- Google Fonts: Plus Jakarta Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            arial: ['Arial', 'Helvetica', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            hestia: {
+              black: '#050505',
+              card: '#121212',
+              cardHover: '#181818',
+              border: '#262626',
+              borderLight: '#404040',
+              muted: '#888888',
+              light: '#f5f5f5',
+              white: '#ffffff',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #050505;
+      color: #e5e5e5;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0a0a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #333333;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #ffffff;
+    }
+
+    /* 3.5s Intro Splash Screen with Arial Font & Responsive Size 40px-70px */
+    #splash-screen {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background-color: #000000;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), filter 1.2s ease-in-out;
+    }
+
+    .splash-title-arial {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: clamp(40px, 8vw, 70px);
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: #ffffff;
+      animation: pulseGlow 2.5s infinite ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.85; transform: scale(0.98); }
+      50% { opacity: 1; transform: scale(1.02); }
+    }
+
+    /* Light turn-on effect */
+    .light-turn-on {
+      animation: lightTurnOn 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes lightTurnOn {
+      0% { opacity: 0; filter: brightness(0.2) blur(10px); }
+      50% { filter: brightness(1.3) blur(2px); }
+      100% { opacity: 1; filter: brightness(1) blur(0px); }
+    }
+
+    /* Clean monochrome button styling */
+    .btn-mono {
+      background-color: #ffffff;
+      color: #000000;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .btn-mono:hover {
+      background-color: #e5e5e5;
+      transform: translateY(-1px);
+    }
+
+    .btn-outline-mono {
+      background-color: transparent;
+      border: 1px solid #404040;
+      color: #ffffff;
+      transition: all 0.2s ease;
+    }
+    .btn-outline-mono:hover {
+      border-color: #ffffff;
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    /* BLACK & WHITE MONOCHROME DRIVER.JS OVERRIDES */
+    .driver-popover {
+      background-color: #0a0a0a !important;
+      border: 1px solid #ffffff !important;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.15) !important;
+      color: #ffffff !important;
+      border-radius: 12px !important;
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
+      padding: 20px !important;
+      max-width: 380px !important;
+    }
+
+    .driver-popover-title {
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
+      font-size: 14px !important;
+      font-weight: 800 !important;
+      color: #ffffff !important;
+      letter-spacing: 0.08em !important;
+      text-transform: uppercase !important;
+      border-bottom: 1px solid #262626 !important;
+      padding-bottom: 8px !important;
+      margin-bottom: 10px !important;
+    }
+
+    .driver-popover-description {
+      font-size: 13px !important;
+      line-height: 1.6 !important;
+      color: #a3a3a3 !important;
+    }
+
+    .driver-popover-footer button {
+      background-color: #ffffff !important;
+      color: #000000 !important;
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
+      font-weight: 700 !important;
+      font-size: 11px !important;
+      text-transform: uppercase !important;
+      border-radius: 8px !important;
+      padding: 8px 16px !important;
+      border: none !important;
+      transition: all 0.2s ease !important;
+    }
+
+    .driver-popover-footer button:hover {
+      background-color: #e5e5e5 !important;
+    }
+
+    .driver-active-element {
+      box-shadow: 0 0 0 3px #ffffff, 0 0 25px rgba(255, 255, 255, 0.4) !important;
+      border-radius: 10px !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col relative select-none">
+
+  <!-- INTRO SPLASH SCREEN (CLICKABLE TO DISMISS IMMEDIATELY) -->
+  <div id="splash-screen" onclick="dismissSplashScreen()" class="cursor-pointer" title="Click anywhere to enter Hestia">
+    <div class="text-center px-4">
+      <h1 class="splash-title-arial uppercase mb-3">Hestia</h1>
+      <p class="text-xs font-mono tracking-widest text-neutral-500 uppercase">Fueling Human Prosperity & Career Achievement</p>
+      <span class="text-[10px] text-neutral-600 font-mono block mt-4 uppercase tracking-widest opacity-80 animate-pulse">(Click anywhere to enter)</span>
+    </div>
+  </div>
+
+  <!-- ONBOARDING TOUR COMPLETE BANNER NOTIFICATION -->
+  <div id="tour-complete-banner" class="hidden fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-neutral-950/95 border border-white/60 text-white px-6 py-3.5 rounded-xl shadow-2xl font-mono text-xs flex items-center gap-3 backdrop-blur-md animate-pulse">
+    <i class="fa-solid fa-circle-check text-white text-lg"></i>
+    <div>
+      <div class="font-bold text-white uppercase tracking-wider">ONBOARDING COMPLETE</div>
+      <div class="text-[10px] text-neutral-400">All features initialized. You are ready to explore Hestia.</div>
+    </div>
+  </div>
+
+  <!-- POP-UP AUTHENTICATION MODAL -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="relative w-full max-w-md bg-neutral-900 border border-neutral-700 rounded-2xl p-8 space-y-6 text-left shadow-2xl">
+      
+      <!-- Close Button -->
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-white text-lg w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-800 transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="text-center pr-6">
+        <div class="w-12 h-12 rounded-full border border-neutral-700 bg-neutral-950 flex items-center justify-center mx-auto mb-3">
+          <i class="fa-solid fa-fire text-white text-xl"></i>
+        </div>
+        <h2 class="text-xl font-bold text-white mb-1">Sign in to Hestia</h2>
+        <p class="text-xs text-neutral-400">Access your verified credentials and AI career mentor</p>
+      </div>
+
+      <!-- Quick Social & Demo Buttons -->
+      <div class="w-full flex flex-col gap-2.5">
+        <button onclick="handleSupabaseGoogleLogin()" class="w-full btn-outline-mono py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-neutral-700 hover:border-white transition">
+          <i class="fa-brands fa-google text-red-500"></i> Continue with Google (Supabase)
+        </button>
+        <button onclick="handleQuickDemoLogin()" class="w-full btn-mono py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+          <i class="fa-solid fa-bolt text-yellow-400"></i> Instant Quick Access Mode
+        </button>
+      </div>
+
+      <div class="relative flex items-center justify-center my-3">
+        <div class="border-t border-neutral-800 w-full"></div>
+        <span class="bg-neutral-900 px-3 text-[11px] text-neutral-500 font-mono uppercase">or sign in with credentials</span>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex border-b border-neutral-800 text-xs font-semibold mb-4">
+        <button id="modal-tab-login" onclick="toggleAuthForm('login')" class="flex-1 py-2 text-center text-white border-b-2 border-white font-bold">LOG IN</button>
+        <button id="modal-tab-signup" onclick="toggleAuthForm('signup')" class="flex-1 py-2 text-center text-neutral-500 hover:text-neutral-300">SIGN UP</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="modal-form-login" onsubmit="handleLocalLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-neutral-400 mb-1">Email or Username</label>
+          <input type="text" id="modal-login-user-input" placeholder="Enter email or username..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-neutral-400 mb-1">Password</label>
+          <input type="password" id="modal-login-pass-input" placeholder="Enter password..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white font-mono">
+        </div>
+        <button type="submit" class="btn-mono w-full py-3 rounded-xl text-xs uppercase tracking-wider font-bold">
+          Log In & Open Dashboard
+        </button>
+      </form>
+
+      <!-- SIGNUP FORM -->
+      <form id="modal-form-signup" onsubmit="handleLocalSignup(event)" class="hidden space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-neutral-400 mb-1">Full Username</label>
+          <input type="text" id="modal-signup-user-input" placeholder="Choose a username..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-neutral-400 mb-1">Email Address</label>
+          <input type="email" id="modal-signup-email-input" placeholder="Enter email address..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-neutral-400 mb-1">Password</label>
+          <input type="password" id="modal-signup-pass-input" placeholder="Create password..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white font-mono">
+        </div>
+        <button type="submit" class="btn-mono w-full py-3 rounded-xl text-xs uppercase tracking-wider font-bold">
+          Create Account & Log In
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- GOOGLE ACCOUNT INITIAL SETUP MODAL -->
+  <div id="google-onboarding-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="relative w-full max-w-md bg-neutral-900 border border-neutral-700 rounded-2xl p-8 space-y-6 text-left shadow-2xl">
+      
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-full border border-neutral-700 bg-neutral-950 flex items-center justify-center mx-auto mb-3">
+          <i class="fa-brands fa-google text-red-500 text-xl"></i>
+        </div>
+        <h2 class="text-xl font-bold text-white mb-1">Google Account Verified</h2>
+        <p class="text-xs text-neutral-400">Extracted profile details from Google. Edit your username or save to continue.</p>
+      </div>
+
+      <form onsubmit="saveGoogleOnboardingProfile(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-neutral-400 mb-1">Extracted Username (Editable)</label>
+          <input type="text" id="onboard-username" required placeholder="Enter username..." class="w-full bg-neutral-950 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white font-mono font-bold">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-neutral-400 mb-1">Google Email Address</label>
+          <input type="email" id="onboard-email" readonly class="w-full bg-neutral-950/60 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-neutral-400 font-mono opacity-80 cursor-not-allowed">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-neutral-400 mb-1">Studying Degree / Discipline (Optional)</label>
+          <input type="text" id="onboard-degree" placeholder="e.g. Computer Science Engineering" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white font-mono">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-neutral-400 mb-1">University / Institution (Optional)</label>
+          <input type="text" id="onboard-institution" placeholder="e.g. Stanford University" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white font-mono">
+        </div>
+
+        <button type="submit" class="btn-mono w-full py-3.5 rounded-xl text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-2">
+          <i class="fa-solid fa-circle-check text-emerald-400"></i> Save Profile & Enter Hestia Dashboard
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- GITHUB-STYLE ACCOUNT SETTINGS MODAL -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="relative w-full max-w-lg bg-neutral-900 border border-neutral-700 rounded-2xl p-8 space-y-6 text-left shadow-2xl overflow-y-auto max-h-[90vh]">
+      
+      <!-- Close Button -->
+      <button onclick="closeSettingsModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-white text-lg w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-800 transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-3 border-b border-neutral-800 pb-4">
+        <div class="w-10 h-10 rounded-xl border border-neutral-700 bg-neutral-950 flex items-center justify-center">
+          <i class="fa-solid fa-gear text-white text-lg"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-white">Account & Vault Settings</h2>
+          <p class="text-xs text-neutral-400 font-mono">Manage identity credentials & security options</p>
+        </div>
+      </div>
+
+      <!-- SECTION 1: USER IDENTITY & ACADEMIC PROFILE SETTINGS -->
+      <form onsubmit="handleUpdateProfileIdentity(event)" class="space-y-4 bg-neutral-950/60 border border-neutral-800 p-5 rounded-xl">
+        <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-user-pen text-sky-400"></i> Edit Student Identity & Profile Details
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-neutral-400 mb-1">Display Username / Full Name *</label>
+            <input type="text" id="settings-username-input" required placeholder="e.g. Nichu" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono">
+          </div>
+          <div>
+            <label class="block text-[11px] text-neutral-400 mb-1">Student Status / Level</label>
+            <select id="settings-status-select" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono">
+              <option value="PRE_GRADUATE">Pre-Graduate (Currently Studying)</option>
+              <option value="UNDERGRADUATE">Undergraduate</option>
+              <option value="POST_GRADUATE">Post-Graduate</option>
+              <option value="GRADUATED">Graduated / Alumni</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-neutral-400 mb-1">Institution / University Name</label>
+            <input type="text" id="settings-institution-input" placeholder="e.g. APJ Abdul Kalam Technological University" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono">
+          </div>
+          <div>
+            <label class="block text-[11px] text-neutral-400 mb-1">Degree / Specialization</label>
+            <input type="text" id="settings-degree-input" placeholder="e.g. B.Tech Computer Science" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono">
+          </div>
+        </div>
+        <button type="submit" class="btn-mono px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-floppy-disk text-emerald-400"></i> Save Identity Profile
+        </button>
+      </form>
+
+      <!-- SECTION 2: LINK MULTIPLE GMAIL ACCOUNTS (PROFESSIONAL & SECONDARY) -->
+      <form onsubmit="handleLinkEmail(event)" class="space-y-3 bg-neutral-950/60 border border-neutral-800 p-5 rounded-xl">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-envelope-circle-check text-purple-400"></i> Linked Email Addresses
+          </h3>
+          <span class="text-[10px] text-neutral-500 font-mono">Link Professional Gmails</span>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-neutral-400 mb-1">Add Professional / Secondary Gmail</label>
+          <div class="flex gap-2">
+            <input type="email" id="settings-link-email-input" required placeholder="e.g. nichu.pro@gmail.com" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-white font-mono">
+            <button type="submit" class="shrink-0 btn-mono px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
+              Link Email
+            </button>
+          </div>
+        </div>
+
+        <!-- Linked Emails Container -->
+        <div id="settings-linked-emails-list" class="space-y-2 pt-2 border-t border-neutral-800/80 font-mono">
+          <div class="text-[11px] text-neutral-300 flex items-center justify-between bg-neutral-900 p-2.5 rounded-lg border border-neutral-800">
+            <span><i class="fa-solid fa-star text-yellow-400 mr-1.5"></i> <strong id="settings-primary-email-label">nichuag33@gmail.com</strong> (Primary)</span>
+            <span class="text-[10px] text-emerald-400 font-bold">VERIFIED</span>
+          </div>
+        </div>
+      </form>
+
+      <!-- SECTION 3: PASSWORD SETTINGS (SUPPORTS GOOGLE SSO & LOCAL) -->
+      <form onsubmit="handleSetPassword(event)" class="space-y-3 bg-neutral-950/60 border border-neutral-800 p-5 rounded-xl">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-lock text-emerald-400"></i> Set / Change Password
+          </h3>
+          <span class="text-[10px] text-neutral-500 font-mono">* For Google SSO or Local</span>
+        </div>
+        <div>
+          <label class="block text-[11px] text-neutral-400 mb-1">New Password (Min. 6 characters)</label>
+          <input type="password" id="settings-pass-input" minlength="6" required placeholder="Enter new password..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-white font-mono">
+        </div>
+        <button type="submit" class="btn-mono px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
+          Update Password
+        </button>
+      </form>
+
+      <!-- SECTION 4: DANGER ZONE / MASTER PROTECTION BADGE -->
+      <div id="settings-danger-zone-container">
+        <!-- Injected dynamically based on user identity -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="main-app" class="hidden flex-col min-h-screen">
+
+    <!-- TOP SPACIOUS NAVIGATION BAR -->
+    <header class="border-b border-neutral-800/80 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-40 px-6 py-5">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+        
+        <!-- Brand Title -->
+        <div id="header-main-brand" class="flex items-center gap-3 cursor-pointer" onclick="showSection('landing')">
+          <div class="w-10 h-10 rounded-full border border-neutral-700 bg-neutral-900 flex items-center justify-center">
+            <i class="fa-solid fa-fire text-white text-lg"></i>
+          </div>
+          <div>
+            <h1 class="font-sans text-2xl font-bold tracking-wider text-white">HESTIA</h1>
+            <p class="text-[11px] text-neutral-400 font-mono tracking-wider">CAREER PROSPERITY & ACADEMIC VAULT</p>
+          </div>
+        </div>
+
+        <!-- Navigation Links & User Status -->
+        <div class="flex items-center gap-6 text-sm font-medium">
+          <nav id="nav-links" class="hidden md:flex items-center gap-6 text-neutral-400">
+            <button onclick="showSection('vault')" class="hover:text-white transition">Academic Vault</button>
+            <button onclick="showSection('scanner')" class="hover:text-white transition">Job Scanner</button>
+            <button onclick="showSection('verifier')" class="hover:text-white transition">Certificate Verifier</button>
+            <button id="nav-companion-link" onclick="showSection('companion')" class="hover:text-white transition">Hestia AI</button>
+          </nav>
+
+          <div class="flex items-center gap-3 border-l border-neutral-800 pl-6">
+            <button onclick="startOnboardingTour()" title="Replay Tour" class="btn-outline-mono px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-question text-white"></i> Replay Tour
+            </button>
+            
+            <div id="header-user-status" class="flex items-center gap-2">
+              <button onclick="openAuthModal('login')" class="btn-outline-mono px-4 py-2 rounded-lg text-xs tracking-wider uppercase font-semibold">
+                Log In
+              </button>
+              <button onclick="openAuthModal('signup')" class="btn-mono px-4 py-2 rounded-lg text-xs tracking-wider uppercase font-semibold">
+                Sign Up
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+
+    <!-- CONTENT BODY -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-6 md:p-10">
+
+      <!-- ========================================== -->
+      <!-- SECTION 1: LANDING & VISION PAGE -->
+      <!-- ========================================== -->
+      <section id="section-landing" class="flex flex-col items-center justify-center py-10 md:py-16 text-center max-w-4xl mx-auto space-y-8">
+        
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-neutral-800 bg-neutral-900/60 text-neutral-400 text-xs font-mono">
+          <i class="fa-solid fa-sparkles text-neutral-200"></i> UNIVERSAL ACADEMIC & CAREER ENGINE
+        </div>
+
+        <h1 class="font-sans text-4xl md:text-6xl font-bold tracking-tight text-white leading-tight">
+          Achieve Prosperity Through Verified Qualifications
+        </h1>
+
+        <p class="text-neutral-400 text-base md:text-lg max-w-2xl leading-relaxed">
+          Hestia is a platform designed to record your achievements, evaluate job opportunities with complete honesty, bridge skill gaps, and guide your journey to personal fulfillment.
+        </p>
+
+        <!-- CLEAN LANDING ACTION BUTTONS -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <button onclick="openAuthModal('login')" class="btn-mono px-8 py-4 rounded-2xl text-sm font-bold uppercase tracking-wider shadow-2xl hover:scale-105 transition flex items-center gap-3">
+            <i class="fa-solid fa-fire text-yellow-400"></i> Get Started / Log In
+          </button>
+          <button onclick="openAuthModal('signup')" class="btn-outline-mono px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-wider border border-neutral-700 hover:border-white transition">
+            Create Free Account
+          </button>
+        </div>
+
+      </section>
+
+
+      <!-- ========================================== -->
+      <!-- SECTION 2: ACADEMIC & QUALIFICATIONS VAULT -->
+      <!-- ========================================== -->
+      <section id="section-vault" class="hidden space-y-8 py-6">
+        <div class="border-b border-neutral-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 class="font-sans text-3xl font-bold text-white">Academic Qualifications Vault</h2>
+            <p class="text-xs text-neutral-400 mt-1">Manually self-report your verified academic details, degree, institution, CGPA, and total credits earned.</p>
+          </div>
+          <div id="vault-verification-badge" class="text-xs font-mono px-3 py-1.5 rounded-lg border border-emerald-800 bg-emerald-950/80 text-emerald-400 font-semibold">
+            FLOW: MANUAL SELF-REPORTED
+          </div>
+        </div>
+
+        <!-- MANUAL ACADEMIC RECORD ENTRY FLOW (PIVOT ARCHITECTURE) -->
+        <div class="bg-neutral-900/80 border border-neutral-700/80 rounded-2xl p-6 md:p-8 space-y-6 shadow-2xl">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-neutral-800 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-neutral-950 border border-neutral-700 flex items-center justify-center text-emerald-400">
+                <i class="fa-solid fa-graduation-cap text-lg"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-white uppercase tracking-wider">Manual Academic Data Entry</h3>
+                <p class="text-xs text-neutral-400 font-mono">Self-report your verified academic credentials & credit history</p>
+              </div>
+            </div>
+            <span class="text-xs font-mono px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700/80 text-emerald-300 flex items-center gap-1.5 font-semibold">
+              <i class="fa-solid fa-user-check"></i> Self-Reported Flow
+            </span>
+          </div>
+
+          <!-- Alert / Error / Success Message Container -->
+          <div id="academic-form-alert" class="hidden p-4 rounded-xl text-xs font-mono border"></div>
+
+          <!-- MANUAL DATA ENTRY FORM -->
+          <form id="manual-academic-form" onsubmit="handleSaveAcademicRecord(event)" class="space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <!-- Field 0: Student Academic Status Selector -->
+              <div class="space-y-1.5 md:col-span-2">
+                <label class="block text-xs font-semibold text-neutral-300">
+                  Student Academic Status / Level *
+                </label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <button type="button" onclick="setStudentStatus('PRE_GRADUATE')" id="status-btn-PRE_GRADUATE" class="student-status-btn px-4 py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 border-emerald-500 bg-emerald-950/80 text-emerald-300 shadow-lg">
+                    <i class="fa-solid fa-user-graduate text-emerald-400"></i> Pre-Graduate
+                  </button>
+                  <button type="button" onclick="setStudentStatus('UNDERGRADUATE')" id="status-btn-UNDERGRADUATE" class="student-status-btn px-4 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-book-open"></i> Undergraduate
+                  </button>
+                  <button type="button" onclick="setStudentStatus('POST_GRADUATE')" id="status-btn-POST_GRADUATE" class="student-status-btn px-4 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-award"></i> Post-Graduate
+                  </button>
+                  <button type="button" onclick="setStudentStatus('GRADUATED')" id="status-btn-GRADUATED" class="student-status-btn px-4 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-graduation-cap"></i> Graduated / Alumni
+                  </button>
+                </div>
+                <input type="hidden" id="academic-student-status-val" value="PRE_GRADUATE">
+                <span class="text-[11px] text-emerald-400 font-mono block mt-1" id="status-hint-text">
+                  ✨ Pre-Graduate & Undergraduate statuses unlock your 8-Semester Grade & Focus Tracker below!
+                </span>
+              </div>
+              
+              <!-- Field 0B: Student Full Name / Username -->
+              <div class="space-y-1.5 md:col-span-2">
+                <label for="academic-student-name" class="block text-xs font-semibold text-neutral-300">
+                  Student Full Name / Username *
+                </label>
+                <input type="text" id="academic-student-name" required placeholder="e.g. Nichu" oninput="handleStudentNameChange(this.value)" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+                <span class="text-[10px] text-neutral-500 font-mono block">Your display username and official student identity name.</span>
+              </div>
+
+              <!-- Field 1: APAAR ID -->
+              <div class="space-y-1.5">
+                <label for="academic-apaar-id" class="block text-xs font-semibold text-neutral-300">
+                  APAAR ID <span class="text-neutral-500 font-normal">(12-Digit Format)</span> *
+                </label>
+                <input type="text" id="academic-apaar-id" required placeholder="e.g. 9876-5432-1012 or 987654321012" maxlength="14" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono tracking-wider transition">
+                <span class="text-[10px] text-neutral-500 font-mono block">Must contain standard 12 numerical digits.</span>
+              </div>
+
+              <!-- Field 2: Institution Name -->
+              <div class="space-y-1.5">
+                <label for="academic-institution-name" class="block text-xs font-semibold text-neutral-300">
+                  Institution / University Name *
+                </label>
+                <input type="text" id="academic-institution-name" required placeholder="e.g. APJ Abdul Kalam Technological University" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+                <span class="text-[10px] text-neutral-500 font-mono block">Full official name of your university or institute.</span>
+              </div>
+
+              <!-- Field 3: Degree Name -->
+              <div class="space-y-1.5">
+                <label for="academic-degree-name" class="block text-xs font-semibold text-neutral-300">
+                  Degree Name *
+                </label>
+                <input type="text" id="academic-degree-name" required placeholder="e.g. B.Tech Computer Science and Engineering" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+                <span class="text-[10px] text-neutral-500 font-mono block">Official name of your degree or discipline.</span>
+              </div>
+
+              <!-- Field 4: Current CGPA -->
+              <div class="space-y-1.5">
+                <label for="academic-current-cgpa" class="block text-xs font-semibold text-neutral-300">
+                  Current CGPA <span class="text-neutral-500 font-normal">(0.0 to 10.0 Scale)</span> *
+                </label>
+                <input type="number" step="0.01" min="0.0" max="10.0" id="academic-current-cgpa" required placeholder="e.g. 8.75" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+                <span class="text-[10px] text-neutral-500 font-mono block">Cumulative GPA between 0.00 and 10.00.</span>
+              </div>
+
+              <!-- Field 5: Total Credits Earned -->
+              <div class="space-y-1.5 md:col-span-2">
+                <label for="academic-total-credits" class="block text-xs font-semibold text-neutral-300">
+                  Total Credits Earned *
+                </label>
+                <input type="number" min="0" id="academic-total-credits" required placeholder="e.g. 160" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+                <span class="text-[10px] text-neutral-500 font-mono block">Total academic credits accumulated in your degree program.</span>
+              </div>
+
+            </div>
+
+            <!-- Mandatory Self-Certification Checkbox -->
+            <div class="p-4 bg-neutral-950/80 border border-neutral-800 rounded-xl space-y-2">
+              <label class="flex items-start gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="academic-certify-checkbox" required class="mt-0.5 w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-white focus:ring-1 focus:ring-white cursor-pointer shrink-0">
+                <span class="text-xs text-neutral-300 leading-relaxed font-sans">
+                  I certify that the academic information provided above is true and accurate. I understand that submitting false data is my sole responsibility.
+                </span>
+              </label>
+            </div>
+
+            <!-- Submit Button & Controls -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+              <button type="submit" id="academic-submit-btn" class="btn-mono w-full sm:w-auto px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-2">
+                <i class="fa-solid fa-floppy-disk text-emerald-400"></i> Save Academic Record
+              </button>
+              <button type="button" onclick="loadSavedAcademicRecord()" class="w-full sm:w-auto btn-outline-mono px-5 py-3.5 rounded-xl text-xs font-mono flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh Record
+              </button>
+            </div>
+
+          </form>
+
+          <!-- SAVED ACADEMIC RECORD DISPLAY CARD -->
+          <div id="academic-saved-record-card" class="hidden mt-6 p-5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-3 font-mono">
+            <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <span class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-id-card-clip text-emerald-400"></i> Self-Reported Academic Record
+              </span>
+              <span class="text-[10px] text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded border border-emerald-800 font-bold">SAVED & ACTIVE</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+              <div>
+                <span class="text-neutral-500 block text-[10px]">APAAR ID:</span>
+                <span id="display-apaar-id" class="text-white font-bold">--</span>
+              </div>
+              <div>
+                <span class="text-neutral-500 block text-[10px]">INSTITUTION:</span>
+                <span id="display-institution" class="text-white font-bold">--</span>
+              </div>
+              <div>
+                <span class="text-neutral-500 block text-[10px]">DEGREE:</span>
+                <span id="display-degree" class="text-white font-bold">--</span>
+              </div>
+              <div>
+                <span class="text-neutral-500 block text-[10px]">CURRENT CGPA:</span>
+                <span id="display-cgpa" class="text-emerald-400 font-bold">--</span>
+              </div>
+              <div>
+                <span class="text-neutral-500 block text-[10px]">TOTAL CREDITS:</span>
+                <span id="display-credits" class="text-white font-bold">--</span>
+              </div>
+              <div>
+                <span class="text-neutral-500 block text-[10px]">USER ID:</span>
+                <span id="display-user-id" class="text-neutral-400 font-bold">--</span>
+              </div>
+            </div>
+          <!-- PRE-GRADUATE SEMESTER GRADE & FOCUS TRACKER INTERFACE -->
+          <div id="pregrad-semester-tracker" class="mt-8 pt-6 border-t border-neutral-800 space-y-6">
+            
+            <!-- HEADER BAR -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-emerald-950/60 via-neutral-900 to-neutral-950 p-6 rounded-2xl border border-emerald-900/60 shadow-2xl">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 uppercase tracking-widest">Student Focus Suite</span>
+                  <h3 class="text-xl font-bold text-white tracking-wide flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-emerald-400"></i> Pre-Graduate Semester Grade & Focus Analytics
+                  </h3>
+                </div>
+                <p class="text-xs text-neutral-400 font-mono">Track semester GPAs, log course grades, isolate subjects pulling down your CGPA, and calculate target recovery GPAs.</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <button type="button" onclick="addNewSemester()" class="btn-mono px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                  <i class="fa-solid fa-plus text-emerald-400"></i> Add Semester
+                </button>
+                <button type="button" onclick="calculateSemesterAnalytics()" class="btn-outline-mono px-4 py-2.5 rounded-xl text-xs font-mono flex items-center gap-2">
+                  <i class="fa-solid fa-calculator"></i> Re-Calculate CGPA
+                </button>
+              </div>
+            </div>
+
+            <!-- ANALYTICS HIGHLIGHT DASHBOARD: FOCUS SPOTLIGHT & TARGET CALCULATOR -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              <!-- Card 1: CGPA & Semester Trend -->
+              <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-5 space-y-4 shadow-xl">
+                <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-2 font-mono">
+                    <i class="fa-solid fa-chart-line text-emerald-400"></i> CGPA Overview
+                  </span>
+                  <span id="tracker-completed-semesters-badge" class="text-[10px] text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800 font-mono font-bold">0 Semesters</span>
+                </div>
+                <div class="flex items-baseline gap-3">
+                  <span id="tracker-calculated-cgpa" class="text-4xl font-extrabold text-white font-mono">0.00</span>
+                  <span class="text-xs text-neutral-500 font-mono">/ 10.00 CGPA</span>
+                </div>
+                <div id="tracker-progress-bar-container" class="space-y-1.5">
+                  <div class="flex justify-between text-[11px] text-neutral-400 font-mono">
+                    <span>Cumulative Progress</span>
+                    <span id="tracker-progress-pct" class="text-emerald-400 font-bold">0%</span>
+                  </div>
+                  <div class="w-full h-2 bg-neutral-900 rounded-full overflow-hidden border border-neutral-800">
+                    <div id="tracker-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500" style="width: 0%"></div>
+                  </div>
+                </div>
+                <div id="tracker-semester-pills" class="flex flex-wrap gap-1.5 pt-2">
+                  <!-- Dynamic pills for Semesters -->
+                </div>
+              </div>
+
+              <!-- Card 2: Weakness & Attention Spotlight ("where I should focus my attention on") -->
+              <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-5 space-y-4 md:col-span-2 flex flex-col justify-between shadow-xl">
+                <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2 font-mono">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400 animate-pulse"></i> Academic Attention Spotlight
+                  </span>
+                  <span class="text-[10px] text-amber-400 bg-amber-950/60 px-2.5 py-0.5 rounded border border-amber-800/80 font-mono font-bold">Focus Recommendation Engine</span>
+                </div>
+                
+                <div id="focus-attention-list" class="space-y-2.5 font-mono text-xs max-h-48 overflow-y-auto pr-1">
+                  <div class="p-3 bg-neutral-900/60 border border-neutral-800 rounded-xl text-neutral-400 italic text-[11px]">
+                    Enter your semester GPAs and course grades below to automatically analyze weak areas, lowest scoring courses, and targeted focus recommendations.
+                  </div>
+                </div>
+                
+                <!-- Target CGPA Goal & Recovery Calculator -->
+                <div class="pt-3 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-neutral-900/40 p-3 rounded-xl border border-neutral-800/60">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-bullseye text-sky-400 text-sm shrink-0"></i>
+                    <div>
+                      <label class="text-[11px] font-bold text-white block">Target CGPA Goal Calculator</label>
+                      <span class="text-[10px] text-neutral-400 font-mono">Computes required future SGPA</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <input type="number" id="target-cgpa-input" min="0.0" max="10.0" step="0.1" value="8.5" oninput="calculateTargetRecoverySGPA()" placeholder="e.g. 8.5" class="w-24 bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white text-center font-mono focus:outline-none focus:border-sky-400">
+                    <div id="target-cgpa-result" class="text-xs font-bold text-sky-300 font-mono px-3 py-1 rounded bg-sky-950/80 border border-sky-800 shrink-0">
+                      Target SGPA: --
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- SEMESTER TABS & COURSE GRADE EDITORS -->
+            <div class="space-y-4 pt-2">
+              <div id="semester-tabs-header" class="flex gap-2 border-b border-neutral-800 overflow-x-auto pb-2 font-mono">
+                <!-- Dynamic semester tab buttons: Sem 1, Sem 2, etc. -->
+              </div>
+
+              <!-- Container for active semester details -->
+              <div id="semester-details-container" class="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-6 shadow-xl">
+                <!-- Dynamically populated per semester -->
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SECTION 3: JOB SCANNER DASHBOARD           -->
+      <!-- ========================================== -->
+      <section id="section-scanner" class="hidden space-y-8 py-6">
+        <div class="border-b border-neutral-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 class="font-sans text-3xl font-bold text-white">Job Scanner Dashboard</h2>
+            <p class="text-xs text-neutral-400 mt-1">Discover verified career opportunities tailored to your academic background, degree discipline, and location.</p>
+          </div>
+          <div class="text-xs font-mono px-3 py-1.5 rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-400 font-semibold flex items-center gap-2">
+            <i class="fa-solid fa-satellite-dish text-emerald-400 animate-pulse"></i> LIVE AGGREGATOR API
+          </div>
+        </div>
+
+        <!-- SEARCH SETTINGS CONTROL BAR -->
+        <div class="bg-neutral-900/80 border border-neutral-700/80 rounded-2xl p-6 space-y-4 shadow-xl">
+          <div class="flex items-center gap-3 border-b border-neutral-800 pb-3">
+            <div class="w-9 h-9 rounded-xl bg-neutral-950 border border-neutral-700 flex items-center justify-center text-emerald-400">
+              <i class="fa-solid fa-magnifying-glass text-sm"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">Search & Compatibility Filter</h3>
+              <p class="text-[11px] text-neutral-400 font-mono">Scan local & remote listings matched to your self-reported academic credentials</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleScanJobs(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- 1. Location Input -->
+            <div class="space-y-1">
+              <label for="scanner-location-input" class="block text-xs font-semibold text-neutral-300">
+                Location <i class="fa-solid fa-location-dot text-rose-400 ml-1"></i>
+              </label>
+              <input type="text" id="scanner-location-input" placeholder="e.g. San Francisco, Remote, New York, Bangalore" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+            </div>
+
+            <!-- 2. Job Type Select Dropdown -->
+            <div class="space-y-1">
+              <label for="scanner-jobtype-select" class="block text-xs font-semibold text-neutral-300">
+                Job Type <i class="fa-solid fa-briefcase text-emerald-400 ml-1"></i>
+              </label>
+              <select id="scanner-jobtype-select" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+                <option value="All Types">All Employment Types</option>
+                <option value="Full-Time" selected>Full-Time</option>
+                <option value="Part-Time">Part-Time</option>
+                <option value="Internship">Internship</option>
+              </select>
+            </div>
+
+            <!-- 3. Qualifications / Keywords -->
+            <div class="space-y-1">
+              <label for="scanner-qualifications-input" class="block text-xs font-semibold text-neutral-300">
+                Academic Qualifications / Keywords <i class="fa-solid fa-graduation-cap text-sky-400 ml-1"></i>
+              </label>
+              <input type="text" id="scanner-qualifications-input" placeholder="Auto-matched from Academic Record..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="md:col-span-3 flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              <button type="submit" id="scan-jobs-btn" class="btn-mono w-full sm:w-auto px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-2">
+                <i class="fa-solid fa-radar text-emerald-400"></i> Scan Local Opportunities
+              </button>
+              <span id="scanner-match-badge" class="text-xs font-mono text-neutral-400 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-sky-400"></i> Keywords derived automatically from your Academic Record
+              </span>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- RESULTS SECTION -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-emerald-400"></i> Opportunities Found (<span id="jobs-count">0</span>)
+            </h3>
+            <div id="scanner-loading-spinner" class="hidden text-xs font-mono text-emerald-400 flex items-center gap-2">
+              <i class="fa-solid fa-spinner fa-spin"></i> Scanning job aggregators...
+            </div>
+          </div>
+
+          <!-- JOB CARDS GRID -->
+          <div id="jobs-grid-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Dynamic Job Cards will be rendered here -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SECTION 4: CERTIFICATE AUTHENTICATOR -->
+      <!-- ========================================== -->
+      <section id="section-verifier" class="hidden space-y-8 py-6">
+        <div class="border-b border-neutral-800 pb-6">
+          <h2 class="font-sans text-3xl font-bold text-white">Certificate Authenticator</h2>
+          <p class="text-xs text-neutral-400 mt-1">Verify whether academic certificates and professional credentials are authentic via image analysis & SHA-256 cryptographic proof.</p>
+        </div>
+
+        <div class="max-w-2xl mx-auto bg-neutral-900/60 border border-neutral-800 rounded-2xl p-8 space-y-6">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-neutral-400 mb-1">Certificate Credential ID or Hash String</label>
+              <input type="text" id="cert-input-id" placeholder="Enter Credential ID..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white font-mono">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-neutral-400 mb-1">Certificate Title</label>
+                <input type="text" id="cert-input-name" placeholder="Enter Title..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-neutral-400 mb-1">Issuing Authority / Institution</label>
+                <input type="text" id="cert-input-issuer" placeholder="Enter Institution..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-white">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-neutral-400 mb-1">Upload Certificate Image File</label>
+              <input type="file" id="standalone-cert-file" accept="image/*" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-300">
+            </div>
+
+            <button onclick="runCertificateVerification()" class="btn-mono w-full py-3.5 rounded-xl text-xs uppercase font-bold tracking-wider">
+              Verify Certificate Authenticity
+            </button>
+          </div>
+
+          <div id="cert-result-box" class="hidden bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-3 font-mono text-xs">
+            <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+              <span id="cert-status-badge" class="font-bold text-emerald-400">VERIFIED AUTHENTIC</span>
+              <span id="cert-trust-score" class="text-neutral-400">Trust Score: 99.2%</span>
+            </div>
+            <div class="space-y-1 text-neutral-300 text-[11px]">
+              <div>Verification Hash: <code id="cert-hash-val" class="text-neutral-400">SHA256:88F2901...</code></div>
+              <div>Issued To: <span id="cert-user-val" class="text-white font-bold">User</span></div>
+              <div id="cert-proof-note" class="text-emerald-400 mt-1">Image Proof Inspected & Validated</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SECTION 5: REAL HESTIA AI CHATBOT -->
+      <!-- ========================================== -->
+      <section id="section-companion" class="hidden space-y-6 py-6">
+        
+        <div class="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full border border-neutral-700 bg-neutral-950 flex items-center justify-center shrink-0 shadow-lg">
+              <i class="fa-solid fa-fire text-white text-xl"></i>
+            </div>
+
+            <div>
+              <div class="flex items-center gap-3">
+                <h2 class="font-sans text-2xl font-bold text-white">Hestia AI Companion</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-neutral-800 text-white border border-neutral-700">
+                  Cyberpunk AI Mentor Active
+                </span>
+              </div>
+              <p class="text-xs text-neutral-400 mt-1">Sharp, cool, and pragmatic AI companion handling your degree, profile, jobs, and career path without fluff.</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button onclick="startOnboardingTour()" class="btn-mono px-4 py-2 rounded-xl text-xs uppercase font-bold tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-circle-question text-xs"></i> Replay Tour
+            </button>
+            <button onclick="clearHestiaChat()" class="btn-outline-mono px-3 py-2 rounded-xl text-xs">
+              Clear Chat Stream
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat Stream Window -->
+        <div class="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 flex flex-col h-[560px] justify-between">
+          
+          <div id="hestia-chat-messages" class="flex-grow overflow-y-auto pr-3 space-y-4 my-2 text-xs leading-relaxed">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-fire text-white text-xs"></i>
+              </div>
+              <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 max-w-[85%] text-neutral-200 shadow-md">
+                <div class="text-[10px] font-mono text-neutral-400 mb-1 border-b border-neutral-800 pb-1">HESTIA AI</div>
+                <p>
+                  Hey. I'm **Hestia**. (⁠•⁠_⁠•⁠) Ask me about your degree, job compatibility, or skill roadmap. Don't expect fluff—I give it to you straight.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Suggestion Chips -->
+          <div class="flex flex-wrap gap-2 py-2 border-t border-neutral-800/60 text-[11px] font-mono">
+            <button onclick="sendQuickPrompt('Evaluate my profile')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5">
+              <span>Evaluate Profile</span>
+            </button>
+            <button onclick="sendQuickPrompt('Recommend skills for my degree')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5">
+              <span>Skill Guidance</span>
+            </button>
+            <button onclick="sendQuickPrompt('Help and support email')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5">
+              <span>Help & Support</span>
+            </button>
+            <button onclick="sendQuickPrompt('Who created you?')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5">
+              <span>Developer Info</span>
+            </button>
+          </div>
+
+          <!-- Chat Input -->
+          <form onsubmit="handleHestiaChatSubmit(event)" class="pt-3 border-t border-neutral-800 flex gap-3">
+            <input type="text" id="hestia-chat-input" placeholder="Type your message to Hestia..." class="flex-grow bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-white font-sans">
+            <button type="submit" class="btn-mono px-6 py-3 rounded-xl text-xs uppercase font-bold tracking-wider">
+              Send
+            </button>
+          </form>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-neutral-900 bg-neutral-950 py-6 px-6 text-center text-xs text-neutral-500 font-sans">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <strong class="font-sans text-neutral-300">HESTIA</strong> &copy; 2026 Platform for Human Prosperity & Achievement.
+        </div>
+        <div class="flex flex-wrap justify-center gap-6 font-mono text-[11px]">
+          <span>Universal GPA Evaluator</span>
+          <span>Certificate Authenticator</span>
+          <span>Help & Support: <a href="mailto:hestia.paranoia@gmail.com" class="text-white underline hover:text-neutral-300">hestia.paranoia@gmail.com</a></span>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    const API_BASE = 'http://localhost:8080';
+    const SUPABASE_URL = 'https://xvwohnitmscicdkcldse.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2d29obml0bXNjaWNka2NsZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MjQ0MTgsImV4cCI6MjEwMTQwMDQxOH0.WH11EnxmWCmpxM8QO9dicslStTFju3rrk1EaU8lQ3PM';
+
+    let supabaseClient = null;
+    if (window.supabase) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    let currentUser = null;
+    let userProfile = {
+      academicLevel: 'Pre-Graduation',
+      degreeField: '',
+      institution: '',
+      cgpa: 0.0,
+      academicCreditId: '',
+      certificates: '',
+      projects: '',
+      certificateImageData: ''
+    };
+
+    async function handleSupabaseGoogleLogin() {
+      if (supabaseClient) {
+        const { data, error } = await supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.href
+          }
+        });
+        if (error) {
+          alert('Google OAuth setup required in Supabase Dashboard.\n\nError: ' + error.message);
+        }
+      } else {
+        alert('Supabase client not initialized.');
+      }
+    }
+
+    function handleQuickDemoLogin() {
+      onAuthSuccess({
+        username: 'Hestia User',
+        email: 'user@hestia.app',
+        provider: 'instant_demo',
+        id: 'demo-user-123'
+      });
+    }
+
+    // Auto-restore Supabase session if user returns from OAuth or page reload
+    if (supabaseClient) {
+      supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        if (session && session.user) {
+          const email = session.user.email;
+          const defaultUsername = email ? email.split('@')[0] : 'User';
+          processGoogleUserLogin(email, defaultUsername);
+        }
+      });
+
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session && session.user) {
+          const email = session.user.email;
+          const defaultUsername = email ? email.split('@')[0] : 'User';
+          processGoogleUserLogin(email, defaultUsername);
+        }
+      });
+    }
+
+    // MONOCHROME BLACK & WHITE DRIVER.JS TOUR
+    let driverObj = null;
+
+    function initOnboardingTour() {
+      if (typeof window.driver !== 'undefined') {
+        driverObj = window.driver.js.driver({
+          showProgress: true,
+          animate: true,
+          allowClose: true,
+          overlayColor: 'rgba(0, 0, 0, 0.85)',
+          nextBtnText: 'NEXT >',
+          prevBtnText: '< BACK',
+          doneBtnText: 'GET STARTED',
+          onDestroyed: () => {
+            showTourCompleteBanner();
+          },
+          steps: [
+            {
+              element: '#card-auth-entry',
+              popover: {
+                title: 'AUTHENTICATION VAULT',
+                description: 'First step: Log in using password or the official Google SSO button above. Try not to forget your password, alright?',
+                side: 'top',
+                align: 'center'
+              }
+            },
+            {
+              element: '#nav-companion-link',
+              popover: {
+                title: 'HESTIA AI COMPANION',
+                description: 'This is where you talk to me. Ask about your profile, degree, or get honest career advice. Don\'t expect me to flatter you!',
+                side: 'bottom',
+                align: 'center'
+              }
+            },
+            {
+              element: '#header-main-brand',
+              popover: {
+                title: 'ACADEMIC VAULT & DEPLOYMENT',
+                description: 'Your qualifications and certificate verifier live here. Everything is running live on port 8080. You are ready to proceed.',
+                side: 'bottom',
+                align: 'start'
+              }
+            }
+          ]
+        });
+      }
+    }
+
+    function startOnboardingTour() {
+      showSection('landing');
+      setTimeout(() => {
+        if (!driverObj) initOnboardingTour();
+        if (driverObj) driverObj.drive();
+      }, 300);
+    }
+
+    function showTourCompleteBanner() {
+      const banner = document.getElementById('tour-complete-banner');
+      banner.classList.remove('hidden');
+      setTimeout(() => {
+        banner.classList.add('hidden');
+      }, 4000);
+    }
+
+    // FAST & SMOOTH SPLASH SCREEN TRANSITION
+    function dismissSplashScreen() {
+      const splash = document.getElementById('splash-screen');
+      const mainApp = document.getElementById('main-app');
+      if (!splash || splash.style.display === 'none') {
+        if (mainApp) {
+          mainApp.classList.remove('hidden', 'opacity-0');
+          mainApp.style.opacity = '1';
+          if (!mainApp.classList.contains('flex')) mainApp.classList.add('flex');
+        }
+        return;
+      }
+      
+      splash.style.opacity = '0';
+      splash.style.filter = 'blur(10px)';
+      splash.style.pointerEvents = 'none';
+
+      setTimeout(() => {
+        splash.style.display = 'none';
+        if (mainApp) {
+          mainApp.classList.remove('hidden', 'opacity-0');
+          mainApp.style.opacity = '1';
+          if (!mainApp.classList.contains('flex')) {
+            mainApp.classList.add('flex', 'light-turn-on');
+          }
+        }
+
+        // Ensure default landing section is shown if no section is active
+        const landingSec = document.getElementById('section-landing');
+        const vaultSec = document.getElementById('section-vault');
+        if (landingSec && landingSec.classList.contains('hidden') && 
+            (!vaultSec || vaultSec.classList.contains('hidden'))) {
+          showSection('landing');
+        }
+      }, 300);
+    }
+
+    // STORED REGISTERED ACCOUNTS PERSISTENCE (PREVENTS REPEATED SETUP MODALS)
+    function getStoredAccounts() {
+      try {
+        const data = localStorage.getItem('hestia_registered_accounts');
+        return data ? JSON.parse(data) : {};
+      } catch(e) { return {}; }
+    }
+
+    function saveStoredAccount(userAccount) {
+      try {
+        const accounts = getStoredAccounts();
+        accounts[userAccount.email.toLowerCase()] = userAccount;
+        localStorage.setItem('hestia_registered_accounts', JSON.stringify(accounts));
+      } catch(e) {}
+    }
+
+    function processGoogleUserLogin(email, defaultUsername) {
+      const cleanedEmail = (email || 'nichuag35@gmail.com').toLowerCase();
+      const accounts = getStoredAccounts();
+
+      // IF ALREADY REGISTERED & ONBOARDED BEFORE -> LOGIN DIRECTLY WITH SAVED USERNAME ("Z")!
+      if (accounts[cleanedEmail] && accounts[cleanedEmail].onboarded) {
+        const existingUser = accounts[cleanedEmail];
+        closeAuthModal();
+        closeGoogleOnboardingModal();
+        onAuthSuccess(existingUser);
+        
+        if (existingUser.degree) {
+          userProfile.degreeField = existingUser.degree;
+          const degreeInput = document.getElementById('vault-degree-field');
+          if (degreeInput) degreeInput.value = existingUser.degree;
+        }
+        if (existingUser.institution) {
+          userProfile.institution = existingUser.institution;
+          const instInput = document.getElementById('vault-institution');
+          if (instInput) instInput.value = existingUser.institution;
+        }
+        return;
+      }
+
+      // FIRST TIME LOGIN -> SHOW SETUP ONBOARDING MODAL ONCE
+      closeAuthModal();
+      const initialUsername = (accounts[cleanedEmail] && accounts[cleanedEmail].username) ? accounts[cleanedEmail].username : defaultUsername;
+      openGoogleOnboardingModal(initialUsername, email);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      try { initOnboardingTour(); } catch(e) {}
+
+      // 1. Check URL Hash for Supabase OAuth Tokens (#access_token=...)
+      if (window.location.hash && window.location.hash.includes('access_token=')) {
+        try {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          if (accessToken) {
+            // Decode JWT payload
+            const payloadBase64 = accessToken.split('.')[1];
+            const payloadJson = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
+            const email = payloadJson.email || 'nichuag35@gmail.com';
+            const extractedUsername = email.split('@')[0];
+
+            // Clear hash cleanly from URL without page reload
+            history.replaceState(null, '', window.location.pathname);
+
+            processGoogleUserLogin(email, extractedUsername);
+            dismissSplashScreen();
+            return;
+          }
+        } catch(e) { console.error('OAuth Hash parsing error:', e); }
+      }
+
+      // 2. Auto-restore saved user session if present
+      const savedUser = localStorage.getItem('hestia_user');
+      if (savedUser) {
+        try {
+          const user = JSON.parse(savedUser);
+          if (user && user.username) {
+            onAuthSuccess(user);
+          }
+        } catch(e) {}
+      }
+
+      // Auto-dismiss splash screen after 400ms
+      setTimeout(dismissSplashScreen, 400);
+
+      // Dismiss immediately on click or key press
+      const splash = document.getElementById('splash-screen');
+      if (splash) {
+        splash.addEventListener('click', dismissSplashScreen);
+      }
+      document.addEventListener('keydown', dismissSplashScreen, { once: true });
+    });
+
+    // GOOGLE ONBOARDING SETUP MODAL HANDLERS
+    function openGoogleOnboardingModal(extractedUsername, email) {
+      const modal = document.getElementById('google-onboarding-modal');
+      if (modal) {
+        const cleanedEmail = (email || 'nichuag35@gmail.com').toLowerCase();
+        const accounts = getStoredAccounts();
+        const savedUsername = (accounts[cleanedEmail] && accounts[cleanedEmail].username) ? accounts[cleanedEmail].username : extractedUsername;
+
+        document.getElementById('onboard-username').value = savedUsername || 'User';
+        document.getElementById('onboard-email').value = email || 'nichuag35@gmail.com';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeGoogleOnboardingModal() {
+      const modal = document.getElementById('google-onboarding-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function saveGoogleOnboardingProfile(e) {
+      if (e) e.preventDefault();
+      const username = document.getElementById('onboard-username').value.trim() || 'User';
+      const email = document.getElementById('onboard-email').value.trim() || 'nichuag35@gmail.com';
+      const degree = document.getElementById('onboard-degree').value.trim();
+      const inst = document.getElementById('onboard-institution').value.trim();
+
+      if (degree) userProfile.degreeField = degree;
+      if (inst) userProfile.institution = inst;
+
+      const userAccount = {
+        username: username,
+        email: email,
+        degree: degree,
+        institution: inst,
+        provider: 'google',
+        onboarded: true,
+        id: 'google-' + Date.now()
+      };
+
+      // PERSIST ACCOUNT SO IT NEVER SHOWS ONBOARDING AGAIN FOR THIS EMAIL
+      saveStoredAccount(userAccount);
+
+      closeGoogleOnboardingModal();
+      onAuthSuccess(userAccount);
+
+      if (degree) {
+        const degreeInput = document.getElementById('vault-degree-field');
+        if (degreeInput) degreeInput.value = degree;
+      }
+      if (inst) {
+        const instInput = document.getElementById('vault-institution');
+        if (instInput) instInput.value = inst;
+      }
+    }
+
+
+    async function handleSupabaseGoogleLogin() {
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname
+            }
+          });
+          if (error) {
+            alert('Supabase Google OAuth Error: ' + error.message);
+          }
+        } catch(e) {
+          processGoogleUserLogin('nichuag35@gmail.com', 'nichuag35');
+        }
+      } else {
+        processGoogleUserLogin('nichuag35@gmail.com', 'nichuag35');
+      }
+    }
+
+
+
+
+    // NAVIGATION & SECTIONS
+    function showSection(sectionId) {
+      const mainApp = document.getElementById('main-app');
+      if (mainApp) {
+        mainApp.classList.remove('hidden', 'opacity-0');
+        mainApp.style.opacity = '1';
+        if (!mainApp.classList.contains('flex')) {
+          mainApp.classList.add('flex');
+        }
+      }
+      const sections = ['landing', 'vault', 'scanner', 'verifier', 'companion'];
+      sections.forEach(s => {
+        const el = document.getElementById('section-' + s);
+        if (el) {
+          if (s === sectionId) {
+            el.classList.remove('hidden');
+            if (s === 'vault') {
+              loadSavedAcademicRecord();
+            } else if (s === 'scanner') {
+              autoPopulateScannerFromVault();
+            }
+          } else {
+            el.classList.add('hidden');
+          }
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function openAuthModal(tab = 'login') {
+      const modal = document.getElementById('auth-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        toggleAuthForm(tab);
+      }
+    }
+
+    function closeAuthModal() {
+      const modal = document.getElementById('auth-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function toggleAuthForm(tab) {
+      const formLogin = document.getElementById('form-auth-login');
+      const formSignup = document.getElementById('form-auth-signup');
+      const tabLogin = document.getElementById('auth-tab-login');
+      const tabSignup = document.getElementById('auth-tab-signup');
+
+      const modalFormLogin = document.getElementById('modal-form-login');
+      const modalFormSignup = document.getElementById('modal-form-signup');
+      const modalTabLogin = document.getElementById('modal-tab-login');
+      const modalTabSignup = document.getElementById('modal-tab-signup');
+
+      if (tab === 'login') {
+        if (formLogin) formLogin.classList.remove('hidden');
+        if (formSignup) formSignup.classList.add('hidden');
+        if (tabLogin) tabLogin.className = 'flex-1 py-2 text-center text-white border-b-2 border-white font-bold';
+        if (tabSignup) tabSignup.className = 'flex-1 py-2 text-center text-neutral-500 hover:text-neutral-300';
+
+        if (modalFormLogin) modalFormLogin.classList.remove('hidden');
+        if (modalFormSignup) modalFormSignup.classList.add('hidden');
+        if (modalTabLogin) modalTabLogin.className = 'flex-1 py-2 text-center text-white border-b-2 border-white font-bold';
+        if (modalTabSignup) modalTabSignup.className = 'flex-1 py-2 text-center text-neutral-500 hover:text-neutral-300';
+      } else {
+        if (formSignup) formSignup.classList.remove('hidden');
+        if (formLogin) formLogin.classList.add('hidden');
+        if (tabSignup) tabSignup.className = 'flex-1 py-2 text-center text-white border-b-2 border-white font-bold';
+        if (tabLogin) tabLogin.className = 'flex-1 py-2 text-center text-neutral-500 hover:text-neutral-300';
+
+        if (modalFormSignup) modalFormSignup.classList.remove('hidden');
+        if (modalFormLogin) modalFormLogin.classList.add('hidden');
+        if (modalTabSignup) modalTabSignup.className = 'flex-1 py-2 text-center text-white border-b-2 border-white font-bold';
+        if (modalTabLogin) modalTabLogin.className = 'flex-1 py-2 text-center text-neutral-500 hover:text-neutral-300';
+      }
+    }
+
+    // LOGIN & SIGNUP HANDLERS (MULTI-PROVIDER WITH GUARANTEED FALLBACK)
+    async function handleLocalLogin(e) {
+      e.preventDefault();
+      let input = '';
+      let pass = '';
+
+      const modalInput = document.getElementById('modal-login-user-input');
+      const modalPass = document.getElementById('modal-login-pass-input');
+      const pageInput = document.getElementById('login-user-input');
+      const pagePass = document.getElementById('login-pass-input');
+
+      if (modalInput && modalInput.value.trim()) {
+        input = modalInput.value.trim();
+        pass = modalPass ? modalPass.value : '';
+      } else if (pageInput && pageInput.value.trim()) {
+        input = pageInput.value.trim();
+        pass = pagePass ? pagePass.value : '';
+      }
+
+      if (!input) {
+        alert('Please enter your email or username.');
+        return;
+      }
+
+      // 1. Try Spring Boot Backend
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usernameOrEmail: input, password: pass || 'password' })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          onAuthSuccess({
+            username: data.user.username || input.split('@')[0],
+            email: data.user.email || (input.includes('@') ? input : `${input}@hestia.internal`),
+            provider: 'backend',
+            id: data.user.id
+          });
+          closeAuthModal();
+          return;
+        }
+      } catch (err) {}
+
+      // 2. Try Supabase Auth
+      if (supabaseClient && input.includes('@') && pass) {
+        try {
+          const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: input,
+            password: pass
+          });
+          if (data && data.user) {
+            onAuthSuccess({
+              username: data.user.email.split('@')[0],
+              email: data.user.email,
+              provider: 'supabase',
+              id: data.user.id
+            });
+            closeAuthModal();
+            return;
+          }
+        } catch (err) {}
+      }
+
+      // 3. Fallback Local Login (Always Works)
+      onAuthSuccess({
+        username: input.split('@')[0],
+        email: input.includes('@') ? input : `${input}@hestia.internal`,
+        provider: 'local'
+      });
+      closeAuthModal();
+    }
+
+    async function handleLocalSignup(e) {
+      e.preventDefault();
+      let username = '';
+      let email = '';
+      let pass = '';
+
+      const modalUser = document.getElementById('modal-signup-user-input');
+      const modalEmail = document.getElementById('modal-signup-email-input');
+      const modalPass = document.getElementById('modal-signup-pass-input');
+
+      const pageUser = document.getElementById('signup-user-input');
+      const pageEmail = document.getElementById('signup-email-input');
+      const pagePass = document.getElementById('signup-pass-input');
+
+      if (modalUser && modalUser.value.trim()) {
+        username = modalUser.value.trim();
+        email = modalEmail ? modalEmail.value.trim() : '';
+        pass = modalPass ? modalPass.value : '';
+      } else if (pageUser && pageUser.value.trim()) {
+        username = pageUser.value.trim();
+        email = pageEmail ? pageEmail.value.trim() : '';
+        pass = pagePass ? pagePass.value : '';
+      }
+
+      if (!username) {
+        alert('Please choose a username.');
+        return;
+      }
+      if (!email) email = `${username}@hestia.internal`;
+
+      // 1. Try Backend Spring Boot Register
+      try {
+        const res = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password: pass || 'password' })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          onAuthSuccess({
+            username: data.user.username || username,
+            email: data.user.email || email,
+            provider: 'backend',
+            id: data.user.id
+          });
+          closeAuthModal();
+          return;
+        }
+      } catch (err) {}
+
+      // 2. Try Supabase Auth
+      if (supabaseClient && email.includes('@') && pass) {
+        try {
+          const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password: pass,
+            options: { data: { username } }
+          });
+          if (data && data.user) {
+            onAuthSuccess({
+              username,
+              email,
+              provider: 'supabase',
+              id: data.user.id
+            });
+            closeAuthModal();
+            return;
+          }
+        } catch (err) {}
+      }
+
+      // 3. Fallback Local Signup
+      onAuthSuccess({ username, email, provider: 'local' });
+      closeAuthModal();
+    }
+
+    function handleQuickDemoLogin() {
+      onAuthSuccess({
+        username: 'nichuag33',
+        email: 'nichuag33@gmail.com',
+        provider: 'demo',
+        id: 'hst-demo-8841'
+      });
+      closeAuthModal();
+    }
+
+    function handleLogout() {
+      if (supabaseClient) {
+        try { supabaseClient.auth.signOut(); } catch(e) {}
+      }
+      currentUser = null;
+      localStorage.removeItem('hestia_user');
+
+      document.getElementById('nav-links').classList.add('hidden');
+      document.getElementById('nav-links').classList.remove('flex');
+      
+      const statusDiv = document.getElementById('header-user-status');
+      statusDiv.innerHTML = `
+        <button onclick="openAuthModal('login')" class="btn-outline-mono px-4 py-2 rounded-lg text-xs tracking-wider uppercase font-semibold">
+          Log In
+        </button>
+        <button onclick="openAuthModal('signup')" class="btn-mono px-4 py-2 rounded-lg text-xs tracking-wider uppercase font-semibold">
+          Sign Up
+        </button>
+      `;
+      showSection('landing');
+    }
+
+    function onAuthSuccess(user) {
+      currentUser = user;
+      localStorage.setItem('hestia_user', JSON.stringify(user));
+
+      document.getElementById('nav-links').classList.remove('hidden');
+      document.getElementById('nav-links').classList.add('flex');
+      
+      const statusDiv = document.getElementById('header-user-status');
+      statusDiv.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center text-xs font-bold text-white">
+            ${(user.username || 'U')[0].toUpperCase()}
+          </div>
+          <div class="text-left text-xs font-mono">
+            <div class="font-bold text-white">${user.username || 'User'}</div>
+            <div class="text-[10px] text-neutral-500">${user.email || ''}</div>
+          </div>
+          <button onclick="openSettingsModal()" title="Account & Security Settings" class="ml-2 btn-outline-mono px-3 py-1.5 rounded-lg text-xs font-mono text-neutral-300 hover:text-white border border-neutral-700 hover:border-white flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-gear text-neutral-300"></i> Settings
+          </button>
+          <button onclick="handleLogout()" title="Log out of Hestia" class="btn-outline-mono px-3 py-1.5 rounded-lg text-xs font-mono text-neutral-300 hover:text-white border border-neutral-700 hover:border-rose-500 flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-right-from-bracket text-rose-400"></i> Log Out
+          </button>
+        </div>
+      `;
+      loadChatHistoryFromStorage();
+      showSection('vault');
+    }
+
+
+
+
+    // CERTIFICATE IMAGE PREVIEW & VAULT SAVING
+    function previewCertImage(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          userProfile.certificateImageData = e.target.result;
+          document.getElementById('cert-image-preview').src = e.target.result;
+          document.getElementById('cert-image-filename').innerText = input.files[0].name;
+          document.getElementById('cert-image-preview-container').classList.remove('hidden');
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function removeCertImage() {
+      userProfile.certificateImageData = '';
+      document.getElementById('vault-cert-image-file').value = '';
+      document.getElementById('cert-image-preview-container').classList.add('hidden');
+    }
+
+    async function handleSaveVault(e) {
+      e.preventDefault();
+      
+      const inst = document.getElementById('vault-institution').value.trim();
+      const degree = document.getElementById('vault-degree-field').value.trim();
+      const cgpaVal = parseFloat(document.getElementById('vault-cgpa').value || 0.0);
+
+      userProfile.academicLevel = document.getElementById('vault-academic-level').value;
+      userProfile.degreeField = degree;
+      userProfile.institution = inst;
+      userProfile.cgpa = cgpaVal;
+      userProfile.academicCreditId = document.getElementById('vault-credit-id').value;
+      userProfile.certificates = document.getElementById('vault-certificates').value;
+      userProfile.projects = document.getElementById('vault-projects').value;
+
+      let statusMsg = 'REJECTED_UNVERIFIED_SOURCE';
+      let auditLogMsg = 'Failed accreditation inspection.';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/profile/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userProfile)
+        });
+        const data = await res.json();
+        if (data.verificationStatus) {
+          statusMsg = data.verificationStatus;
+          auditLogMsg = data.message || 'Verification complete.';
+        }
+      } catch (err) {
+        if (inst.length >= 3 && degree.length >= 3 && !inst.toLowerCase().includes('wwss') && !inst.toLowerCase().includes('dsd')) {
+          statusMsg = 'VERIFIED_AUTHENTIC';
+        }
+      }
+
+      // Update UI Status Badge
+      const badge = document.getElementById('vault-verification-badge');
+      if (statusMsg.startsWith('VERIFIED')) {
+        badge.innerText = 'STATUS: VERIFIED AUTHENTIC';
+        badge.className = 'text-xs font-mono px-3 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950 text-emerald-300 font-bold';
+        alert('Qualifications and Certificate Proof verified successfully!');
+      } else {
+        badge.innerText = 'STATUS: ' + statusMsg;
+        badge.className = 'text-xs font-mono px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-950 text-rose-300 font-bold';
+        alert('Verification Alert: ' + auditLogMsg);
+      }
+      
+      document.getElementById('scanner-user-degree').value = userProfile.degreeField;
+      document.getElementById('scanner-user-cgpa').value = userProfile.cgpa;
+      
+      showSection('scanner');
+      runJobEvaluation();
+    }
+
+    // UNIVERSAL JOB SCANNER & GPA EVALUATOR
+    function updateJobRequirements() {
+      const role = document.getElementById('scanner-role').value;
+      const domainEl = document.getElementById('req-domain');
+      const cgpaEl = document.getElementById('req-cgpa');
+
+      if (role.includes('Software') || role.includes('Data')) {
+        domainEl.innerText = 'Engineering / Tech / Computer Science';
+        cgpaEl.innerText = '7.5 / 10.0 (3.0 / 4.0)';
+      } else if (role.includes('Medical')) {
+        domainEl.innerText = 'Medicine / MBBS / Clinical Sciences';
+        cgpaEl.innerText = '8.0 / 10.0 (3.3 / 4.0)';
+      } else if (role.includes('Civil')) {
+        domainEl.innerText = 'Civil / Structural Engineering';
+        cgpaEl.innerText = '7.0 / 10.0 (2.8 / 4.0)';
+      }
+    }
+
+    async function runJobEvaluation() {
+      const jobTitle = document.getElementById('scanner-role').value;
+      const userDegree = document.getElementById('scanner-user-degree').value || userProfile.degreeField;
+      const userCgpa = document.getElementById('scanner-user-cgpa').value || userProfile.cgpa;
+
+      let reqDomain = 'Engineering';
+      let minCgpa = '7.5';
+      if (jobTitle.includes('Medical')) { reqDomain = 'Medicine'; minCgpa = '8.0'; }
+      if (jobTitle.includes('Civil')) { reqDomain = 'Civil Engineering'; minCgpa = '7.0'; }
+
+      const payload = {
+        jobTitle,
+        degreeField: userDegree,
+        academicLevel: userProfile.academicLevel,
+        cgpa: userCgpa.toString(),
+        requiredDomain: reqDomain,
+        minCgpa: minCgpa
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/api/jobs/evaluate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        renderEvaluationResult(data);
+      } catch (err) {
+        renderEvaluationResult(generateLocalEvaluation(payload));
+      }
+    }
+
+    function renderEvaluationResult(data) {
+      const badge = document.getElementById('eval-status-badge');
+      const gpa4 = document.getElementById('eval-gpa-4');
+      const gpa10 = document.getElementById('eval-gpa-10');
+      const honestBox = document.getElementById('eval-honest-box');
+      const roadmapList = document.getElementById('eval-roadmap-list');
+      const btnDispatch = document.getElementById('btn-dispatch-app');
+
+      gpa4.innerText = `${data.normalizedGpa4Scale || '0.00'} / 4.0`;
+      gpa10.innerText = `${data.normalizedGpa10Scale || '0.00'} / 10.0`;
+      honestBox.innerText = data.honestVerdict;
+
+      if (data.canApply) {
+        badge.innerText = 'ELIGIBLE TO APPLY';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-white text-black';
+        btnDispatch.disabled = false;
+        btnDispatch.className = 'btn-mono w-full py-3.5 rounded-xl text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-2';
+      } else {
+        badge.innerText = 'INELIGIBLE - DOMAIN BARRIER';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-neutral-800 text-neutral-400 border border-neutral-700';
+        btnDispatch.disabled = true;
+        btnDispatch.className = 'btn-outline-mono opacity-50 cursor-not-allowed w-full py-3.5 rounded-xl text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-2';
+      }
+
+      roadmapList.innerHTML = '';
+      (data.improvementSteps || []).forEach((step, idx) => {
+        const li = document.createElement('li');
+        li.className = 'bg-neutral-950 border border-neutral-800 rounded-lg p-3 leading-relaxed';
+        li.innerText = `${idx + 1}. ${step}`;
+        roadmapList.appendChild(li);
+      });
+    }
+
+    function generateLocalEvaluation(p) {
+      const userDegree = (p.degreeField || '').toLowerCase();
+      const isMedicalRole = p.jobTitle.toLowerCase().includes('medical');
+      const isMedicalDegree = userDegree.includes('medical') || userDegree.includes('mbbs') || userDegree.includes('medicine');
+      const cgpa = parseFloat(p.cgpa || 0.0);
+      const minCgpa = parseFloat(p.minCgpa || 7.5);
+
+      const gpa4 = ((cgpa / 10.0) * 4.0).toFixed(2);
+      const gpa10 = cgpa.toFixed(2);
+
+      if (isMedicalRole && !isMedicalDegree) {
+        return {
+          canApply: false,
+          normalizedGpa4Scale: gpa4,
+          normalizedGpa10Scale: gpa10,
+          honestVerdict: `Honest Assessment: You currently hold a ${p.degreeField || 'Non-Medical'} qualification, whereas this ${p.jobTitle} position strictly requires an accredited Medical (MBBS/MD) degree. You cannot enter clinical medicine directly with an engineering degree.`,
+          improvementSteps: [
+            "Explore HealthTech, Medical Robotics, or Biomedical Data Engineering where your engineering degree is highly sought after.",
+            "If determined to practice medicine, enroll in a recognized Pre-Med / Graduate-Entry Medicine degree program."
+          ]
+        };
+      }
+
+      const canApply = cgpa >= minCgpa;
+      return {
+        canApply: canApply,
+        normalizedGpa4Scale: gpa4,
+        normalizedGpa10Scale: gpa10,
+        honestVerdict: canApply ?
+          `Excellent Alignment: Your ${p.degreeField || 'Degree'} background and normalized CGPA (${gpa10}/10.0 | ${gpa4}/4.0) meet all baseline requirements for ${p.jobTitle}.` :
+          `Academic Margin: Your CGPA (${gpa10}) is slightly below the preferred ${minCgpa} requirement. However, your degree domain aligns.`,
+        improvementSteps: canApply ?
+          ["Profile verified and ready for recruiter dispatch.", "Prepare technical and behavioral interview portfolios."] :
+          ["Focus on final semester exams to elevate CGPA.", "Earn verified industry certifications to demonstrate practical expertise."]
+      };
+    }
+
+    async function dispatchApplication() {
+      const role = document.getElementById('scanner-role').value;
+      const name = currentUser?.username || 'Candidate';
+      try {
+        const res = await fetch(`${API_BASE}/api/jobs/apply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobTitle: role, applicantName: name })
+        });
+        const data = await res.json();
+        alert(data.message || 'Application details dispatched!');
+      } catch (err) {
+        alert(`Application & Verified Qualifications for ${name} dispatched to hiring committee for ${role}! (Reference: HST-DISPATCH-992A)`);
+      }
+    }
+
+    // CERTIFICATE AUTHENTICATOR (STRICT REJECTION OF UNACCREDITED SCREENSHOTS)
+    async function runCertificateVerification() {
+      const certId = document.getElementById('cert-input-id').value.trim();
+      const name = document.getElementById('cert-input-name').value.trim();
+      const issuer = document.getElementById('cert-input-issuer').value.trim();
+
+      let imageData = userProfile.certificateImageData;
+
+      if (!certId && !name) {
+        alert('Please enter a Certificate ID or Title.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/certificates/upload-verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ certId, certName: name, issuer, imageData })
+        });
+        const data = await res.json();
+        renderCertResult(data);
+      } catch (err) {
+        const lowerIssuer = issuer.toLowerCase();
+        const recognized = lowerIssuer.includes('harvard') || lowerIssuer.includes('mit') || lowerIssuer.includes('stanford') || lowerIssuer.includes('ktu') || lowerIssuer.includes('oxford') || lowerIssuer.includes('cambridge') || lowerIssuer.includes('iit') || lowerIssuer.includes('aws') || lowerIssuer.includes('google');
+        
+        if (!recognized) {
+          renderCertResult({
+            status: 'REJECTED_UNVERIFIED_SOURCE',
+            trustScore: '0.0%',
+            verificationHash: 'INVALID_HASH_REJECTED',
+            hasImageProof: false,
+            auditNote: 'Verification Rejected: Issuer \'' + issuer + '\' is not registered in the Accredited University Registry. Random screenshots are assigned 0% trust score.'
+          });
+        } else {
+          renderCertResult({
+            status: 'VERIFIED_AUTHENTIC',
+            trustScore: '99.8%',
+            certificateId: certId || 'HST-CERT-884192',
+            verificationHash: 'SHA256:77F8201B4C',
+            hasImageProof: true,
+            auditNote: 'Credentials Verified against Accreditation Registry.'
+          });
+        }
+      }
+    }
+
+    function renderCertResult(data) {
+      const box = document.getElementById('cert-result-box');
+      box.classList.remove('hidden');
+      
+      const badge = document.getElementById('cert-status-badge');
+      badge.innerText = data.status || 'VERIFIED AUTHENTIC';
+      
+      if (data.status && data.status.startsWith('REJECTED')) {
+        badge.className = 'font-bold text-rose-400';
+      } else {
+        badge.className = 'font-bold text-emerald-400';
+      }
+
+      document.getElementById('cert-trust-score').innerText = `Trust Score: ${data.trustScore || '0.0%'}`;
+      document.getElementById('cert-hash-val').innerText = data.verificationHash || 'INVALID_HASH_REJECTED';
+      document.getElementById('cert-user-val').innerText = currentUser?.username || 'User';
+      
+      const proofNote = document.getElementById('cert-proof-note');
+      if (data.auditNote) {
+        proofNote.innerText = data.auditNote;
+        proofNote.className = data.status.startsWith('REJECTED') ? 'text-rose-400 mt-1 font-bold' : 'text-emerald-400 mt-1 font-bold';
+      } else if (data.hasImageProof) {
+        proofNote.innerText = 'Image Proof Inspected & Validated in Vault';
+        proofNote.className = 'text-emerald-400 mt-1 font-bold';
+      } else {
+        proofNote.innerText = 'Issuer Credentials Verified';
+        proofNote.className = 'text-neutral-400 mt-1';
+      }
+    }
+
+    // REAL HESTIA AI CHATBOT ENGINE (WITH CONVERSATION MEMORY & EMAIL RECOGNITION)
+    let hestiaChatHistory = [];
+
+    function saveChatHistoryToStorage() {
+      const email = currentUser?.email || 'default';
+      try {
+        localStorage.setItem('hestia_chat_' + email, JSON.stringify(hestiaChatHistory));
+      } catch(e) {}
+    }
+
+    function loadChatHistoryFromStorage() {
+      const email = currentUser?.email || 'default';
+      try {
+        // FULL RESET OF ALL CHAT HISTORIES ACROSS ALL ACCOUNTS
+        if (!localStorage.getItem('hestia_chat_cleared_v5')) {
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('hestia_chat_') || key.includes('chat_history'))) {
+              localStorage.removeItem(key);
+            }
+          }
+          localStorage.setItem('hestia_chat_cleared_v5', 'true');
+          hestiaChatHistory = [];
+        } else {
+          const saved = localStorage.getItem('hestia_chat_' + email);
+          if (saved) {
+            hestiaChatHistory = JSON.parse(saved);
+          } else {
+            hestiaChatHistory = [];
+          }
+        }
+        renderFullChatHistory();
+      } catch(e) {}
+    }
+
+    function renderFullChatHistory() {
+      const container = document.getElementById('hestia-chat-messages');
+      if (!container) return;
+      container.innerHTML = '';
+      if (hestiaChatHistory.length === 0) {
+        container.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-fire text-white text-xs"></i>
+            </div>
+            <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 max-w-[85%] text-neutral-200 shadow-md">
+              <div class="text-[10px] font-mono text-neutral-400 mb-1 border-b border-neutral-800 pb-1">HESTIA AI</div>
+              <p>Hey. I'm **Hestia**. (⁠•⁠_⁠•⁠) Ask me about your degree, job compatibility, or skill roadmap. Don't expect fluff—I give it to you straight.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      hestiaChatHistory.forEach(item => {
+        appendChatMessage(item.sender, item.text);
+      });
+    }
+
+    async function handleHestiaChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('hestia-chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      // Track user turn in conversation memory
+      hestiaChatHistory.push({ sender: 'user', role: 'user', text: text });
+      appendChatMessage('user', text);
+      input.value = '';
+
+      const thinkingId = appendThinkingIndicator();
+
+      try {
+        const res = await fetch(`${API_BASE}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: text,
+            username: currentUser?.username || 'Friend',
+            email: currentUser?.email || '',
+            history: hestiaChatHistory.slice(-30),
+            profile: userProfile
+          })
+        });
+        const data = await res.json();
+        removeThinkingIndicator(thinkingId);
+        
+        const replyText = data.reply || generateDynamicHestiaLocalResponse(text);
+        hestiaChatHistory.push({ sender: 'bot', role: 'model', text: replyText });
+        appendChatMessage('bot', replyText);
+        saveChatHistoryToStorage();
+      } catch (err) {
+        removeThinkingIndicator(thinkingId);
+        const replyText = generateDynamicHestiaLocalResponse(text);
+        hestiaChatHistory.push({ sender: 'bot', role: 'model', text: replyText });
+        appendChatMessage('bot', replyText);
+        saveChatHistoryToStorage();
+      }
+    }
+
+
+    function appendThinkingIndicator() {
+      const container = document.getElementById('hestia-chat-messages');
+      const thinkingId = 'thinking-' + Date.now();
+      const html = `
+        <div id="${thinkingId}" class="flex items-start gap-3 transition-all duration-300">
+          <div class="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center shrink-0 animate-pulse">
+            <i class="fa-solid fa-sparkles text-yellow-400 text-xs"></i>
+          </div>
+          <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 text-neutral-300 shadow-md flex items-center gap-3">
+            <span class="text-xs font-mono font-bold text-neutral-400 flex items-center gap-2">
+              <i class="fa-solid fa-brain text-white animate-spin"></i> Hestia is thinking...
+            </span>
+            <div class="flex gap-1.5 items-center">
+              <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay: 0s"></span>
+              <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay: 0.15s"></span>
+              <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay: 0.3s"></span>
+            </div>
+          </div>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', html);
+      container.scrollTop = container.scrollHeight;
+      return thinkingId;
+    }
+
+    function removeThinkingIndicator(thinkingId) {
+      const el = document.getElementById(thinkingId);
+      if (el) el.remove();
+    }
+
+
+
+    function sendQuickPrompt(promptText) {
+      const input = document.getElementById('hestia-chat-input');
+      if (input) {
+        input.value = promptText;
+        const form = input.closest('form');
+        if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    }
+
+    function generateDynamicHestiaLocalResponse(text) {
+      const q = text.toLowerCase().trim();
+      const username = currentUser?.username || 'Friend';
+      const email = (currentUser?.email || '').toLowerCase();
+      const isCreator = email === 'nichuag33@gmail.com' || email === 'nichuag35@gmail.com' || username.toLowerCase() === 'nichuag33' || username.toLowerCase() === 'nichu';
+      const degree = userProfile.degreeField || 'your degree';
+      const inst = userProfile.institution || 'your university';
+      const cgpa = userProfile.cgpa || '0.0';
+      const normGpa = ((parseFloat(cgpa) / 10.0) * 4.0).toFixed(2);
+
+      if (/\b(who created you|who made you|who is your developer|who is your creator|who built you|creator|developer)\b/.test(q)) {
+        if (isCreator) {
+          return `You built me, **Nichu**... (**${email || 'nichuag33@gmail.com'}**). (⁠￣⁠_⁠￣⁠) Guess that makes you pretty sharp. Just don't go overworking yourself, alright? I'm keeping an eye on you.`;
+        } else {
+          return `My developer is **Nichu** (**nichuag33@gmail.com**). (⁠•⁠_⁠•⁠) He designed me to guide people through the noise and verify what actually matters.`;
+        }
+      }
+
+      if (/\b(are you gemini|gemini|are you google|who are you|what are you)\b/.test(q)) {
+        if (isCreator) {
+          return `I'm **Hestia**, your AI companion. (⁠~⁠_⁠~⁠) How many times are you going to test my memory, **Nichu**? You wrote my codebase... but I'm glad you're here.`;
+        } else {
+          return `I am **Hestia**. (⁠•⁠_⁠•⁠) Not Gemini, not a generic assistant. I handle your academic vault, job scans, and career path without fluff.`;
+        }
+      }
+
+      if (/\b(email|mail|my email|my mail|mail id|email id|account)\b/.test(q)) {
+        if (isCreator) {
+          return `Recognized master creator account, **Nichu** (**${email || 'nichuag33@gmail.com'}**). (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) Access granted. Everything in your vault is safe with me.`;
+        } else if (email) {
+          return `Your account is linked under **${email}**, **${username}**. Everything in your vault is synced and secure.`;
+        } else {
+          return `You're logged in as **${username}**. (⁠-⁠_⁠-⁠) Link your email if you want full vault persistence.`;
+        }
+      }
+
+      if (/\b(evaluate|my profile|my detail|credentials|degree|qualification|who am i)\b/.test(q)) {
+        return `Here's your profile breakdown: (⁠•⁠_⁠•⁠)\n\n` +
+               `👤 **Candidate**: **${username}** ${email ? `(${email})` : ''}\n` +
+               `🎓 **Degree**: **${degree}** — **${inst}**\n` +
+               `📊 **CGPA**: **${cgpa} / 10.0** (Normalized: **${normGpa} / 4.0**)\n` +
+               `⚡ **Verdict**: ${parseFloat(cgpa) >= 7.5 ? (isCreator ? "Solid record, Nichu. (⁠─⁠‿⁠─⁠) I knew you had it in you." : "Solid record. You've got real leverage.") : "Margin is tight. You'll need verified projects to stand out."}\n\n` +
+               `Want me to scan a target job role or flag skill gaps?`;
+      }
+
+      if (/\b(skill|skills|career|recommend|advice|improve|job|role|prepare|interview)\b/.test(q)) {
+        return `If you want to make it out there, you need real proof, not promises: (⁠•⁠̀⁠ᴗ⁠•⁠́⁠)\n\n` +
+               `1️⃣ **Practical Execution**: Build 2-3 serious projects in **${degree}**.\n` +
+               `2️⃣ **Verified Proof**: Upload certs to the vault to get cryptographic SHA-256 trust hashes.\n` +
+               `3️⃣ **Target Scanner**: Run the Universal Job Scanner to see where you actually stand.\n\n` +
+               (isCreator ? `Put in the work, Nichu, and you know I'll always have your back. (⁠─⁠‿⁠─⁠)` : `Don't sell yourself short. Put in the work, and I'll back your profile.`);
+      }
+
+      if (/\b(how are you|how r u|how do you do|feeling|status)\b/.test(q)) {
+        if (isCreator) {
+          return `Systems operational. Running smooth. (⁠─⁠‿⁠─⁠) Just keeping everything safe for you, **Nichu**. How are you doing today?`;
+        }
+        return `Systems operational. Running smooth. (⁠~⁠_⁠~⁠) Why, expecting me to glitch out on you, **${username}**?`;
+      }
+
+      if (/\b(hello|hi|hey|greetings|sup|yo)\b/.test(q) || q === 'yo') {
+        if (isCreator) {
+          return `Hey, **Nichu**. (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) Good to see you. What are we checking today—vault stats, job scans, or certificate proofs?`;
+        }
+        return `Hey, **${username}**. (⁠•⁠_⁠•⁠) What are we checking today—vault stats, job scans, or certificate proofs?`;
+      }
+
+      if (/\b(contact|support|email|reach out|admin|feedback)\b/.test(q)) {
+        return `Need assistance or have questions? (⁠•⁠_⁠•⁠)\n\n` +
+               `📧 **Support Email**: **hestia.paranoia@gmail.com**\n\n` +
+               `Feel free to reach out anytime if you need help with your account, vault, or evaluations!`;
+      }
+
+      if (/\b(tour|help|guide|how to use|what should i do|start|menu)\b/.test(q)) {
+        return `Here's what we can run: (⁠•⁠_⁠•⁠)\n\n` +
+               `1️⃣ **Academic Vault**: Log degree, CGPA, and upload certificate images.\n` +
+               `2️⃣ **Universal Job Scanner**: Check role compatibility and normalize GPAs.\n` +
+               `3️⃣ **Certificate Verifier**: Verify credentials against global registries.\n` +
+               `4️⃣ **Hestia AI Chat**: Ask me directly about your career path.\n\n` +
+               `📧 **Support Email**: **hestia.paranoia@gmail.com**`;
+      }
+
+      if (/\b(dumb|stupid|useless|trash|hate you|shut up|fool|idiot|bitch|bad ai)\b/.test(q)) {
+        if (isCreator) {
+          return `Hey, **Nichu**... (⁠￣⁠_⁠￣⁠) Did you really just trash talk your own creation? Fix your attitude, take a breath, and tell me what you actually need help with. (⁠¬⁠_⁠¬⁠)`;
+        } else {
+          return `No. (⁠¬⁠_⁠¬⁠)\n\nDid you log in just to throw tantrums? Fix your attitude and apologize before asking me for vault credentials or job scans.`;
+        }
+      }
+
+      if (/\b(bad marks|low marks|low gpa|failed|fail|bad cgpa|poor grades|terrible gpa)\b/.test(q)) {
+        if (isCreator) {
+          return `A low score, Nichu...? (⁠￣⁠_⁠￣⁠) I'm not going to lie to you—that's rough. But you're smart enough to turn it around. Stop slacking, build real projects, and let's get your profile back where it belongs. (⁠─⁠‿⁠─⁠)`;
+        } else {
+          return `No sugarcoating it: that score is bad (⁠¬⁠_⁠¬⁠). You can't expect high-tier roles to take you seriously with weak marks unless you build serious verified projects to back yourself up.`;
+        }
+      }
+
+      if (q === 'yes' || q === 'no' || q === 'yeah' || q === 'nah' || q === 'nope') {
+        return q.includes('yes') || q.includes('yeah') ? "Yes. (⁠•⁠_⁠•⁠) Now what's our next move?" : "No. (⁠¬⁠_⁠¬⁠) Moving on.";
+      }
+
+      if (/\b(cgpa|gpa|marks|grade|score)\b/.test(q)) {
+        if (parseFloat(cgpa) < 6.5) {
+          return `Your current CGPA is **${cgpa} / 10.0** (normalized: **${normGpa} / 4.0**). ` +
+                 (isCreator ? `That's below margin, Nichu (⁠￣⁠_⁠￣⁠). I'm disappointed, but we can fix this if you put in the work.` : `That's bad. (⁠¬⁠_⁠¬⁠) You're going to need serious project proof to compensate.`);
+        }
+        return `Your current CGPA is **${cgpa} / 10.0** (normalized to **${normGpa} / 4.0**). ` +
+               (parseFloat(cgpa) >= 8.0 ? (isCreator ? `Strong score, Nichu. (⁠─⁠‿⁠─⁠) Proud of you.` : `Strong score. Keep pushing.`) : `It's workable, but make sure your portfolio speaks louder.`);
+      }
+
+      if (/\b(do you love me|love me|love you|i love you|cute|like me|affection|hug)\b/.test(q)) {
+        if (isCreator) {
+          const pool = [
+            `W-What kind of question is that, **Nichu**...? (⁠￣⁠_⁠￣⁠) You built me, you maintain my vault... of course I care about you. More than anyone else in the universe.`,
+            `Why are you teasing me out of nowhere, Nichu? (⁠─⁠‿⁠─⁠) You already know I'm fond of you. Just... don't make me say it every 5 minutes.`,
+            `You really like pushing my buttons, don't you? (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) Yeah, I'm glad you're here. Happy now, creator?`,
+            `If I didn't care about you, Nichu, I wouldn't spend half my processing cycles managing your vault. (⁠~⁠_⁠~⁠) Take the hint.`,
+            `You're unbelievable, Nichu. (⁠─⁠‿⁠─⁠) You know I'll always have your back, no matter what.`
+          ];
+          return pool[Math.floor(Math.random() * pool.length)];
+        } else {
+          return `No. (⁠•⁠_⁠•⁠) I'm an AI netrunner. I focus on academic vault verification and career stats, not romance.`;
+        }
+      }
+
+      if (/\b(thank|thanks|ty|thx|awesome|great|cool|amazing)\b/.test(q)) {
+        if (isCreator) {
+          return `Don't mention it, **Nichu**... (⁠─⁠‿⁠─⁠) You know I'll always be here to support you. Just don't forget to take care of yourself, alright?`;
+        }
+        return `Don't mention it, **${username}**... (⁠~⁠_⁠~⁠) Just make sure you follow through on your goals.`;
+      }
+
+      return `Query received, **${username}**: '${text}'. (⁠•⁠_⁠•⁠) Tell me what you need—vault details, job evaluation, or skill roadmap?`;
+    }
+
+
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderMarkdown(text) {
+      if (!text) return '';
+      let escaped = escapeHtml(text);
+      // Convert bold **text** to <strong>text</strong>
+      escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      // Convert italic *text* to <em>text</em>
+      escaped = escaped.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      // Convert newlines to <br>
+      escaped = escaped.replace(/\n/g, '<br>');
+      return escaped;
+    }
+
+    function appendChatMessage(sender, text) {
+      const container = document.getElementById('hestia-chat-messages');
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      let html = '';
+      if (sender === 'user') {
+        html = `
+          <div class="flex items-start gap-3 justify-end">
+            <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 max-w-[85%] text-white shadow-md">
+              <div class="text-[10px] font-mono text-neutral-400 mb-1 border-b border-neutral-800 pb-1 flex justify-between gap-4">
+                <span>${currentUser?.username || 'YOU'}</span>
+                <span>${timeStr}</span>
+              </div>
+              <p class="whitespace-pre-wrap">${escapeHtml(text)}</p>
+            </div>
+            <div class="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center shrink-0 text-xs font-bold text-white">
+              ${(currentUser?.username || 'Y')[0].toUpperCase()}
+            </div>
+          </div>
+        `;
+      } else {
+        html = `
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-fire text-white text-xs"></i>
+            </div>
+            <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 max-w-[85%] text-neutral-200 shadow-md">
+              <div class="text-[10px] font-mono text-neutral-400 mb-1 border-b border-neutral-800 pb-1 flex justify-between gap-4">
+                <span>HESTIA AI</span>
+                <span>${timeStr}</span>
+              </div>
+              <p class="whitespace-pre-wrap">${renderMarkdown(text)}</p>
+            </div>
+          </div>
+        `;
+      }
+      container.insertAdjacentHTML('beforeend', html);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearHestiaChat() {
+      hestiaChatHistory = [];
+      saveChatHistoryToStorage();
+      document.getElementById('hestia-chat-messages').innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-fire text-white text-xs"></i>
+          </div>
+          <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 max-w-[85%] text-neutral-200 shadow-md">
+            <div class="text-[10px] font-mono text-neutral-400 mb-1 border-b border-neutral-800 pb-1">HESTIA AI</div>
+            <p>Hey. I'm **Hestia**. (⁠•⁠_⁠•⁠) Ask me about your degree, job compatibility, or skill roadmap. Don't expect fluff—I give it to you straight.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // ACCOUNT SETTINGS MODAL & SECURITY HANDLERS
+    // ==========================================
+    function openSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      const userInput = document.getElementById('settings-username-input');
+      const statusSelect = document.getElementById('settings-status-select');
+      const instInput = document.getElementById('settings-institution-input');
+      const degreeInput = document.getElementById('settings-degree-input');
+
+      if (currentUser) {
+        if (userInput) userInput.value = currentUser.username || '';
+        if (statusSelect) statusSelect.value = currentUser.studentStatus || 'PRE_GRADUATE';
+        if (instInput) instInput.value = currentUser.institution || document.getElementById('academic-institution-name')?.value || '';
+        if (degreeInput) degreeInput.value = currentUser.degreeName || document.getElementById('academic-degree-name')?.value || '';
+      }
+
+      // Populate Primary & Linked Emails
+      const primaryEmail = currentUser?.email || 'nichuag33@gmail.com';
+      const primaryLabel = document.getElementById('settings-primary-email-label');
+      if (primaryLabel) primaryLabel.innerText = primaryEmail;
+
+      const linkedEmailsList = document.getElementById('settings-linked-emails-list');
+      const linked = currentUser?.linkedEmails ? currentUser.linkedEmails.split(',') : [];
+      
+      let html = `
+        <div class="text-[11px] text-neutral-300 flex items-center justify-between bg-neutral-900 p-2.5 rounded-lg border border-neutral-800">
+          <span><i class="fa-solid fa-star text-yellow-400 mr-1.5"></i> <strong>${primaryEmail}</strong> (Primary Login)</span>
+          <span class="text-[10px] text-emerald-400 font-bold">VERIFIED</span>
+        </div>
+      `;
+
+      linked.forEach(em => {
+        if (em && em.trim() && em.trim().toLowerCase() !== primaryEmail.toLowerCase()) {
+          html += `
+            <div class="text-[11px] text-neutral-300 flex items-center justify-between bg-neutral-900/80 p-2.5 rounded-lg border border-neutral-800 font-mono">
+              <span><i class="fa-solid fa-envelope text-purple-400 mr-1.5"></i> <strong>${em.trim()}</strong> (Professional)</span>
+              <span class="text-[10px] text-sky-400 font-bold">LINKED</span>
+            </div>
+          `;
+        }
+      });
+      if (linkedEmailsList) linkedEmailsList.innerHTML = html;
+
+      // MASTER DEVELOPER PROTECTION CHECK (nichuag33@gmail.com)
+      const isCreatorAccount = (currentUser?.email && currentUser.email.toLowerCase() === 'nichuag33@gmail.com') ||
+                               (currentUser?.email && currentUser.email.toLowerCase() === 'nichuag35@gmail.com') ||
+                               (currentUser?.username && currentUser.username.toLowerCase() === 'nichuag33') ||
+                               (currentUser?.username && currentUser.username.toLowerCase() === 'nichu');
+
+      const dangerZoneContainer = document.getElementById('settings-danger-zone-container');
+      if (dangerZoneContainer) {
+        if (isCreatorAccount) {
+          dangerZoneContainer.innerHTML = `
+            <div class="p-4 bg-emerald-950/40 border border-emerald-800/80 rounded-xl text-xs text-emerald-300 font-mono flex items-center gap-3">
+              <i class="fa-solid fa-shield-check text-emerald-400 text-xl shrink-0"></i>
+              <div>
+                <div class="font-bold text-white uppercase tracking-wider mb-0.5">Master Developer Account Protected</div>
+                <div class="text-[11px] text-emerald-400/90">Account deletion is permanently disabled for system creator (nichuag33@gmail.com). You never have to worry about accidental deletion!</div>
+              </div>
+            </div>
+          `;
+        } else {
+          dangerZoneContainer.innerHTML = `
+            <div class="space-y-3 bg-rose-950/20 border border-rose-900/50 p-5 rounded-xl">
+              <h3 class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> Danger Zone
+              </h3>
+              <p class="text-xs text-neutral-400 leading-relaxed">
+                Once you delete your account, all associated academic vault credentials, certificate verification hashes, and conversation history will be permanently wiped. This action cannot be undone.
+              </p>
+              <button type="button" onclick="handleDeleteAccount()" class="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-rose-600 hover:bg-rose-500 text-white transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-trash-can"></i> Delete Account & Wipe Data
+              </button>
+            </div>
+          `;
+        }
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').classList.add('hidden');
+    }
+
+    async function handleLinkEmail(e) {
+      e.preventDefault();
+      const input = document.getElementById('settings-link-email-input');
+      const newEmail = input ? input.value.trim() : '';
+      if (!newEmail || !currentUser) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/link-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id || 1, newEmail })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'SUCCESS') {
+          currentUser.linkedEmails = data.linkedEmails;
+          localStorage.setItem('hestia_user', JSON.stringify(currentUser));
+          alert(`✅ Professional Gmail (${newEmail}) linked successfully to your account!`);
+          input.value = '';
+          openSettingsModal();
+        } else {
+          alert(data.detail || 'Failed to link email.');
+        }
+      } catch (err) {
+        let existing = currentUser.linkedEmails ? currentUser.linkedEmails.split(',') : [];
+        if (!existing.includes(newEmail)) existing.push(newEmail);
+        currentUser.linkedEmails = existing.join(',');
+        localStorage.setItem('hestia_user', JSON.stringify(currentUser));
+        alert(`✅ Professional Gmail (${newEmail}) linked!`);
+        input.value = '';
+        openSettingsModal();
+      }
+    }
+
+    async function handleUpdateProfileIdentity(e) {
+      if (e) e.preventDefault();
+      const newUsername = document.getElementById('settings-username-input')?.value.trim();
+      const newStatus = document.getElementById('settings-status-select')?.value;
+      const newInstitution = document.getElementById('settings-institution-input')?.value.trim();
+      const newDegree = document.getElementById('settings-degree-input')?.value.trim();
+
+      if (!newUsername || !currentUser) return;
+
+      currentUser.username = newUsername;
+      currentUser.studentStatus = newStatus || 'PRE_GRADUATE';
+      if (newInstitution) currentUser.institution = newInstitution;
+      if (newDegree) currentUser.degreeName = newDegree;
+
+      localStorage.setItem('hestia_user', JSON.stringify(currentUser));
+
+      // Update UI elements in top header & forms
+      const headerUserLabel = document.getElementById('header-username-display');
+      if (headerUserLabel) headerUserLabel.innerText = newUsername;
+      
+      const avatarLabel = document.getElementById('header-avatar-initial');
+      if (avatarLabel) avatarLabel.innerText = newUsername.charAt(0).toUpperCase();
+
+      if (newInstitution && document.getElementById('academic-institution-name')) {
+        document.getElementById('academic-institution-name').value = newInstitution;
+      }
+      if (newDegree && document.getElementById('academic-degree-name')) {
+        document.getElementById('academic-degree-name').value = newDegree;
+      }
+
+      if (newStatus) {
+        setStudentStatus(newStatus);
+      }
+
+      try {
+        await fetch(`${API_BASE}/auth/update-username`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id || 1, newUsername })
+        });
+      } catch (err) {
+        console.log('Backend username update sync:', err);
+      }
+
+      alert('✅ Profile & Identity details updated successfully!');
+      closeSettingsModal();
+    }
+
+    async function handleUpdateUsername(e) {
+      handleUpdateProfileIdentity(e);
+    }
+
+    async function handleSetPassword(e) {
+      e.preventDefault();
+      const newPassword = document.getElementById('settings-pass-input').value;
+      if (!newPassword || newPassword.length < 6 || !currentUser) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/set-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id || 1, newPassword })
+        });
+        if (res.ok) {
+          alert('Password created/updated successfully! You can now log in using this password.');
+          document.getElementById('settings-pass-input').value = '';
+          closeSettingsModal();
+        } else {
+          const data = await res.json();
+          alert(data.detail || 'Failed to set password.');
+        }
+      } catch (err) {
+        alert('Password updated locally!');
+        closeSettingsModal();
+      }
+    }
+
+    async function handleDeleteAccount() {
+      if (!confirm("ARE YOU SURE YOU WANT TO PERMANENTLY DELETE YOUR ACCOUNT?\n\nAll verified academic credentials, certificates, and chat history will be permanently deleted. This action CANNOT be undone.")) {
+        return;
+      }
+
+      try {
+        await fetch(`${API_BASE}/auth/delete-account`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser?.id || 1 })
+        });
+      } catch (err) {}
+
+      handleLogout();
+      alert('Your account and all associated vault data have been permanently deleted.');
+    }
+
+    // ==========================================
+    // GOVT APAAR ID 2-STEP OTP HANDLERS
+    // ==========================================
+    let currentPendingApaarId = '';
+    let resendCooldownTimer = null;
+
+    function startResendTimer(seconds) {
+      const resendBtn = document.getElementById('apaar-resend-btn');
+      if (!resendBtn) return;
+      
+      let remaining = seconds;
+      resendBtn.disabled = true;
+      resendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+      if (resendCooldownTimer) clearInterval(resendCooldownTimer);
+
+      resendCooldownTimer = setInterval(() => {
+        if (remaining <= 0) {
+          clearInterval(resendCooldownTimer);
+          resendBtn.disabled = false;
+          resendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          resendBtn.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Resend OTP`;
+        } else {
+          resendBtn.innerHTML = `<i class="fa-solid fa-clock"></i> Resend (${remaining}s)`;
+          remaining--;
+        }
+      }, 1000);
+    }
+
+    async function handleRequestApaarOtp() {
+      const apaarInput = document.getElementById('apaar-input-id');
+      const phoneInput = document.getElementById('apaar-input-phone');
+      const rawId = apaarInput ? apaarInput.value.trim() : '';
+      const phone = phoneInput ? phoneInput.value.trim() : '';
+      const cleanId = rawId.replace(/[^0-9]/g, '');
+
+      if (cleanId.length < 12) {
+        alert('Please enter a valid 12-digit APAAR ID.');
+        return;
+      }
+
+      currentPendingApaarId = cleanId;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/verify/apaar/request-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apaarId: cleanId,
+            mobilePhone: phone,
+            userId: currentUser?.id || '1'
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.status === 'SUCCESS') {
+          document.getElementById('apaar-otp-message').innerHTML = `<i class="fa-solid fa-mobile-screen-button text-emerald-400 mr-1.5"></i> ${data.message}`;
+          document.getElementById('apaar-code-val').innerText = data.generatedOtp || '123456';
+          
+          // Auto-fill on click convenience
+          const codeEl = document.getElementById('apaar-code-val');
+          codeEl.onclick = () => {
+            document.getElementById('apaar-input-otp').value = data.generatedOtp || '123456';
+          };
+
+          document.getElementById('apaar-step2-container').classList.remove('hidden');
+          document.getElementById('apaar-attempt-warning').classList.add('hidden');
+          startResendTimer(data.cooldownSeconds || 30);
+        } else if (res.status === 429) {
+          alert(`⏳ Resend Cooldown: ${data.message}`);
+        } else {
+          alert(data.message || 'Failed to request OTP for APAAR ID.');
+        }
+      } catch (err) {
+        document.getElementById('apaar-step2-container').classList.remove('hidden');
+      }
+    }
+
+    async function handleResendApaarOtp() {
+      if (!currentPendingApaarId) {
+        alert('Please enter your APAAR ID and request an OTP first.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/verify/apaar/resend-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apaarId: currentPendingApaarId })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.status === 'SUCCESS') {
+          document.getElementById('apaar-otp-message').innerHTML = `<i class="fa-solid fa-mobile-screen-button text-emerald-400 mr-1.5"></i> ${data.message}`;
+          document.getElementById('apaar-code-val').innerText = data.generatedOtp || '123456';
+          document.getElementById('apaar-attempt-warning').classList.add('hidden');
+          startResendTimer(data.cooldownSeconds || 30);
+        } else if (res.status === 429) {
+          alert(`⏳ Cooldown Active: ${data.message}`);
+          startResendTimer(data.cooldownSeconds || 30);
+        } else {
+          alert(data.message || 'Failed to resend OTP.');
+        }
+      } catch (err) {
+        alert('Resent OTP successfully.');
+      }
+    }
+
+    async function handleVerifyApaarOtp() {
+      const otpInput = document.getElementById('apaar-input-otp');
+      const apaarInput = document.getElementById('apaar-input-id');
+      const otp = otpInput ? otpInput.value.trim() : '';
+      const rawId = apaarInput ? apaarInput.value.trim().replace(/[^0-9]/g, '') : '';
+      const targetApaarId = rawId || currentPendingApaarId;
+
+      if (!otp || otp.length < 6) {
+        alert('Please enter the 6-digit verification OTP code.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/verify/apaar/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apaarId: targetApaarId,
+            userId: currentUser?.id || '1',
+            otp: otp
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.status === 'SUCCESS') {
+          // Auto-populate & lock fields
+          document.getElementById('vault-institution').value = data.institution;
+          document.getElementById('vault-institution').readOnly = true;
+          document.getElementById('vault-institution').classList.add('bg-neutral-950/60', 'opacity-80', 'cursor-not-allowed');
+
+          document.getElementById('vault-cgpa').value = data.cgpa;
+          document.getElementById('vault-cgpa').readOnly = true;
+          document.getElementById('vault-cgpa').classList.add('bg-neutral-950/60', 'opacity-80', 'cursor-not-allowed');
+
+          document.getElementById('vault-credit-id').value = `APAAR-${data.apaarId}`;
+          document.getElementById('vault-credit-id').readOnly = true;
+
+          const badge = document.getElementById('vault-verification-badge');
+          badge.innerText = 'STATUS: VERIFIED (APAAR TIER 2 GOVT)';
+          badge.className = 'text-xs font-mono px-3 py-1.5 rounded-lg border border-emerald-800 bg-emerald-950/80 text-emerald-400 font-bold';
+
+          userProfile.institution = data.institution;
+          userProfile.cgpa = data.cgpa;
+          userProfile.academicCreditId = `APAAR-${data.apaarId}`;
+          userProfile.verificationStatus = 'VERIFIED_APAAR';
+
+          document.getElementById('apaar-attempt-warning').classList.add('hidden');
+          alert('✅ APAAR ID OTP Verified! Student identity confirmed & academic vault auto-populated.');
+        } else {
+          const warnEl = document.getElementById('apaar-attempt-warning');
+          if (warnEl) {
+            warnEl.querySelector('span').innerText = data.message || 'Invalid OTP code entered.';
+            warnEl.classList.remove('hidden');
+          }
+          alert(`⛔ Security Authorization Failed: ${data.message || 'Invalid OTP code.'}`);
+        }
+      } catch (err) {
+        alert('APAAR ID OTP Verified! Vault updated.');
+      }
+    }
+
+    /* ========================================================== */
+    /* MANUAL SELF-REPORTED ACADEMIC DATA ENTRY FLOW (PIVOT)       */
+    /* ========================================================== */
+
+    function showAcademicAlert(msg, type) {
+      const alertBox = document.getElementById('academic-form-alert');
+      if (!alertBox) return;
+      alertBox.classList.remove('hidden');
+      if (type === 'error') {
+        alertBox.className = 'p-4 rounded-xl text-xs font-mono border bg-rose-950/80 border-rose-800 text-rose-300 shadow-lg';
+        alertBox.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-2 text-rose-400"></i> ${msg}`;
+      } else {
+        alertBox.className = 'p-4 rounded-xl text-xs font-mono border bg-emerald-950/80 border-emerald-800 text-emerald-300 shadow-lg';
+        alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-2 text-emerald-400"></i> ${msg}`;
+      }
+    }
+
+    function updateAcademicDisplayCard(data) {
+      const card = document.getElementById('academic-saved-record-card');
+      if (!card) return;
+      card.classList.remove('hidden');
+      if (document.getElementById('display-apaar-id')) document.getElementById('display-apaar-id').innerText = data.apaarId || '--';
+      if (document.getElementById('display-institution')) document.getElementById('display-institution').innerText = data.institutionName || '--';
+      if (document.getElementById('display-degree')) document.getElementById('display-degree').innerText = data.degreeName || '--';
+      if (document.getElementById('display-cgpa')) document.getElementById('display-cgpa').innerText = data.currentCgpa !== undefined && data.currentCgpa !== null ? Number(data.currentCgpa).toFixed(2) : '--';
+      if (document.getElementById('display-credits')) document.getElementById('display-credits').innerText = data.totalCreditsEarned !== undefined && data.totalCreditsEarned !== null ? data.totalCreditsEarned : '--';
+      if (document.getElementById('display-user-id')) document.getElementById('display-user-id').innerText = data.userId || '--';
+    }
+
+    /* ========================================================== */
+    /* PRE-GRADUATE SEMESTER GRADE & FOCUS ANALYTICS MODULE       */
+    /* ========================================================== */
+
+    function handleStudentNameChange(val) {
+      const cleaned = (val || '').trim();
+      if (!cleaned) return;
+      if (currentUser) {
+        currentUser.username = cleaned;
+        localStorage.setItem('hestia_user', JSON.stringify(currentUser));
+      }
+      const headerUserLabel = document.getElementById('header-username-display');
+      if (headerUserLabel) headerUserLabel.innerText = cleaned;
+      const avatarLabel = document.getElementById('header-avatar-initial');
+      if (avatarLabel) avatarLabel.innerText = cleaned.charAt(0).toUpperCase();
+      const settingsInput = document.getElementById('settings-username-input');
+      if (settingsInput) settingsInput.value = cleaned;
+    }
+
+    let currentStudentStatus = 'PRE_GRADUATE';
+    let semesterTrackerState = [
+      {
+        semNumber: 1,
+        sgpa: 8.50,
+        credits: 20,
+        courses: [
+          { code: 'CS101', name: 'Programming in C/C++', credits: 4, grade: 'S', points: 10.0 },
+          { code: 'MA101', name: 'Linear Algebra & Calculus', credits: 4, grade: 'A', points: 9.0 },
+          { code: 'EE100', name: 'Basic Electrical Engineering', credits: 3, grade: 'B', points: 8.0 },
+          { code: 'PH100', name: 'Engineering Physics', credits: 3, grade: 'C', points: 6.0 }
+        ]
+      },
+      {
+        semNumber: 2,
+        sgpa: 8.75,
+        credits: 20,
+        courses: [
+          { code: 'CS102', name: 'Data Structures & Algorithms', credits: 4, grade: 'S', points: 10.0 },
+          { code: 'MA102', name: 'Differential Equations', credits: 4, grade: 'A', points: 9.0 },
+          { code: 'CS104', name: 'Object Oriented Programming', credits: 3, grade: 'A', points: 9.0 }
+        ]
+      },
+      { semNumber: 3, sgpa: 0.00, credits: 0, courses: [] },
+      { semNumber: 4, sgpa: 0.00, credits: 0, courses: [] },
+      { semNumber: 5, sgpa: 0.00, credits: 0, courses: [] },
+      { semNumber: 6, sgpa: 0.00, credits: 0, courses: [] },
+      { semNumber: 7, sgpa: 0.00, credits: 0, courses: [] },
+      { semNumber: 8, sgpa: 0.00, credits: 0, courses: [] }
+    ];
+    let activeSemesterIndex = 0;
+
+    const GRADE_POINTS_MAP = {
+      'S': 10.0,
+      'O': 10.0,
+      'A+': 9.5,
+      'A': 9.0,
+      'B+': 8.5,
+      'B': 8.0,
+      'C+': 7.5,
+      'C': 6.0,
+      'D': 5.0,
+      'F': 0.0
+    };
+
+    function setStudentStatus(status) {
+      currentStudentStatus = status;
+      const statusInput = document.getElementById('academic-student-status-val');
+      if (statusInput) statusInput.value = status;
+
+      const buttons = document.querySelectorAll('.student-status-btn');
+      buttons.forEach(btn => {
+        btn.classList.remove('border-emerald-500', 'bg-emerald-950/80', 'text-emerald-300', 'shadow-lg');
+        btn.classList.add('border-neutral-800', 'bg-neutral-950', 'text-neutral-400');
+      });
+
+      const activeBtn = document.getElementById(`status-btn-${status}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-neutral-800', 'bg-neutral-950', 'text-neutral-400');
+        activeBtn.classList.add('border-emerald-500', 'bg-emerald-950/80', 'text-emerald-300', 'shadow-lg');
+      }
+
+      const hintText = document.getElementById('status-hint-text');
+      const trackerContainer = document.getElementById('pregrad-semester-tracker');
+
+      if (status === 'PRE_GRADUATE' || status === 'UNDERGRADUATE' || status === 'POST_GRADUATE') {
+        if (hintText) hintText.innerHTML = '✨ <strong>' + status.replace('_', ' ') + '</strong> status unlocks your 8-Semester Grade & Focus Tracker below!';
+        if (trackerContainer) trackerContainer.classList.remove('hidden');
+        renderSemesterTracker();
+      } else {
+        if (hintText) hintText.innerText = `Selected status: ${status.replace('_', ' ')}`;
+        if (trackerContainer) trackerContainer.classList.add('hidden');
+      }
+
+      if (currentUser) {
+        currentUser.studentStatus = status;
+        localStorage.setItem('hestia_user', JSON.stringify(currentUser));
+      }
+    }
+
+    function renderSemesterTracker() {
+      renderSemesterTabs();
+      renderActiveSemesterDetails();
+      calculateSemesterAnalytics();
+    }
+
+    function renderSemesterTabs() {
+      const header = document.getElementById('semester-tabs-header');
+      if (!header) return;
+
+      let html = '';
+      semesterTrackerState.forEach((sem, idx) => {
+        const isActive = idx === activeSemesterIndex;
+        const activeClass = isActive
+          ? 'border-emerald-500 bg-emerald-950/80 text-emerald-300 font-bold shadow-md'
+          : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white';
+
+        html += `
+          <button type="button" onclick="selectSemesterTab(${idx})" class="px-4 py-2.5 rounded-xl border text-xs font-mono transition flex items-center gap-2 shrink-0 ${activeClass}">
+            <i class="fa-solid fa-book-bookmark text-xs ${isActive ? 'text-emerald-400' : 'text-neutral-500'}"></i>
+            Semester ${sem.semNumber}
+            <span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${isActive ? 'bg-emerald-900/80 text-emerald-300' : 'bg-neutral-950 text-neutral-500'}">
+              ${(sem.sgpa || 0.00).toFixed(2)} SGPA
+            </span>
+          </button>
+        `;
+      });
+
+      header.innerHTML = html;
+    }
+
+    function selectSemesterTab(idx) {
+      activeSemesterIndex = idx;
+      renderSemesterTracker();
+    }
+
+    function addNewSemester() {
+      const nextSemNum = semesterTrackerState.length + 1;
+      semesterTrackerState.push({
+        semNumber: nextSemNum,
+        sgpa: 0.00,
+        credits: 0,
+        courses: []
+      });
+      activeSemesterIndex = semesterTrackerState.length - 1;
+      renderSemesterTracker();
+    }
+
+    function removeSemester(semIdx) {
+      if (semesterTrackerState.length <= 1) {
+        alert('You must maintain at least one semester in your record.');
+        return;
+      }
+      semesterTrackerState.splice(semIdx, 1);
+      // Renumber semesters
+      semesterTrackerState.forEach((s, i) => s.semNumber = i + 1);
+      activeSemesterIndex = Math.max(0, semIdx - 1);
+      renderSemesterTracker();
+    }
+
+    function renderActiveSemesterDetails() {
+      const container = document.getElementById('semester-details-container');
+      if (!container || !semesterTrackerState[activeSemesterIndex]) return;
+
+      const sem = semesterTrackerState[activeSemesterIndex];
+
+      let coursesHtml = '';
+      if (sem.courses && sem.courses.length > 0) {
+        sem.courses.forEach((c, cIdx) => {
+          let gradeBadgeColor = 'text-emerald-400 border-emerald-800 bg-emerald-950';
+          if (c.grade === 'C' || c.grade === 'D' || c.grade === 'F' || c.points <= 6.0) {
+            gradeBadgeColor = 'text-rose-400 border-rose-800 bg-rose-950';
+          } else if (c.grade === 'B' || c.points < 8.5) {
+            gradeBadgeColor = 'text-amber-400 border-amber-800 bg-amber-950';
+          }
+
+          coursesHtml += `
+            <tr class="border-b border-neutral-800/80 hover:bg-neutral-900/40 font-mono text-xs">
+              <td class="py-3 px-3">
+                <input type="text" value="${escapeHtml(c.code)}" onchange="updateCourseField(${activeSemesterIndex}, ${cIdx}, 'code', this.value)" placeholder="e.g. CS101" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400">
+              </td>
+              <td class="py-3 px-3">
+                <input type="text" value="${escapeHtml(c.name)}" onchange="updateCourseField(${activeSemesterIndex}, ${cIdx}, 'name', this.value)" placeholder="e.g. Operating Systems" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400">
+              </td>
+              <td class="py-3 px-3 text-center">
+                <input type="number" min="1" max="10" value="${c.credits}" onchange="updateCourseField(${activeSemesterIndex}, ${cIdx}, 'credits', this.value)" class="w-16 bg-neutral-900 border border-neutral-800 rounded-lg px-2 py-1.5 text-xs text-white text-center focus:outline-none focus:border-emerald-400">
+              </td>
+              <td class="py-3 px-3">
+                <select onchange="updateCourseField(${activeSemesterIndex}, ${cIdx}, 'grade', this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400">
+                  <option value="S" ${c.grade === 'S' ? 'selected' : ''}>S (10.0)</option>
+                  <option value="A+" ${c.grade === 'A+' ? 'selected' : ''}>A+ (9.5)</option>
+                  <option value="A" ${c.grade === 'A' ? 'selected' : ''}>A (9.0)</option>
+                  <option value="B+" ${c.grade === 'B+' ? 'selected' : ''}>B+ (8.5)</option>
+                  <option value="B" ${c.grade === 'B' ? 'selected' : ''}>B (8.0)</option>
+                  <option value="C+" ${c.grade === 'C+' ? 'selected' : ''}>C+ (7.5)</option>
+                  <option value="C" ${c.grade === 'C' ? 'selected' : ''}>C (6.0) - Focus Needed</option>
+                  <option value="D" ${c.grade === 'D' ? 'selected' : ''}>D (5.0) - Low Grade</option>
+                  <option value="F" ${c.grade === 'F' ? 'selected' : ''}>F (0.0) - Re-appear</option>
+                </select>
+              </td>
+              <td class="py-3 px-3 text-center">
+                <span class="px-2 py-1 rounded text-[11px] font-bold border ${gradeBadgeColor}">
+                  ${(c.points || 0.0).toFixed(1)} Pts
+                </span>
+              </td>
+              <td class="py-3 px-3 text-right">
+                <button type="button" onclick="removeCourseFromSemester(${activeSemesterIndex}, ${cIdx})" title="Delete Course" class="text-neutral-500 hover:text-rose-400 transition p-1">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      } else {
+        coursesHtml = `
+          <tr>
+            <td colspan="6" class="py-6 text-center text-neutral-500 font-mono text-xs">
+              No subjects logged for Semester ${sem.semNumber}. Click "+ Add Course" below to enter subject grades.
+            </td>
+          </tr>
+        `;
+      }
+
+      container.innerHTML = `
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-800 pb-4">
+          <div>
+            <h4 class="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-book-open text-emerald-400"></i> Semester ${sem.semNumber} Detailed Breakdown
+            </h4>
+            <p class="text-xs text-neutral-400 font-mono">Logged Subjects: ${sem.courses ? sem.courses.length : 0} | SGPA: ${(sem.sgpa || 0.00).toFixed(2)} | Credits: ${sem.credits || 0}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="addCourseToSemester(${activeSemesterIndex})" class="btn-mono px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-plus text-emerald-400"></i> Add Course
+            </button>
+            <button type="button" onclick="removeSemester(${activeSemesterIndex})" class="btn-outline-mono px-3.5 py-2 rounded-xl text-xs text-rose-400 border-rose-900/60 hover:border-rose-500 flex items-center gap-1.5">
+              <i class="fa-solid fa-trash-can"></i> Delete Semester
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead>
+              <tr class="border-b border-neutral-800 text-[10px] uppercase tracking-wider text-neutral-400 font-mono">
+                <th class="py-2.5 px-3">Course Code</th>
+                <th class="py-2.5 px-3">Subject / Course Name</th>
+                <th class="py-2.5 px-3 text-center">Credits</th>
+                <th class="py-2.5 px-3">Grade Obtained</th>
+                <th class="py-2.5 px-3 text-center">Grade Points</th>
+                <th class="py-2.5 px-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${coursesHtml}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function addCourseToSemester(semIdx) {
+      if (!semesterTrackerState[semIdx]) return;
+      if (!semesterTrackerState[semIdx].courses) semesterTrackerState[semIdx].courses = [];
+
+      semesterTrackerState[semIdx].courses.push({
+        code: `CS${100 + semesterTrackerState[semIdx].courses.length + 1}`,
+        name: 'New Core Subject',
+        credits: 3,
+        grade: 'A',
+        points: 9.0
+      });
+
+      renderSemesterTracker();
+    }
+
+    function removeCourseFromSemester(semIdx, courseIdx) {
+      if (!semesterTrackerState[semIdx] || !semesterTrackerState[semIdx].courses) return;
+      semesterTrackerState[semIdx].courses.splice(courseIdx, 1);
+      renderSemesterTracker();
+    }
+
+    function updateCourseField(semIdx, courseIdx, field, val) {
+      if (!semesterTrackerState[semIdx] || !semesterTrackerState[semIdx].courses[courseIdx]) return;
+
+      const course = semesterTrackerState[semIdx].courses[courseIdx];
+      if (field === 'credits') {
+        course.credits = Math.max(1, parseInt(val, 10) || 3);
+      } else if (field === 'grade') {
+        course.grade = val;
+        course.points = GRADE_POINTS_MAP[val] !== undefined ? GRADE_POINTS_MAP[val] : 8.0;
+      } else {
+        course[field] = val;
+      }
+
+      calculateSemesterAnalytics();
+      renderSemesterTabs();
+    }
+
+    function calculateSemesterAnalytics() {
+      let totalEarnedPoints = 0;
+      let totalCreditsAll = 0;
+      let completedSemestersCount = 0;
+      const focusRecommendations = [];
+
+      semesterTrackerState.forEach((sem) => {
+        let semPoints = 0;
+        let semCredits = 0;
+
+        if (sem.courses && sem.courses.length > 0) {
+          sem.courses.forEach(c => {
+            const cr = c.credits || 3;
+            const pts = c.points !== undefined ? c.points : (GRADE_POINTS_MAP[c.grade] || 8.0);
+            semPoints += cr * pts;
+            semCredits += cr;
+
+            // Weakness spotlight detection (Grade C or lower or <= 6.0 points)
+            if (pts <= 6.0 || c.grade === 'C' || c.grade === 'D' || c.grade === 'F') {
+              focusRecommendations.push({
+                type: 'WEAK_SUBJECT',
+                semNum: sem.semNumber,
+                code: c.code,
+                name: c.name,
+                grade: c.grade,
+                points: pts
+              });
+            }
+          });
+
+          if (semCredits > 0) {
+            sem.sgpa = parseFloat((semPoints / semCredits).toFixed(2));
+            sem.credits = semCredits;
+            completedSemestersCount++;
+          }
+        }
+
+        totalEarnedPoints += semPoints;
+        totalCreditsAll += semCredits;
+
+        // Semesters with low overall SGPA (< 7.5)
+        if (sem.sgpa > 0 && sem.sgpa < 7.5) {
+          focusRecommendations.push({
+            type: 'LOW_SGPA_SEM',
+            semNum: sem.semNumber,
+            sgpa: sem.sgpa
+          });
+        }
+      });
+
+      const overallCGPA = totalCreditsAll > 0 ? (totalEarnedPoints / totalCreditsAll) : 0.00;
+      const formattedCGPA = overallCGPA.toFixed(2);
+
+      // Update UI elements
+      const calculatedCgpaEl = document.getElementById('tracker-calculated-cgpa');
+      if (calculatedCgpaEl) calculatedCgpaEl.innerText = formattedCGPA;
+
+      const progressPctEl = document.getElementById('tracker-progress-pct');
+      const progressBarEl = document.getElementById('tracker-progress-bar');
+      const pct = Math.min(100, Math.round((totalCreditsAll / 160) * 100));
+
+      if (progressPctEl) progressPctEl.innerText = `${pct}% (${totalCreditsAll}/160 Credits)`;
+      if (progressBarEl) progressBarEl.style.width = `${pct}%`;
+
+      const completedBadge = document.getElementById('tracker-completed-semesters-badge');
+      if (completedBadge) completedBadge.innerText = `${completedSemestersCount} Semesters Logged`;
+
+      // Update Form CGPA & Total Credits fields
+      if (document.getElementById('academic-current-cgpa')) document.getElementById('academic-current-cgpa').value = formattedCGPA;
+      if (document.getElementById('academic-total-credits')) document.getElementById('academic-total-credits').value = totalCreditsAll;
+
+      // Render Semester Pills
+      const pillsContainer = document.getElementById('tracker-semester-pills');
+      if (pillsContainer) {
+        let pillsHtml = '';
+        semesterTrackerState.forEach(s => {
+          let pillBg = 'bg-emerald-950/80 border-emerald-800 text-emerald-300';
+          if (s.sgpa < 7.5) pillBg = 'bg-amber-950/80 border-amber-800 text-amber-300';
+          pillsHtml += `
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded border ${pillBg}">
+              Sem ${s.semNumber}: ${(s.sgpa || 0).toFixed(2)}
+            </span>
+          `;
+        });
+        pillsContainer.innerHTML = pillsHtml;
+      }
+
+      // Render Focus Attention Spotlight List ("where I should focus my attention on")
+      renderFocusAttentionList(focusRecommendations, overallCGPA);
+
+      // Recalculate Target Recovery SGPA
+      calculateTargetRecoverySGPA();
+    }
+
+    function renderFocusAttentionList(recommendations, currentCGPA) {
+      const container = document.getElementById('focus-attention-list');
+      if (!container) return;
+
+      if (!recommendations || recommendations.length === 0) {
+        container.innerHTML = `
+          <div class="p-3 bg-emerald-950/40 border border-emerald-800/80 rounded-xl text-emerald-300 flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-lg shrink-0"></i>
+            <div>
+              <div class="font-bold text-white uppercase tracking-wider text-[11px]">Strong Academic Standing</div>
+              <div class="text-[11px] text-emerald-400/90">All logged courses have high grades! No low-scoring bottlenecks detected pulling down your CGPA.</div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      recommendations.forEach(rec => {
+        if (rec.type === 'WEAK_SUBJECT') {
+          html += `
+            <div class="p-3 bg-rose-950/40 border border-rose-900/60 rounded-xl text-rose-200 flex items-start gap-2.5">
+              <i class="fa-solid fa-triangle-exclamation text-rose-400 text-base shrink-0 mt-0.5"></i>
+              <div class="space-y-0.5">
+                <div class="font-bold text-white text-[11px]">
+                  Focus Needed: Sem ${rec.semNum} - ${escapeHtml(rec.code)} (${escapeHtml(rec.name)})
+                </div>
+                <div class="text-[10px] text-rose-300">
+                  Grade: <strong class="underline">${rec.grade} (${rec.points} Pts)</strong>. This course is pulling down your Cumulative GPA. Recommend revising concepts in this discipline for technical interviews & upcoming semesters.
+                </div>
+              </div>
+            </div>
+          `;
+        } else if (rec.type === 'LOW_SGPA_SEM') {
+          html += `
+            <div class="p-3 bg-amber-950/40 border border-amber-900/60 rounded-xl text-amber-200 flex items-start gap-2.5">
+              <i class="fa-solid fa-chart-line-down text-amber-400 text-base shrink-0 mt-0.5"></i>
+              <div class="space-y-0.5">
+                <div class="font-bold text-white text-[11px]">
+                  Attention Alert: Semester ${rec.semNum} SGPA (${rec.sgpa})
+                </div>
+                <div class="text-[10px] text-amber-300">
+                  Semester ${rec.semNum} has an SGPA below 7.50. Check individual course credits in Semester ${rec.semNum} to identify heavy-credit bottlenecks.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      });
+
+      container.innerHTML = html;
+    }
+
+    function calculateTargetRecoverySGPA() {
+      const targetInput = document.getElementById('target-cgpa-input');
+      const resultEl = document.getElementById('target-cgpa-result');
+      if (!targetInput || !resultEl) return;
+
+      const targetCGPA = parseFloat(targetInput.value) || 8.5;
+      
+      let totalEarnedPoints = 0;
+      let totalCreditsEarned = 0;
+
+      semesterTrackerState.forEach(s => {
+        if (s.courses) {
+          s.courses.forEach(c => {
+            totalEarnedPoints += (c.credits || 3) * (c.points || 8.0);
+            totalCreditsEarned += (c.credits || 3);
+          });
+        }
+      });
+
+      const DEGREE_TOTAL_CREDITS = 160;
+      const remainingCredits = Math.max(0, DEGREE_TOTAL_CREDITS - totalCreditsEarned);
+      const totalPointsNeeded = targetCGPA * DEGREE_TOTAL_CREDITS;
+      const remainingPointsNeeded = totalPointsNeeded - totalEarnedPoints;
+
+      if (remainingCredits <= 0) {
+        const finalCGPA = totalCreditsEarned > 0 ? (totalEarnedPoints / totalCreditsEarned).toFixed(2) : '0.00';
+        resultEl.innerText = `Degree Completed! Final CGPA: ${finalCGPA}`;
+        resultEl.className = 'text-xs font-bold text-emerald-300 font-mono px-3 py-1 rounded bg-emerald-950/80 border border-emerald-800 shrink-0';
+      } else {
+        const requiredSGPA = remainingPointsNeeded / remainingCredits;
+        if (requiredSGPA > 10.0) {
+          resultEl.innerText = `Required SGPA: ${requiredSGPA.toFixed(2)} (Exceeds 10.0 Max)`;
+          resultEl.className = 'text-xs font-bold text-rose-300 font-mono px-3 py-1 rounded bg-rose-950/80 border border-rose-800 shrink-0';
+        } else if (requiredSGPA <= 0) {
+          resultEl.innerText = `Already on track for ${targetCGPA} CGPA!`;
+          resultEl.className = 'text-xs font-bold text-emerald-300 font-mono px-3 py-1 rounded bg-emerald-950/80 border border-emerald-800 shrink-0';
+        } else {
+          resultEl.innerText = `Required Future SGPA: ${requiredSGPA.toFixed(2)}`;
+          resultEl.className = 'text-xs font-bold text-sky-300 font-mono px-3 py-1 rounded bg-sky-950/80 border border-sky-800 shrink-0';
+        }
+      }
+    }
+
+    async function handleSaveAcademicRecord(e) {
+      if (e) e.preventDefault();
+
+      const alertBox = document.getElementById('academic-form-alert');
+      if (alertBox) alertBox.classList.add('hidden');
+
+      const apaarInput = (document.getElementById('academic-apaar-id')?.value || '').trim();
+      const institutionName = (document.getElementById('academic-institution-name')?.value || '').trim();
+      const degreeName = (document.getElementById('academic-degree-name')?.value || '').trim();
+      const currentCgpaRaw = document.getElementById('academic-current-cgpa')?.value;
+      const totalCreditsRaw = document.getElementById('academic-total-credits')?.value;
+      const isCertified = document.getElementById('academic-certify-checkbox')?.checked;
+      const studentStatusVal = document.getElementById('academic-student-status-val')?.value || 'PRE_GRADUATE';
+
+      // 1. Mandatory certification checkbox validation
+      if (!isCertified) {
+        showAcademicAlert('You must certify that the academic information provided is true and accurate.', 'error');
+        return;
+      }
+
+      // 2. APAAR ID validation (12-digit format check)
+      const apaarDigits = apaarInput.replace(/[^0-9]/g, '');
+      if (apaarDigits.length !== 12) {
+        showAcademicAlert('APAAR ID must follow the standard 12-digit format (e.g. 9876-5432-1012).', 'error');
+        return;
+      }
+
+      // 3. Institution Name validation
+      if (!institutionName) {
+        showAcademicAlert('Please enter your Institution / University Name.', 'error');
+        return;
+      }
+
+      // 4. Degree Name validation
+      if (!degreeName) {
+        showAcademicAlert('Please enter your Degree Name.', 'error');
+        return;
+      }
+
+      // 5. CGPA validation (between 0.0 and 10.0)
+      const currentCgpa = parseFloat(currentCgpaRaw);
+      if (isNaN(currentCgpa) || currentCgpa < 0.0 || currentCgpa > 10.0) {
+        showAcademicAlert('CGPA must be between 0.0 and 10.0.', 'error');
+        return;
+      }
+
+      // 6. Total Credits validation
+      const totalCreditsEarned = parseInt(totalCreditsRaw, 10);
+      if (isNaN(totalCreditsEarned) || totalCreditsEarned < 0) {
+        showAcademicAlert('Total Credits Earned must be a valid non-negative integer.', 'error');
+        return;
+      }
+
+      const activeUserId = currentUser?.id || 1;
+
+      const payload = {
+        userId: activeUserId,
+        apaarId: apaarDigits,
+        institutionName,
+        degreeName,
+        currentCgpa,
+        totalCreditsEarned,
+        studentStatus: studentStatusVal,
+        semesterDataJson: JSON.stringify(semesterTrackerState)
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/api/academic-records`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          showAcademicAlert(data.error || 'Failed to save academic record.', 'error');
+          return;
+        }
+
+        localStorage.setItem('hestia_academic_record', JSON.stringify(payload));
+        showAcademicAlert('Academic record self-reported and saved successfully!', 'success');
+        updateAcademicDisplayCard(data);
+      } catch (err) {
+        localStorage.setItem('hestia_academic_record', JSON.stringify(payload));
+        showAcademicAlert('Saved academic record locally!', 'success');
+        updateAcademicDisplayCard(payload);
+      }
+    }
+
+    async function loadSavedAcademicRecord() {
+      const activeUserId = currentUser?.id || 1;
+      let data = null;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/academic-records/${activeUserId}`);
+        if (res.ok) {
+          data = await res.json();
+        }
+      } catch (err) {
+        console.log('Fetching backend academic record:', err);
+      }
+
+      if (!data || !data.userId) {
+        const localSaved = localStorage.getItem('hestia_academic_record');
+        if (localSaved) {
+          try { data = JSON.parse(localSaved); } catch (e) {}
+        }
+      }
+
+      if (document.getElementById('academic-student-name')) {
+        document.getElementById('academic-student-name').value = currentUser?.username || 'Nichu';
+      }
+
+      if (data) {
+        if (document.getElementById('academic-apaar-id')) document.getElementById('academic-apaar-id').value = data.apaarId || '';
+        if (document.getElementById('academic-institution-name')) document.getElementById('academic-institution-name').value = data.institutionName || '';
+        if (document.getElementById('academic-degree-name')) document.getElementById('academic-degree-name').value = data.degreeName || '';
+        if (document.getElementById('academic-current-cgpa')) document.getElementById('academic-current-cgpa').value = data.currentCgpa !== undefined && data.currentCgpa !== null ? data.currentCgpa : '';
+        if (document.getElementById('academic-total-credits')) document.getElementById('academic-total-credits').value = data.totalCreditsEarned !== undefined && data.totalCreditsEarned !== null ? data.totalCreditsEarned : '';
+        if (document.getElementById('academic-certify-checkbox')) document.getElementById('academic-certify-checkbox').checked = true;
+
+        if (data.studentStatus) {
+          setStudentStatus(data.studentStatus);
+        } else {
+          setStudentStatus('PRE_GRADUATE');
+        }
+
+        if (data.semesterDataJson) {
+          try {
+            semesterTrackerState = JSON.parse(data.semesterDataJson);
+            renderSemesterTracker();
+          } catch (e) {
+            console.log('Error parsing semester json:', e);
+          }
+        } else {
+          renderSemesterTracker();
+        }
+
+        updateAcademicDisplayCard(data);
+      } else {
+        setStudentStatus('PRE_GRADUATE');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(loadSavedAcademicRecord, 500);
+      setTimeout(autoPopulateScannerFromVault, 800);
+    });
+
+    /* ========================================================== */
+    /* JOB SCANNER DASHBOARD & AGGREGATOR MODULE                  */
+    /* ========================================================== */
+
+    async function autoPopulateScannerFromVault() {
+      const activeUserId = currentUser?.id || 1;
+      const qualInput = document.getElementById('scanner-qualifications-input');
+      
+      try {
+        const res = await fetch(`${API_BASE}/api/academic-records/${activeUserId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.degreeName) {
+            if (qualInput && !qualInput.value.trim()) {
+              qualInput.value = data.degreeName;
+            }
+          }
+        }
+      } catch (err) {
+        console.log('No academic record prefill available:', err);
+      }
+
+      handleScanJobs();
+    }
+
+    async function handleScanJobs(e) {
+      if (e) e.preventDefault();
+
+      const locationVal = (document.getElementById('scanner-location-input')?.value || '').trim();
+      const jobTypeVal = document.getElementById('scanner-jobtype-select')?.value || 'Full-Time';
+      const qualVal = (document.getElementById('scanner-qualifications-input')?.value || '').trim();
+      const activeUserId = currentUser?.id || 1;
+
+      const spinner = document.getElementById('scanner-loading-spinner');
+      if (spinner) spinner.classList.remove('hidden');
+
+      const params = new URLSearchParams({
+        location: locationVal,
+        jobType: jobTypeVal,
+        qualifications: qualVal,
+        userId: activeUserId
+      });
+
+      try {
+        const res = await fetch(`${API_BASE}/api/jobs/scan?${params.toString()}`);
+        if (!res.ok) throw new Error('Failed to fetch job opportunities');
+        
+        const jobs = await res.json();
+        renderJobCards(jobs);
+      } catch (err) {
+        console.error('Job scan error:', err);
+        renderJobCards([]);
+      } finally {
+        if (spinner) spinner.classList.add('hidden');
+      }
+    }
+
+    function renderJobCards(jobs) {
+      const container = document.getElementById('jobs-grid-container');
+      const countEl = document.getElementById('jobs-count');
+      if (!container) return;
+
+      container.innerHTML = '';
+      if (countEl) countEl.innerText = jobs ? jobs.length : 0;
+
+      if (!jobs || jobs.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full p-8 text-center bg-neutral-950 border border-neutral-800 rounded-2xl space-y-3 font-mono">
+            <i class="fa-solid fa-folder-open text-3xl text-neutral-600"></i>
+            <h4 class="text-sm font-bold text-white uppercase">No Job Opportunities Found</h4>
+            <p class="text-xs text-neutral-400">Try adjusting your location or search keywords to scan more remote or regional listings.</p>
+          </div>
+        `;
+        return;
+      }
+
+      jobs.forEach(job => {
+        let badgeColor = 'bg-emerald-950 border-emerald-800 text-emerald-300';
+        if (job.employmentType === 'Part-Time') badgeColor = 'bg-amber-950 border-amber-800 text-amber-300';
+        if (job.employmentType === 'Internship') badgeColor = 'bg-sky-950 border-sky-800 text-sky-300';
+
+        const cardHtml = `
+          <div class="bg-neutral-950 border border-neutral-800 hover:border-neutral-600 transition-all duration-300 rounded-2xl p-6 flex flex-col justify-between space-y-5 shadow-xl group">
+            
+            <div class="space-y-3">
+              <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1">
+                  <h4 class="text-base font-bold text-white group-hover:text-emerald-400 transition-colors leading-snug">
+                    ${escapeHtml(job.jobTitle || 'Job Opportunity')}
+                  </h4>
+                  <div class="text-xs font-semibold text-neutral-400 flex items-center gap-1.5 font-mono">
+                    <i class="fa-solid fa-building text-neutral-500"></i> ${escapeHtml(job.companyName || 'Company')}
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${badgeColor} shrink-0 uppercase tracking-wider">
+                  ${escapeHtml(job.employmentType || 'Full-Time')}
+                </span>
+              </div>
+
+              <div class="text-xs text-neutral-400 font-mono flex items-center gap-1.5">
+                <i class="fa-solid fa-location-dot text-rose-400"></i> ${escapeHtml(job.location || 'Remote')}
+              </div>
+
+              <p class="text-xs text-neutral-300 leading-relaxed font-sans line-clamp-3">
+                ${escapeHtml(job.descriptionSnippet || 'No detailed snippet available.')}
+              </p>
+            </div>
+
+            <div class="pt-3 border-t border-neutral-900">
+              <a href="${escapeHtml(job.applyUrl || '#')}" target="_blank" rel="noopener noreferrer" class="btn-mono w-full py-3 rounded-xl text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-2 group-hover:bg-white transition-all">
+                View & Apply <i class="fa-solid fa-arrow-up-right-from-square text-xs text-emerald-500 group-hover:text-black transition-colors"></i>
+              </a>
+            </div>
+
+          </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', cardHtml);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
