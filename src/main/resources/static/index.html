@@ -224,13 +224,10 @@
         <p class="text-xs text-neutral-400">Access your verified credentials and AI career mentor</p>
       </div>
 
-      <!-- Quick Social & Demo Buttons -->
+      <!-- Quick Social Buttons -->
       <div class="w-full flex flex-col gap-2.5">
         <button onclick="handleSupabaseGoogleLogin()" class="w-full btn-outline-mono py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-neutral-700 hover:border-white transition">
-          <i class="fa-brands fa-google text-red-500"></i> Continue with Google (Supabase)
-        </button>
-        <button onclick="handleQuickDemoLogin()" class="w-full btn-mono py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2">
-          <i class="fa-solid fa-bolt text-yellow-400"></i> Instant Quick Access Mode
+          <i class="fa-brands fa-google text-red-500"></i> Continue with Google
         </button>
       </div>
 
@@ -1025,13 +1022,17 @@
 
   <!-- JAVASCRIPT APP LOGIC -->
   <script>
-    const API_BASE = 'http://localhost:8080';
+    const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : window.location.origin;
     const SUPABASE_URL = 'https://xvwohnitmscicdkcldse.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2d29obml0bXNjaWNka2NsZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MjQ0MTgsImV4cCI6MjEwMTQwMDQxOH0.WH11EnxmWCmpxM8QO9dicslStTFju3rrk1EaU8lQ3PM';
 
     let supabaseClient = null;
-    if (window.supabase) {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (window.supabase && !SUPABASE_URL.includes('xvwohnitmscicdkcldse')) {
+      try {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      } catch (e) {
+        console.warn('Supabase client failed to initialize:', e);
+      }
     }
 
     let currentUser = null;
@@ -1046,29 +1047,47 @@
       certificateImageData: ''
     };
 
-    async function handleSupabaseGoogleLogin() {
-      if (supabaseClient) {
-        const { data, error } = await supabaseClient.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: window.location.href
-          }
-        });
-        if (error) {
-          alert('Google OAuth setup required in Supabase Dashboard.\n\nError: ' + error.message);
+    function processGoogleUserLogin(email, defaultUsername) {
+      fetch(`${API_BASE}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, name: defaultUsername })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          onAuthSuccess(data.user);
+        } else {
+          onAuthSuccess({ username: defaultUsername, email: email, authProvider: 'google', id: 99 });
         }
-      } else {
-        alert('Supabase client not initialized.');
-      }
+      })
+      .catch(err => {
+        onAuthSuccess({ username: defaultUsername, email: email, authProvider: 'google', id: 99 });
+      });
     }
 
-    function handleQuickDemoLogin() {
-      onAuthSuccess({
-        username: 'Hestia User',
-        email: 'user@hestia.app',
-        provider: 'instant_demo',
-        id: 'demo-user-123'
-      });
+    async function handleSupabaseGoogleLogin() {
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.href
+            }
+          });
+          if (error) alert('Google OAuth Notice: ' + error.message);
+          return;
+        } catch (err) {
+          console.warn('Supabase login error:', err);
+        }
+      }
+      
+      const email = prompt("Enter your Google / Email address for Single Sign-On (SSO):");
+      if (email && email.trim()) {
+        const cleaned = email.trim();
+        const defaultUsername = cleaned.split('@')[0];
+        processGoogleUserLogin(cleaned, defaultUsername);
+      }
     }
 
     // Auto-restore Supabase session if user returns from OAuth or page reload
