@@ -95,8 +95,27 @@ public class HestiaAiService {
         // 2b. Fetch dynamic academic vault context
         String academicVaultContext = buildAcademicVaultContext(email, username, profile);
 
-        // 3. Construct System Prompt with Persona & Memory
-        String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail, memoryContext, academicVaultContext, activeMood);
+        // 2c. Prepare clean conversation history (avoid duplicate tail of current query)
+        List<Map<String, String>> cleanHistory = new ArrayList<>();
+        if (history != null) {
+            for (Map<String, String> turn : history) {
+                if (turn != null && turn.containsKey("text")) {
+                    cleanHistory.add(turn);
+                }
+            }
+            if (!cleanHistory.isEmpty()) {
+                Map<String, String> lastTurn = cleanHistory.get(cleanHistory.size() - 1);
+                String lastText = lastTurn.get("text");
+                String lastRole = lastTurn.getOrDefault("role", lastTurn.getOrDefault("sender", "user"));
+                boolean isBot = "bot".equalsIgnoreCase(lastRole) || "model".equalsIgnoreCase(lastRole) || "hestia".equalsIgnoreCase(lastRole) || "assistant".equalsIgnoreCase(lastRole);
+                if (!isBot && query != null && query.trim().equalsIgnoreCase(lastText != null ? lastText.trim() : "")) {
+                    cleanHistory.remove(cleanHistory.size() - 1);
+                }
+            }
+        }
+
+        // 3. Construct System Prompt with Persona & Memory & Conversational Trajectory
+        String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail, memoryContext, academicVaultContext, activeMood, cleanHistory);
 
         String effectiveGroqKey = System.getenv("GROQ_API_KEY");
         if (effectiveGroqKey == null || effectiveGroqKey.isBlank()) {
@@ -110,12 +129,12 @@ public class HestiaAiService {
 
         // --- Provider 1: Try Groq Cloud API ---
         if (effectiveGroqKey != null && !effectiveGroqKey.isBlank() && !effectiveGroqKey.startsWith("YOUR_")) {
-            rawResponse = callGroqApi(effectiveGroqKey, systemPromptText, history, query, username);
+            rawResponse = callGroqApi(effectiveGroqKey, systemPromptText, cleanHistory, query, username);
         }
 
         // --- Provider 2: Try Ollama Local API if Groq unavailable ---
         if ((rawResponse == null || rawResponse.isBlank()) && ollamaUrl != null) {
-            rawResponse = callOllamaApi(systemPromptText, history, query, username);
+            rawResponse = callOllamaApi(systemPromptText, cleanHistory, query, username);
         }
 
         // --- Provider 3: Try Gemini API if available ---
@@ -125,13 +144,13 @@ public class HestiaAiService {
         }
 
         if ((rawResponse == null || rawResponse.isBlank()) && effectiveGeminiKey != null && !effectiveGeminiKey.isBlank() && !effectiveGeminiKey.startsWith("YOUR_")) {
-            rawResponse = callGeminiApi(effectiveGeminiKey, systemPromptText, history, query);
+            rawResponse = callGeminiApi(effectiveGeminiKey, systemPromptText, cleanHistory, query);
         }
 
         // --- Provider 4: Massive Contextual Offline Neural Simulation Engine (1,000+ lines) ---
         HestiaNeuralSimulator.SimulationResult simResult = null;
         if (rawResponse == null || rawResponse.isBlank()) {
-            simResult = HestiaNeuralSimulator.simulateResponse(query, username, email, isCreator, profile, memoryContext, academicVaultContext);
+            simResult = HestiaNeuralSimulator.simulateResponse(query, cleanHistory, username, email, isCreator, profile, memoryContext, academicVaultContext);
             rawResponse = simResult.getReply();
             activeMood = simResult.getMood();
         }

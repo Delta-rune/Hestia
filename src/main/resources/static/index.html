@@ -2123,7 +2123,7 @@
             query: text,
             username: currentUser?.username || 'Friend',
             email: currentUser?.email || '',
-            history: hestiaChatHistory.slice(-30),
+            history: hestiaChatHistory.slice(0, -1).slice(-20),
             profile: userProfile
           })
         });

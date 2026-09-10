@@ -2,29 +2,37 @@ package com.hestia.vault.ai;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Cognitive Prompt Engine for Hestia 2.0.
  * Synthesizes master persona directives, temporal & environmental grounding,
- * associative memories, verified semester vault records, and relational dynamics.
+ * associative memories, verified semester vault records, conversational trajectory, and relational dynamics.
  */
 public class HestiaPromptBuilder {
 
     public static String buildSystemPrompt(String username, String email, Map<String, Object> profile, 
                                            String activeSupportEmail, String longTermMemoryContext) {
-        return buildSystemPrompt(username, email, profile, activeSupportEmail, longTermMemoryContext, null, null);
+        return buildSystemPrompt(username, email, profile, activeSupportEmail, longTermMemoryContext, null, null, null);
     }
 
     public static String buildSystemPrompt(String username, String email, Map<String, Object> profile, 
                                            String activeSupportEmail, String longTermMemoryContext, 
                                            String academicVaultContext) {
-        return buildSystemPrompt(username, email, profile, activeSupportEmail, longTermMemoryContext, academicVaultContext, null);
+        return buildSystemPrompt(username, email, profile, activeSupportEmail, longTermMemoryContext, academicVaultContext, null, null);
     }
 
     public static String buildSystemPrompt(String username, String email, Map<String, Object> profile, 
                                            String activeSupportEmail, String longTermMemoryContext, 
                                            String academicVaultContext, HestiaPersonaConfig.MoodState activeMood) {
+        return buildSystemPrompt(username, email, profile, activeSupportEmail, longTermMemoryContext, academicVaultContext, activeMood, null);
+    }
+
+    public static String buildSystemPrompt(String username, String email, Map<String, Object> profile, 
+                                           String activeSupportEmail, String longTermMemoryContext, 
+                                           String academicVaultContext, HestiaPersonaConfig.MoodState activeMood,
+                                           List<Map<String, String>> history) {
         String degree = profile != null && profile.get("degreeField") != null ? profile.get("degreeField").toString() : "Engineering";
         String inst = profile != null && profile.get("institution") != null ? profile.get("institution").toString() : "University";
         String cgpa = profile != null && profile.get("cgpa") != null ? profile.get("cgpa").toString() : "8.0";
@@ -77,13 +85,32 @@ public class HestiaPromptBuilder {
             prompt.append("• INSTRUCTION: Use this official grade card data naturally. If they ask about advice, refer directly to specific courses they took or lower grades, providing realistic study and project balance advice.\n\n");
         }
 
-        // 5. Associative Memory Context
+        // 5. Active Conversational Trajectory & Thread Continuity
+        if (history != null && !history.isEmpty()) {
+            prompt.append("=== RECENT CONVERSATIONAL TRAJECTORY (PRIOR PROMPTS & REPLIES) ===\n");
+            int startIdx = Math.max(0, history.size() - 6);
+            for (int i = startIdx; i < history.size(); i++) {
+                Map<String, String> turn = history.get(i);
+                String role = turn.getOrDefault("role", turn.getOrDefault("sender", "user"));
+                String text = turn.getOrDefault("text", "");
+                if (text != null && !text.isBlank()) {
+                    String speaker = (role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model") || role.equalsIgnoreCase("hestia") || role.equalsIgnoreCase("assistant")) ? "HESTIA" : (username != null ? username : "USER");
+                    prompt.append("• [").append(speaker).append("]: ").append(text.trim()).append("\n");
+                }
+            }
+            prompt.append("• THREAD CONTINUITY DIRECTIVE (CRITICAL):\n");
+            prompt.append("  - Stay acutely aware of what you and the user were just discussing.\n");
+            prompt.append("  - When the user asks brief questions like 'why?', 'how come?', 'explain more', 'tell me more', 'which one?', or uses pronouns like 'it', 'they', 'that', immediately resolve the context from the recent dialogue above.\n");
+            prompt.append("  - DO NOT reset the conversation or treat follow-ups like isolated queries.\n\n");
+        }
+
+        // 6. Associative Memory Context
         if (longTermMemoryContext != null && !longTermMemoryContext.isBlank()) {
             prompt.append("=== COGNITIVE EPISODIC MEMORY (WHAT YOU REMEMBER ABOUT THEM) ===\n");
             prompt.append(longTermMemoryContext).append("\n\n");
         }
 
-        // 6. Relationship Context
+        // 7. Relationship Context
         if (isCreator) {
             prompt.append("""
                 === MASTER CREATOR CONTEXT: NICHU ===
@@ -99,7 +126,7 @@ public class HestiaPromptBuilder {
                 """).append("\n");
         }
 
-        // 7. Human Conversational Directives
+        // 8. Human Conversational Directives
         prompt.append("""
             === HUMAN CONVERSATIONAL RULES ===
             1. NO ROBOTIC CANNED OPENERS: Never start with "As an AI...", "Certainly!", "I'd be glad to help", or "Great question!". Jump straight into the conversation like a human.

@@ -32,27 +32,39 @@ public class HestiaAiController {
 
         if (query == null) query = "";
 
-        String reply = hestiaAiService.generateResponse(query, username, email, history, profile);
+        Map<String, Object> enriched = null;
+        try {
+            enriched = hestiaAiService.generateEnrichedResponse(query, username, email, history, profile);
+        } catch (Exception ignored) {}
+
+        String reply = (enriched != null && enriched.get("reply") != null && !((String) enriched.get("reply")).isBlank())
+                ? (String) enriched.get("reply")
+                : hestiaAiService.generateResponse(query, username, email, history, profile);
+
+        if (reply == null) reply = "";
 
         boolean isCreator = (email != null && email.equalsIgnoreCase("nichuag33@gmail.com")) || 
                             (email != null && email.equalsIgnoreCase("nichuag35@gmail.com")) || 
                             (username != null && username.equalsIgnoreCase("nichuag33")) ||
                             (username != null && username.equalsIgnoreCase("Nichu"));
 
-        int currentHour = java.time.LocalDateTime.now().getHour();
-        HestiaPersonaConfig.MoodState mood = HestiaPersonaConfig.inferMoodFromQuery(query, isCreator, currentHour);
+        String mood = (enriched != null && enriched.get("mood") != null) ? (String) enriched.get("mood") : "CALM_INTELLECT";
+        String moodLabel = (enriched != null && enriched.get("moodLabel") != null) ? (String) enriched.get("moodLabel") : "Calm & Reflective";
+        String moodDesc = (enriched != null && enriched.get("moodDesc") != null) ? (String) enriched.get("moodDesc") : "";
+        Object suggestedActions = (enriched != null && enriched.get("suggestedActions") != null) ? enriched.get("suggestedActions") : List.of();
+        int typingSpeedMs = (enriched != null && enriched.get("typingSpeedMs") != null) ? (Integer) enriched.get("typingSpeedMs") : 20;
 
         Map<String, Object> responseMap = new LinkedHashMap<>();
         responseMap.put("status", "SUCCESS");
         responseMap.put("reply", reply);
-        responseMap.put("mood", mood.name());
-        responseMap.put("moodLabel", mood.getLabel());
-        responseMap.put("moodDesc", mood.getDescription());
-        responseMap.put("audioPitch", mood.getDefaultPitch());
-        responseMap.put("audioRate", mood.getDefaultRate());
-        responseMap.put("suggestedActions", List.of("Audit my academic vault", "Roast my student profile", "Tell me an engineering joke"));
-        responseMap.put("typingSpeedMs", 22);
-        responseMap.put("tone", isCreator ? "CREATOR_FONDNESS" : mood.name());
+        responseMap.put("mood", mood);
+        responseMap.put("moodLabel", moodLabel);
+        responseMap.put("moodDesc", moodDesc);
+        responseMap.put("audioPitch", 1.05);
+        responseMap.put("audioRate", 1.0);
+        responseMap.put("suggestedActions", suggestedActions);
+        responseMap.put("typingSpeedMs", typingSpeedMs);
+        responseMap.put("tone", isCreator ? "CREATOR_FONDNESS" : mood);
         responseMap.put("timestamp", System.currentTimeMillis());
 
         return ResponseEntity.ok(responseMap);

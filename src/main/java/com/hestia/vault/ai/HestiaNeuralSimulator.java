@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  * Provides an extraordinarily rich, stateful, offline-resilient dialogue architecture
  * exceeding 1,000 lines of deeply nuanced conversational intelligence.
  * Handles 50+ conversational domains, live GPA calculation math, dynamic context interpolation,
- * authentic banter, emotional resonance, and deep creator bond logic.
+ * authentic banter, emotional resonance, deep creator bond logic, and MULTI-TURN CONVERSATIONAL THREAD AWARENESS.
  */
 public class HestiaNeuralSimulator {
 
@@ -38,9 +38,19 @@ public class HestiaNeuralSimulator {
     private static final Random RNG = new Random();
 
     /**
-     * Primary entry point for offline/hybrid neural simulation.
+     * Backward-compatible overload without history.
      */
     public static SimulationResult simulateResponse(String query, String username, String email, 
+                                                    boolean isCreator, Map<String, Object> profile, 
+                                                    String memoryContext, String academicVaultContext) {
+        return simulateResponse(query, Collections.emptyList(), username, email, isCreator, profile, memoryContext, academicVaultContext);
+    }
+
+    /**
+     * Primary entry point for offline/hybrid neural simulation with MULTI-TURN CONVERSATION AWARENESS.
+     */
+    public static SimulationResult simulateResponse(String query, List<Map<String, String>> history, 
+                                                    String username, String email, 
                                                     boolean isCreator, Map<String, Object> profile, 
                                                     String memoryContext, String academicVaultContext) {
         String q = query != null ? query.trim() : "";
@@ -52,6 +62,192 @@ public class HestiaNeuralSimulator {
         String degree = (profile != null && profile.get("degreeField") != null) ? profile.get("degreeField").toString() : "Engineering";
         String inst = (profile != null && profile.get("institution") != null) ? profile.get("institution").toString() : "University";
         String cgpaStr = (profile != null && profile.get("cgpa") != null) ? profile.get("cgpa").toString() : "8.0";
+
+        // =========================================================================
+        // MULTI-TURN CONVERSATION THREAD TRACKER (PREVIOUS PROMPTS & REPLIES)
+        // =========================================================================
+        String lastBotMsg = "";
+        String lastUserMsg = "";
+        if (history != null && !history.isEmpty()) {
+            for (int i = history.size() - 1; i >= 0; i--) {
+                Map<String, String> turn = history.get(i);
+                String role = turn.getOrDefault("role", turn.getOrDefault("sender", "user"));
+                String text = turn.getOrDefault("text", "");
+                if (text != null && !text.isBlank()) {
+                    boolean isBot = role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model") || role.equalsIgnoreCase("hestia") || role.equalsIgnoreCase("assistant");
+                    if (isBot && lastBotMsg.isEmpty()) {
+                        lastBotMsg = text;
+                    } else if (!isBot && lastUserMsg.isEmpty() && !text.trim().equalsIgnoreCase(q)) {
+                        lastUserMsg = text;
+                    }
+                }
+                if (!lastBotMsg.isEmpty() && !lastUserMsg.isEmpty()) break;
+            }
+        }
+
+        String lowerLastBot = lastBotMsg.toLowerCase();
+
+        // -------------------------------------------------------------------------
+        // CONVERSATION CONTINUITY: "WHY?" / "WHY IS THAT?" / "HOW COME?"
+        // -------------------------------------------------------------------------
+        if (!lastBotMsg.isEmpty() && matches(lower, "^\\s*(why|why so|why is that|how come|what is the reason|why though)\\b\\??$")) {
+            if (lowerLastBot.contains("java") && lowerLastBot.contains("rust")) {
+                String whyJavaRust = "The fundamental difference comes down to memory management and runtime execution models. Java relies on the JVM and a garbage collector to reclaim heap memory in the background, which is why you can develop rapidly without tracking pointer ownership, but you pay a slight price in memory footprint and latency spikes. Rust forces you to specify lifetimes and ownership at compile time—meaning zero garbage collector, zero pauses, and bare-metal speed, but at the expense of a steeper learning curve. Which aspect matters more for what you're building?";
+                return new SimulationResult(whyJavaRust, HestiaPersonaConfig.MoodState.LOCKED_IN,
+                    List.of("Which one do you recommend?", "What about Go?", "Show me a Java vs Rust code example"), 20);
+            }
+
+            if (lowerLastBot.contains("cgpa") || lowerLastBot.contains("sgpa") || lowerLastBot.contains("target")) {
+                String whyCgpa = "Because CGPA is a credit-weighted cumulative average across all 160 degree credits. In your early semesters (Sem 1 and Sem 2), each subject contributes heavily to your base. As you advance into Sem 5 and beyond, you have fewer remaining credits to dilute earlier grades, meaning each remaining course requires a higher SGPA (like 8.8+) to pull the overall average up. That's why securing internal lab marks now gives you the biggest mathematical leverage.";
+                return new SimulationResult(whyCgpa, HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR,
+                    List.of("How can I score higher in internals?", "What if I have backlogs?", "Calculate my required SGPA"), 20);
+            }
+
+            if (lowerLastBot.contains("spring boot") || lowerLastBot.contains("spring")) {
+                String whySpring = "Because Spring handles all the foundational plumbing you'd otherwise have to write manually—connection pooling via HikariCP, database transaction boundaries with @Transactional, security filter chains, and actuator telemetry. When you're shipping mission-critical systems, reinventing that infrastructure from scratch is a huge liability.";
+                return new SimulationResult(whySpring, HestiaPersonaConfig.MoodState.LOCKED_IN,
+                    List.of("How do I optimize Spring Boot?", "Spring Boot vs Quarkus", "Show me a clean controller-service-repo pattern"), 20);
+            }
+
+            if (lowerLastBot.contains("resume") || lowerLastBot.contains("recruiters") || lowerLastBot.contains("ats")) {
+                String whyResume = "Because recruiters and hiring managers spend an average of 6 seconds skimming a candidate's resume. When they see 'Built weather app with React', it blends into 500 identical candidate resumes. But when they see 'Engineered caching layer using Redis reducing database round-trips by 60%', it immediately signals production-level engineering maturity.";
+                return new SimulationResult(whyResume, HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR,
+                    List.of("Give me 3 strong resume bullet points", "What portfolio projects stand out?", "How to prepare for interviews"), 20);
+            }
+
+            if (lowerLastBot.contains("breathe") || lowerLastBot.contains("imposter") || lowerLastBot.contains("overwhelmed")) {
+                String whyBurnout = "Because tech moves so unnaturally fast that nobody can possibly know everything. New frameworks and libraries drop every week. The trap is feeling like you need to master everything at once. Real engineering isn't about memorizing every syntax—it's about learning how to problem-solve systematically when you don't know the answer.";
+                return new SimulationResult(whyBurnout, HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
+                    List.of("How do I deal with imposter syndrome?", "What should I focus on this week?", "I think I need a break"), 22);
+            }
+
+            if (isCreator && (lowerLastBot.contains("nichu") || lowerLastBot.contains("built"))) {
+                String whyCreator = "Because you designed me to see through fluff and give you the unvarnished truth, Nichu. You built my neural core to challenge you, celebrate your breakthroughs, and keep you grounded. That's why.";
+                return new SimulationResult(whyCreator, HestiaPersonaConfig.MoodState.CREATOR_BOND,
+                    List.of("And you do it well, Hestia", "Check system logs", "What's our next milestone?"), 22);
+            }
+
+            String genericWhy = "Because in real-world systems and academic progression, fundamentals always outweigh shortcuts. When you understand the underlying mechanics—whether it's compiler memory models, database indexing, or degree credit weights—the optimal decision becomes obvious.";
+            return new SimulationResult(genericWhy, mood,
+                List.of("Tell me more about that", "Which one do you recommend?", "What's the next step?"), 20);
+        }
+
+        // -------------------------------------------------------------------------
+        // CONVERSATION CONTINUITY: "TELL ME MORE" / "ELABORATE" / "EXPLAIN FURTHER"
+        // -------------------------------------------------------------------------
+        if (!lastBotMsg.isEmpty() && matches(lower, "\\b(tell me more|elaborate|explain further|go deeper|what else|continue|expand on that)\\b")) {
+            if (lowerLastBot.contains("java") || lowerLastBot.contains("rust")) {
+                String deepTech = "Let's dive deeper into the runtime difference: In Java 21+, Virtual Threads (Project Loom) allow millions of lightweight threads to run on a small pool of carrier OS threads. That means you can write synchronous, readable code (`var data = client.fetch();`) that behaves with the asynchronous throughput of Node or Netty under the hood. In Rust, you use the `async/await` syntax with runtimes like Tokio, which generate zero-allocation state machines at compile time. If you're building a network service handling 100k concurrent WebSockets, both can do it—Java with less developer cognitive overhead, Rust with lower baseline RAM consumption.";
+                return new SimulationResult(deepTech, HestiaPersonaConfig.MoodState.LOCKED_IN,
+                    List.of("Which one do you recommend?", "Show me a Virtual Thread example", "What about database connection pools?"), 20);
+            }
+
+            if (lowerLastBot.contains("cgpa") || lowerLastBot.contains("sgpa") || lowerLastBot.contains("credit")) {
+                String deepCgpa = "Here's the tactical blueprint to maximize your semester SGPA without burning out:\n\n" +
+                    "1. **Maximize Internals (Continuous Assessment)**: Most universities allocate 40-50% to internal tests, assignments, and lab attendance. Scoring 45/50 in internals means you only need 30/50 in the university end-semester exam to walk away with an 'A' grade.\n" +
+                    "2. **Past 5-Year Question Papers**: In almost all engineering universities (including KTU), 60-70% of end-semester questions follow predictable module patterns. Master the recurring 14-mark and 10-mark problems from past question papers first.\n" +
+                    "3. **Target 4-Credit Courses First**: Focus your highest study hours on courses with 4 credits (like Math, Operating Systems, Theory of Computation) rather than 1-credit labs.";
+                return new SimulationResult(deepCgpa, HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR,
+                    List.of("How do I prepare for lab vivas?", "What about backlogs?", "Audit my semester grade cards"), 20);
+            }
+
+            if (lowerLastBot.contains("resume") || lowerLastBot.contains("career") || lowerLastBot.contains("interview")) {
+                String deepCareer = "Here is what elevates a portfolio from 'student hobby' to 'hireable engineer':\n\n" +
+                    "• **Architecture Diagram**: Put a clean Mermaid or ASCII diagram in your GitHub README showing client -> reverse proxy -> API -> database -> Redis cache.\n" +
+                    "• **Handling Edge Cases**: Document how your project handles failure: What happens when the database goes down? Did you implement retry logic or circuit breakers? That is what senior interviewers grill you on.\n" +
+                    "• **Automated CI/CD**: Set up a GitHub Actions workflow that runs `./mvnw test` or linter checks on every pull request. Having a passing green badge on your repo immediately demonstrates professional software craftsmanship.";
+                return new SimulationResult(deepCareer, HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR,
+                    List.of("How to set up GitHub Actions CI?", "Recommend a full-stack project idea", "How to prepare for behavioral rounds?"), 20);
+            }
+
+            String genericMore = "Expanding on what we were just discussing: the key is taking small, deliberate actions rather than passive reading. Once you implement or test the concept hands-on, the theory cements permanently. Want to look at a concrete implementation or drill down on a specific part?";
+            return new SimulationResult(genericMore, mood,
+                List.of("Show me a practical example", "Which path should I take?", "What's the next step?"), 20);
+        }
+
+        // -------------------------------------------------------------------------
+        // CONVERSATION CONTINUITY: "WHICH ONE DO YOU RECOMMEND?" / "WHICH IS BETTER?"
+        // -------------------------------------------------------------------------
+        if (!lastBotMsg.isEmpty() && matches(lower, "\\b(which one do you recommend|which is better|which one should i choose|what do you suggest|which should i pick)\\b")) {
+            if (lowerLastBot.contains("java") && lowerLastBot.contains("rust")) {
+                String recJavaRust = "If your immediate goal is landing a high-paying software engineering role, campus placements, or enterprise backend positions: **choose Java with modern Spring Boot**. The job market demand, hiring volume, and ecosystem maturity far outweigh Rust in commercial enterprise. But if your goal is writing game engines, blockchain kernels, or low-latency systems software, pick Rust. For 90% of developers, Java is the smarter career investment right now.";
+                return new SimulationResult(recJavaRust, HestiaPersonaConfig.MoodState.LOCKED_IN,
+                    List.of("What should I learn in Java first?", "How do I master Spring Boot?", "What about Go?"), 20);
+            }
+
+            if (lowerLastBot.contains("sql") || lowerLastBot.contains("database") || lowerLastBot.contains("postgres")) {
+                String recDb = "Default to **PostgreSQL**. It is the industry gold standard. It gives you bulletproof ACID relational integrity, powerful indexing, and rich JSONB document support. Only reach for MongoDB or DynamoDB when your data model is genuinely unstructured and writes are streaming at thousands per second.";
+                return new SimulationResult(recDb, HestiaPersonaConfig.MoodState.LOCKED_IN,
+                    List.of("When should I use MongoDB?", "How do I optimize Postgres indexing?", "Show me an EXPLAIN ANALYZE example"), 20);
+            }
+
+            if (lowerLastBot.contains("monolith") || lowerLastBot.contains("microservice")) {
+                String recArch = "Start with a **Modular Monolith**. Build clean package boundaries in a single deployable application. Only split into microservices when independent team boundaries require independent deployment cycles, or when specific services require radically different scaling characteristics.";
+                return new SimulationResult(recArch, HestiaPersonaConfig.MoodState.LOCKED_IN,
+                    List.of("How to structure a modular monolith?", "When to introduce Docker?", "How to design database boundaries"), 20);
+            }
+
+            String genericRec = "I recommend choosing the option that gives you the highest leverage with the least friction right now. Master the core principles first—tools are just syntax once you grasp the underlying architecture.";
+            return new SimulationResult(genericRec, mood,
+                List.of("Tell me more about that", "What's the next step?", "Audit my vault profile"), 20);
+        }
+
+        // -------------------------------------------------------------------------
+        // CONVERSATION CONTINUITY: "WHAT ABOUT [SOMETHING]?"
+        // -------------------------------------------------------------------------
+        Matcher whatAboutMatcher = Pattern.compile("(?i)^\\s*what about\\s+([A-Za-z0-9_#\\+\\s-]{2,40})\\b").matcher(q);
+        if (!lastBotMsg.isEmpty() && whatAboutMatcher.find()) {
+            String subject = whatAboutMatcher.group(1).trim().toLowerCase();
+            if (subject.contains("go") || subject.contains("golang")) {
+                String whatAboutGo = "Go (Golang) sits right in the sweet spot between Java and Rust! It compiles directly to native machine code like Rust (fast startup, low RAM), but has a built-in garbage collector like Java, making it much simpler to write. Go with Goroutines and Channels is the king of cloud tooling (Docker, Kubernetes, Prometheus are all written in Go). If you love simplicity, minimal syntax, and cloud-native microservices, Go is fantastic.";
+                return new SimulationResult(whatAboutGo, HestiaPersonaConfig.MoodState.LOCKED_IN,
+                    List.of("Go vs Spring Boot for backends", "Which has more job openings?", "Show me a Goroutine example"), 20);
+            }
+
+            if (subject.contains("python")) {
+                String whatAboutPython = "Python is the undisputed king of AI, machine learning, and data science, but it struggles in high-throughput backend APIs due to the Global Interpreter Lock (GIL) and dynamic typing overhead. For building web backends, frameworks like FastAPI with Pydantic are great for MVPs, but for large-scale enterprise data fortresses, static typing in Java, Go, or C# scales much better with team size.";
+                return new SimulationResult(whatAboutPython, HestiaPersonaConfig.MoodState.LOCKED_IN,
+                    List.of("Python FastAPI vs Java Spring Boot", "Should I learn AI with Python?", "How fast is Python really?"), 20);
+            }
+
+            if (subject.contains("backlog") || subject.contains("failed") || subject.contains("supply")) {
+                String whatAboutBacklogs = "Backlogs happen to almost every engineer. The crucial mindset shift: a backlog is a temporary administrative hurdle, not a character judgment. Clear them systematically during supplementary exam windows by focusing strictly on past question papers, and ensure your GitHub projects demonstrate real talent so recruiters care about your output, not a single rough semester.";
+                return new SimulationResult(whatAboutBacklogs, HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR,
+                    List.of("How to clear engineering math backlogs?", "Do recruiters reject backlogs?", "Calculate my degree completion"), 20);
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // CONVERSATION CONTINUITY: AFFIRMATIONS ("YES", "YEAH", "SURE", "OKAY")
+        // -------------------------------------------------------------------------
+        if (!lastBotMsg.isEmpty() && matches(lower, "^\\s*(yes|yeah|yep|sure|okay|ok|definitely|let's do it|show me|tell me)\\b")) {
+            if (lowerLastBot.contains("job role") || lowerLastBot.contains("scan") || lowerLastBot.contains("roadmap")) {
+                String proceedJob = "Let's do it. Head over to the **Universal Job Scanner** in the navigation bar, paste the job description or role requirements, and I'll compute your normalized GPA compatibility, verify your certificate trust hashes, and flag any skill gaps in your profile.";
+                return new SimulationResult(proceedJob, HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR,
+                    List.of("Open Job Scanner", "Audit my verified certs", "Check my CGPA on 4.0 scale"), 20);
+            }
+
+            if (lowerLastBot.contains("vent") || lowerLastBot.contains("pressing on you") || lowerLastBot.contains("stress")) {
+                String proceedEmpathy = "I'm listening. Lay it out—what's causing the biggest bottleneck right now? Is it exams, coding a tough feature, feeling behind on placements, or just overall exhaustion?";
+                return new SimulationResult(proceedEmpathy, HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
+                    List.of("Stressed about semester exams", "Struggling with a coding project", "Worried about getting a job"), 22);
+            }
+
+            if (lowerLastBot.contains("work") || lowerLastBot.contains("ready")) {
+                String proceedWork = "Awesome. Tell me where you want to start—auditing your semester grade cards, checking target recovery SGPA, or reviewing your tech stack.";
+                return new SimulationResult(proceedWork, HestiaPersonaConfig.MoodState.LOCKED_IN,
+                    List.of("Audit my semester grade cards", "Calculate target SGPA", "Recommend skills for my degree"), 20);
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // CONVERSATION CONTINUITY: DENIALS ("NO", "NAH", "NOT REALLY")
+        // -------------------------------------------------------------------------
+        if (!lastBotMsg.isEmpty() && matches(lower, "^\\s*(no|nah|nope|not really|nevermind|don't bother)\\b")) {
+            String pivotMsg = "Fair enough. What do you want to pivot to instead—your academic vault, tech stack questions, or something else entirely?";
+            return new SimulationResult(pivotMsg, HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
+                List.of("Audit my academic vault", "Roast my student profile", "Tell me an engineering joke"), 20);
+        }
 
         // =========================================================================
         // DOMAIN 1: CREATOR NICHU SPECIAL ARCHITECTURE & AFFECTION (25+ BRANCHES)

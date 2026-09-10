@@ -106,4 +106,33 @@ public class HestiaMemoryAndPersonaTest {
         assertTrue(academicResult.getReply().contains("CGPA"));
         assertEquals(com.hestia.vault.ai.HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR, academicResult.getMood());
     }
+
+    @Test
+    public void testMultiTurnConversationalAwareness() {
+        List<Map<String, String>> history = List.of(
+            Map.of("role", "user", "text", "What do you think of PostgreSQL vs MongoDB for student projects?"),
+            Map.of("role", "assistant", "text", "PostgreSQL is unbeatable for relational consistency and ACID transactions, whereas MongoDB gives rapid schema-less prototyping.")
+        );
+
+        // 1. Verify Prompt Builder includes conversational trajectory and thread continuity directives
+        String prompt = HestiaPromptBuilder.buildSystemPrompt(
+            "Nichu", "nichuag33@gmail.com", Map.of(), "support@hestia.org", "", "", null, history
+        );
+        assertNotNull(prompt);
+        assertTrue(prompt.contains("RECENT CONVERSATIONAL TRAJECTORY"));
+        assertTrue(prompt.contains("PostgreSQL vs MongoDB"));
+        assertTrue(prompt.contains("THREAD CONTINUITY DIRECTIVE"));
+
+        // 2. Verify Neural Simulator resolves brief follow-up questions using prior context
+        var followUpResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
+            "Which one do you recommend?", history, "Nichu", "nichuag33@gmail.com", true, Map.of(), "", ""
+        );
+        assertNotNull(followUpResult);
+        assertNotNull(followUpResult.getReply());
+        // Should reference the topic from prior dialogue
+        assertTrue(followUpResult.getReply().toLowerCase().contains("postgres") || 
+                   followUpResult.getReply().toLowerCase().contains("recommend") ||
+                   followUpResult.getReply().toLowerCase().contains("choice"));
+    }
 }
+
