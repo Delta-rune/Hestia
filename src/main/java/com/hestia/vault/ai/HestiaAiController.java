@@ -93,7 +93,7 @@ public class HestiaAiController {
 
         return ResponseEntity.ok(Map.of(
             "name", "Hestia Cyberpunk AI",
-            "persona", "Lucy (Cyberpunk Edgerunners)",
+            "persona", "Hestia",
             "tone", isCreator ? "Deep Organic Fondness (Creator Nichu)" : "Cold Sarcastic Netrunner Mentor",
             "isCreator", isCreator,
             "memoryEngineActive", (hestiaMemoryService != null),

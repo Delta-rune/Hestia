@@ -690,8 +690,8 @@
               <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2 font-mono">
                 <i class="fa-solid fa-bullseye text-amber-400"></i> Academic Focus & Weakness Spotlight
               </span>
-              <button type="button" onclick="askLucyAboutFocus()" class="btn-mono text-[11px] px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shadow-md">
-                <i class="fa-solid fa-comment-dots text-emerald-400"></i> Ask Lucy for Study Advice
+              <button type="button" onclick="askHestiaAboutFocus()" class="btn-mono text-[11px] px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shadow-md">
+                <i class="fa-solid fa-comment-dots text-emerald-400"></i> Ask Hestia for Study Advice
               </button>
             </div>
             
@@ -3397,7 +3397,7 @@
                     Focus Recommendation: Sem ${fa.semNum} - ${escapeHtml(fa.code ? fa.code + ' ' : '')}${escapeHtml(fa.name)}
                   </div>
                   <div class="text-[10px] text-rose-300">
-                    Grade: <strong class="underline">${fa.grade}</strong>. Identified as a lower-scoring bottleneck. Lucy can advise you on study strategies and project revision.
+                    Grade: <strong class="underline">${fa.grade}</strong>. Identified as a lower-scoring bottleneck. Hestia can advise you on study strategies and project revision.
                   </div>
                 </div>
               </div>
@@ -3442,7 +3442,7 @@
       }
     }
 
-    function askLucyAboutFocus() {
+    function askHestiaAboutFocus() {
       showSection('companion');
 
       const weakItems = [];
@@ -3459,9 +3459,9 @@
         });
       }
 
-      let prompt = "Hey Lucy, can you look over my academic vault and semester grade cards? Give me your honest, authentic advice on what subjects I should focus on and how I can level up.";
+      let prompt = "Hey Hestia, can you look over my academic vault and semester grade cards? Give me your honest, authentic advice on what subjects I should focus on and how I can level up.";
       if (weakItems.length > 0) {
-        prompt = `Hey Lucy, looking at my verified semester cards, I notice my grades were lower in ${weakItems.slice(0, 3).join(', ')}. What's your honest, practical advice on how I should tackle these areas and balance them with my projects?`;
+        prompt = `Hey Hestia, looking at my verified semester cards, I notice my grades were lower in ${weakItems.slice(0, 3).join(', ')}. What's your honest, practical advice on how I should tackle these areas and balance them with my projects?`;
       }
 
       const input = document.getElementById('hestia-chat-input');
@@ -3471,6 +3471,7 @@
         handleHestiaChatSubmit(fakeEvt);
       }
     }
+    const askLucyAboutFocus = askHestiaAboutFocus;
 
     async function loadSavedAcademicRecord() {
       const activeUserId = currentUser?.id || 1;

@@ -36,7 +36,7 @@ public class HestiaMemoryAndPersonaTest {
 
         assertNotNull(prompt);
         assertTrue(prompt.contains("MASTER CREATOR CONTEXT: NICHU"));
-        assertTrue(prompt.contains("LUCY"));
+        assertTrue(prompt.contains("HESTIA"));
         assertTrue(prompt.contains("Computer Science"));
         assertTrue(prompt.contains("TECH_STACK"));
         assertTrue(prompt.contains("Senior AI Systems Engineer"));

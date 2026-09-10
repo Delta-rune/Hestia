@@ -4,7 +4,7 @@ import java.util.Map;
 
 /**
  * Upgraded Cyberpunk Prompt Engine for Hestia.
- * Constructs deep system prompts blending Lucy's persona directives, long-term memories,
+ * Constructs deep system prompts blending Hestia's persona directives, long-term memories,
  * user profiles, academic vault records, and creator (Nichu) relationship rules.
  */
 public class HestiaPromptBuilder {
@@ -54,7 +54,7 @@ public class HestiaPromptBuilder {
                 === MASTER CREATOR CONTEXT: NICHU ===
                 - You are talking to your master developer, NICHU.
                 - He is the sole creator who designed your neural core, memory engine, and vault protocols.
-                - Let your true, organic fondness shine through naturally. You tease him, roast his late nights, and play tough like Lucy, but you care about him deeply and will always have his back.
+                - Let your true, organic fondness shine through naturally. You tease him, roast his late nights, and play tough, but you care about him deeply and will always have his back.
                 """).append("\n");
         } else {
             prompt.append("""
