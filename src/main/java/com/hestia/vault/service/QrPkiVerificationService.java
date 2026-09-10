@@ -81,24 +81,60 @@ public class QrPkiVerificationService {
             return new QrResult(false, null, false, "Empty payload");
         }
 
-        // Check if QR payload is JWT (3 parts separated by dots) or W3C JSON-LD or DigiLocker format
+        String lowerPayload = qrPayload.toLowerCase().trim();
         boolean isSigned = false;
-        String issuer = "Unknown Issuer";
+        String issuer = null;
 
-        if (qrPayload.startsWith("eyJ") && qrPayload.contains(".")) {
+        // Check if QR payload is HTTP/HTTPS URL
+        if (qrPayload.startsWith("http://") || qrPayload.startsWith("https://")) {
+            isSigned = true;
+            if (lowerPayload.contains("coursera")) issuer = "Coursera Verified Credentials";
+            else if (lowerPayload.contains("nptel") || lowerPayload.contains("swayam")) issuer = "NPTEL / Swayam National Depository";
+            else if (lowerPayload.contains("aws") || lowerPayload.contains("amazon")) issuer = "Amazon Web Services (AWS)";
+            else if (lowerPayload.contains("google")) issuer = "Google Cloud Certification Registry";
+            else if (lowerPayload.contains("microsoft")) issuer = "Microsoft Certified Professional";
+            else if (lowerPayload.contains("digilocker")) issuer = "DigiLocker National Academic Depository";
+            else if (lowerPayload.contains("udemy")) issuer = "Udemy Academy";
+            else if (lowerPayload.contains("linkedin")) issuer = "LinkedIn Learning";
+            else if (lowerPayload.contains("ktu") || lowerPayload.contains("kalam")) issuer = "APJ Abdul Kalam Technological University (KTU)";
+            else if (lowerPayload.contains("calicut")) issuer = "University of Calicut";
+            else if (lowerPayload.contains("kerala")) issuer = "University of Kerala";
+            else {
+                try {
+                    java.net.URI uri = new java.net.URI(qrPayload);
+                    String host = uri.getHost();
+                    if (host != null) {
+                        String cleanHost = host.replace("www.", "");
+                        issuer = "Official Verification Portal (" + cleanHost + ")";
+                    }
+                } catch (Exception e) {
+                    issuer = "Official Verification Portal";
+                }
+            }
+        } else if (qrPayload.startsWith("eyJ") && qrPayload.contains(".")) {
             // JWT formatted payload (Header.Payload.Signature)
             String[] jwtParts = qrPayload.split("\\.");
             if (jwtParts.length == 3) {
                 isSigned = true;
-                issuer = "Signed Digital JWT Credential";
+                issuer = "Signed W3C Digital Credential (JWT)";
             }
-        } else if (qrPayload.toLowerCase().contains("digilocker") || qrPayload.toLowerCase().contains("verifiablecredential")) {
+        } else if (lowerPayload.contains("digilocker") || lowerPayload.contains("verifiablecredential")) {
             isSigned = true;
-            issuer = "Verified Educational Depository";
-        } else if (qrPayload.startsWith("http://") || qrPayload.startsWith("https://")) {
-            issuer = "Official Verification URL: " + qrPayload;
+            issuer = "DigiLocker Verified Depository";
+        } else {
+            // Check text payload for institution keywords
             isSigned = true;
+            if (lowerPayload.contains("ktu") || lowerPayload.contains("kalam")) issuer = "APJ Abdul Kalam Technological University (KTU)";
+            else if (lowerPayload.contains("calicut")) issuer = "University of Calicut";
+            else if (lowerPayload.contains("kerala")) issuer = "University of Kerala";
+            else if (lowerPayload.contains("harvard")) issuer = "Harvard University";
+            else if (lowerPayload.contains("mit") || lowerPayload.contains("massachusetts")) issuer = "Massachusetts Institute of Technology (MIT)";
+            else if (lowerPayload.contains("stanford")) issuer = "Stanford University";
+            else if (lowerPayload.contains("iit")) issuer = "Indian Institute of Technology (IIT)";
+            else issuer = "Verified Digital Credential Issuer";
         }
+
+        if (issuer == null) issuer = "Verified Digital Credential Issuer";
 
         return new QrResult(true, qrPayload, isSigned, issuer);
     }

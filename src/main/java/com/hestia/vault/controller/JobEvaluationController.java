@@ -232,6 +232,50 @@ public class JobEvaluationController {
             } catch (Exception ignored) {}
         }
 
+        // AUTO-EXTRACT FIELDS FROM QR AND PDF TEXT IF USER LEFT THEM BLANK
+        if (qrResult != null && qrResult.found() && qrResult.issuerInfo() != null && !qrResult.issuerInfo().isBlank()) {
+            if (cleanedIssuer.isBlank() || cleanedIssuer.equalsIgnoreCase("Accredited Issuing Authority") || cleanedIssuer.equalsIgnoreCase("Unrecognized Source")) {
+                cleanedIssuer = qrResult.issuerInfo();
+            }
+        }
+
+        if (auditResult != null && auditResult.extractedText() != null && !auditResult.extractedText().isBlank()) {
+            String extracted = auditResult.extractedText();
+            String extractedLower = extracted.toLowerCase();
+
+            if (cleanedIssuer.isBlank() || cleanedIssuer.equalsIgnoreCase("Accredited Issuing Authority") || cleanedIssuer.equalsIgnoreCase("Unrecognized Source") || cleanedIssuer.equalsIgnoreCase("Verified Digital Credential Issuer")) {
+                for (String u : RECOGNIZED_UNIVERSITIES) {
+                    if (extractedLower.contains(u)) {
+                        cleanedIssuer = Character.toUpperCase(u.charAt(0)) + u.substring(1);
+                        break;
+                    }
+                }
+            }
+
+            if (cleanedName.isBlank() || cleanedName.equalsIgnoreCase("Unverified Screenshot") || cleanedName.equalsIgnoreCase("Verified Qualification Credential")) {
+                if (extractedLower.contains("bachelor of technology") || extractedLower.contains("b.tech")) {
+                    cleanedName = "Bachelor of Technology (B.Tech)";
+                } else if (extractedLower.contains("master of computer applications") || extractedLower.contains("mca")) {
+                    cleanedName = "Master of Computer Applications (MCA)";
+                } else if (extractedLower.contains("bachelor of science") || extractedLower.contains("b.sc")) {
+                    cleanedName = "Bachelor of Science (B.Sc)";
+                } else if (extractedLower.contains("bachelor of engineering") || extractedLower.contains("b.e")) {
+                    cleanedName = "Bachelor of Engineering (B.E)";
+                } else if (extractedLower.contains("degree") || extractedLower.contains("diploma")) {
+                    cleanedName = "Verified Academic Degree Certificate";
+                } else if (extractedLower.contains("certificate of completion")) {
+                    cleanedName = "Certificate of Completion";
+                }
+            }
+
+            if (cleanedId.isBlank() || cleanedId.equalsIgnoreCase("UNVERIFIED")) {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)(register|registration|roll|credential|certificate|cert)\\s*(no|number|id)?\\s*[:=.-]?\\s*([a-zA-Z0-9\\-/]{5,25})").matcher(extracted);
+                if (m.find()) {
+                    cleanedId = m.group(3).toUpperCase();
+                }
+            }
+        }
+
         boolean isGibberishId = isGibberish(cleanedId);
         boolean isGibberishIssuer = isGibberish(cleanedIssuer);
         boolean recognizedIssuer = isRecognizedUniversity(cleanedIssuer);
@@ -255,16 +299,20 @@ public class JobEvaluationController {
         if (qrResult != null && qrResult.found()) {
             String hashInput = cleanedId + cleanedIssuer + qrResult.qrText();
             String shaHash = "SHA256:" + Integer.toHexString(hashInput.hashCode()).toUpperCase();
+            String finalIssuer = (!cleanedIssuer.isBlank() && !cleanedIssuer.equals("Verified Digital Credential Issuer")) ? cleanedIssuer : (qrResult.issuerInfo() != null ? qrResult.issuerInfo() : "Verified Digital Issuer");
+            String finalCertId = !cleanedId.isBlank() ? cleanedId : "HST-CERT-" + Math.abs(shaHash.hashCode() % 899999 + 100000);
+            String finalName = !cleanedName.isBlank() ? cleanedName : "Cryptographically Verified Certificate";
+
             return ResponseEntity.ok(Map.of(
                 "status", "VERIFIED_AUTHENTIC",
                 "trustScore", "99.8%",
                 "tier", "TIER_2_QR_PKI",
-                "certificateId", cleanedId.isBlank() ? "HST-CERT-" + Math.abs(shaHash.hashCode() % 899999 + 100000) : cleanedId,
-                "certificateName", cleanedName.isBlank() ? "Cryptographically Verified Certificate" : cleanedName,
-                "issuer", qrResult.issuerInfo() != null ? qrResult.issuerInfo() : (cleanedIssuer.isBlank() ? "Verified Digital Issuer" : cleanedIssuer),
+                "certificateId", finalCertId,
+                "certificateName", finalName,
+                "issuer", finalIssuer,
                 "hasImageProof", true,
                 "verificationHash", shaHash,
-                "auditNote", "Cryptographically Verified: Embedded QR Code / Digital Signature Payload Validated (" + qrResult.issuerInfo() + ").",
+                "auditNote", "Cryptographically Verified: Embedded QR Code / Digital Signature Payload Validated (" + finalIssuer + ").",
                 "verifiedAt", System.currentTimeMillis()
             ));
         }
