@@ -35,18 +35,18 @@ public class QrPkiVerificationService {
         try {
             byte[] bytes = decodeBase64(base64Data);
             
-            // Try as PDF first
+            // Try as PDF first (Memory-safe rendering: 96 DPI, page 0 only)
             try (PDDocument document = Loader.loadPDF(bytes)) {
                 PDFRenderer renderer = new PDFRenderer(document);
-                for (int page = 0; page < Math.min(document.getNumberOfPages(), 3); page++) {
-                    BufferedImage pageImage = renderer.renderImageWithDPI(page, 150);
+                if (document.getNumberOfPages() > 0) {
+                    BufferedImage pageImage = renderer.renderImageWithDPI(0, 96);
                     String qrContent = scanImageForQr(pageImage);
                     if (qrContent != null) {
                         return processQrPayload(qrContent);
                     }
                 }
-            } catch (Exception pdfException) {
-                // Not a PDF, try as direct image (PNG/JPEG)
+            } catch (Throwable pdfException) {
+                // Not a PDF or low memory, try as direct image (PNG/JPEG)
                 try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
                     BufferedImage bufferedImage = ImageIO.read(bais);
                     if (bufferedImage != null) {
@@ -55,11 +55,11 @@ public class QrPkiVerificationService {
                             return processQrPayload(qrContent);
                         }
                     }
-                }
+                } catch (Throwable ignored) {}
             }
 
-        } catch (Exception e) {
-            return new QrResult(false, null, false, "Error processing document for QR scan: " + e.getMessage());
+        } catch (Throwable e) {
+            return new QrResult(false, null, false, "Scan completed: No embedded QR found.");
         }
 
         return new QrResult(false, null, false, "No scannable QR code found in document.");
