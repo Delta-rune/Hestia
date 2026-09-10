@@ -3,6 +3,9 @@ package com.hestia.vault;
 import com.hestia.vault.controller.AuthController;
 import com.hestia.vault.controller.JobEvaluationController;
 import com.hestia.vault.controller.VerificationController;
+import com.hestia.vault.ai.HestiaAiController;
+import com.hestia.vault.ai.HestiaAiService;
+
 import com.hestia.vault.dto.VerificationRequest;
 import com.hestia.vault.dto.VerificationResult;
 import com.hestia.vault.model.User;
@@ -35,6 +38,13 @@ public class HestiaDiagnosticTest {
     @InjectMocks
     private JobEvaluationController jobEvaluationController;
 
+    @Mock
+    private HestiaAiService hestiaAiService;
+
+    @InjectMocks
+    private HestiaAiController hestiaAiController;
+
+
     @org.mockito.Spy
     private com.hestia.vault.service.ApaarOtpService apaarOtpService = new com.hestia.vault.service.ApaarOtpService();
 
@@ -64,7 +74,11 @@ public class HestiaDiagnosticTest {
                 "profile", Map.of("degreeField", "Computer Science", "institution", "Stanford", "cgpa", "9.2")
         );
 
-        var response = jobEvaluationController.chatWithHestia(req);
+        when(hestiaAiService.generateResponse(any(), any(), any(), any(), any()))
+                .thenReturn("Hey, Nichu... I'm active and listening.");
+
+        var response = hestiaAiController.chatWithHestia(req);
+
         assertNotNull(response);
         assertEquals(200, response.getStatusCode().value());
 
@@ -138,7 +152,11 @@ public class HestiaDiagnosticTest {
                 "profile", Map.of()
         );
 
-        var res = jobEvaluationController.chatWithHestia(req);
+        when(hestiaAiService.generateResponse(any(), any(), any(), any(), any()))
+                .thenReturn("Got it, Nichu. I've updated our system support email preference to support@hestia.io");
+
+        var res = hestiaAiController.chatWithHestia(req);
+
         assertNotNull(res);
         assertEquals(200, res.getStatusCode().value());
 
