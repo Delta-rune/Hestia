@@ -2047,15 +2047,15 @@
         renderCertResult(data);
       } catch (err) {
         renderCertResult({
-          status: 'VERIFIED_AUTHENTIC',
-          trustScore: '96.5%',
-          tier: 'TIER_3_OCR_METADATA',
-          certificateId: certId || 'HST-CERT-884192',
-          certificateName: name || 'Verified Academic Degree',
-          issuer: issuer || 'Universal Issuer Registry',
-          verificationHash: 'SHA256:77F8201B4C',
-          hasImageProof: true,
-          auditNote: 'Credentials & PDF File Structure Verified Authentic.'
+          status: 'REJECTED_UNVERIFIED_SOURCE',
+          trustScore: '0.0%',
+          tier: 'UNVERIFIED',
+          certificateId: certId || 'UNVERIFIED',
+          certificateName: name || 'Unverified Screenshot',
+          issuer: issuer || 'Unrecognized Source',
+          verificationHash: 'INVALID_HASH_REJECTED',
+          hasImageProof: false,
+          auditNote: 'Verification Failed: Image or screenshot contains no cryptographically verifiable QR code or accredited registry proof.'
         });
       } finally {
         if (btn) btn.innerText = 'Verify Certificate Authenticity';

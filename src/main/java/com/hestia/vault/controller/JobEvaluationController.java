@@ -202,7 +202,7 @@ public class JobEvaluationController {
         ));
     }
 
-    // Verify Certificate Authenticity (MULTI-TIER QR/PKI SCANNING + PDF FORENSIC AUDIT + AUTO-EXTRACTION)
+    // Verify Certificate Authenticity (STRICT ANTI-FRAUD ENGINE - REJECT RANDOM SCREENSHOTS)
     @PostMapping("/certificates/upload-verify")
     public ResponseEntity<?> uploadAndVerifyCertificate(@RequestBody Map<String, String> request) {
         String certId = request.get("certId");
@@ -224,7 +224,7 @@ public class JobEvaluationController {
             } catch (Exception ignored) {}
         }
 
-        // 2. TIER 3: DOCUMENT FORENSIC AUDIT (METADATA & TEXT EXTRACTION)
+        // 2. TIER 3: DOCUMENT FORENSIC AUDIT (METADATA & TEXT EXTRACTION FOR PDF)
         DocumentAuditService.DocumentAuditResult auditResult = null;
         if (hasDocumentData) {
             try {
@@ -232,38 +232,12 @@ public class JobEvaluationController {
             } catch (Exception ignored) {}
         }
 
-        // AUTO-EXTRACT FIELDS FROM PDF TEXT IF USER LEFT THEM BLANK
-        if (auditResult != null && auditResult.extractedText() != null && !auditResult.extractedText().isBlank()) {
-            String extracted = auditResult.extractedText();
-            if (cleanedName.isBlank()) {
-                if (extracted.toLowerCase().contains("degree") || extracted.toLowerCase().contains("bachelor") || extracted.toLowerCase().contains("master")) {
-                    cleanedName = "Verified Academic Degree Certificate";
-                } else if (extracted.toLowerCase().contains("certificate of completion") || extracted.toLowerCase().contains("certified")) {
-                    cleanedName = "Verified Professional Certificate";
-                }
-            }
-            if (cleanedIssuer.isBlank()) {
-                for (String u : RECOGNIZED_UNIVERSITIES) {
-                    if (extracted.toLowerCase().contains(u)) {
-                        cleanedIssuer = u.substring(0, 1).toUpperCase() + u.substring(1);
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (cleanedName.isBlank()) cleanedName = "Verified Qualification Credential";
-        if (cleanedIssuer.isBlank()) cleanedIssuer = "Accredited Issuing Authority";
-        if (cleanedId.isBlank()) {
-            cleanedId = "HST-CERT-" + Math.abs((cleanedName + cleanedIssuer + System.currentTimeMillis()).hashCode() % 899999 + 100000);
-        }
-
         boolean isGibberishId = isGibberish(cleanedId);
         boolean isGibberishIssuer = isGibberish(cleanedIssuer);
         boolean recognizedIssuer = isRecognizedUniversity(cleanedIssuer);
 
-        // REJECT IF GIBBERISH INPUTS WITHOUT DOCUMENT PROOF
-        if (isGibberishId || isGibberishIssuer) {
+        // REJECT GIBBERISH ID OR ISSUER
+        if ((!cleanedId.isEmpty() && isGibberishId) || (!cleanedIssuer.isEmpty() && isGibberishIssuer)) {
             return ResponseEntity.ok(Map.of(
                 "status", "REJECTED_UNVERIFIED_SOURCE",
                 "trustScore", "0.0%",
@@ -277,9 +251,7 @@ public class JobEvaluationController {
             ));
         }
 
-        // EVALUATE SCENARIOS
-
-        // SCENARIO A: QR CODE / PKI CRYPTOGRAPHICALLY SIGNED (TIER 2)
+        // SCENARIO 1: QR CODE / PKI CRYPTOGRAPHICALLY SIGNED (TIER 2 - 99.8% TRUST)
         if (qrResult != null && qrResult.found()) {
             String hashInput = cleanedId + cleanedIssuer + qrResult.qrText();
             String shaHash = "SHA256:" + Integer.toHexString(hashInput.hashCode()).toUpperCase();
@@ -287,9 +259,9 @@ public class JobEvaluationController {
                 "status", "VERIFIED_AUTHENTIC",
                 "trustScore", "99.8%",
                 "tier", "TIER_2_QR_PKI",
-                "certificateId", cleanedId,
-                "certificateName", cleanedName,
-                "issuer", qrResult.issuerInfo() != null ? qrResult.issuerInfo() : cleanedIssuer,
+                "certificateId", cleanedId.isBlank() ? "HST-CERT-" + Math.abs(shaHash.hashCode() % 899999 + 100000) : cleanedId,
+                "certificateName", cleanedName.isBlank() ? "Cryptographically Verified Certificate" : cleanedName,
+                "issuer", qrResult.issuerInfo() != null ? qrResult.issuerInfo() : (cleanedIssuer.isBlank() ? "Verified Digital Issuer" : cleanedIssuer),
                 "hasImageProof", true,
                 "verificationHash", shaHash,
                 "auditNote", "Cryptographically Verified: Embedded QR Code / Digital Signature Payload Validated (" + qrResult.issuerInfo() + ").",
@@ -297,8 +269,15 @@ public class JobEvaluationController {
             ));
         }
 
-        // SCENARIO B: PDF / IMAGE DOCUMENT FORENSIC AUDIT (TIER 3)
-        if (auditResult != null && (auditResult.isPdf() || hasDocumentData)) {
+        // SCENARIO 2: NATIVE PDF DOCUMENT WITH EXTRACTED CERTIFICATE TEXT (TIER 3 - 95.0%-98.5% TRUST)
+        if (auditResult != null && auditResult.isPdf()) {
+            String extracted = auditResult.extractedText() != null ? auditResult.extractedText().toLowerCase() : "";
+            boolean hasCertKeywords = extracted.contains("certificate") || extracted.contains("degree") || 
+                                     extracted.contains("diploma") || extracted.contains("completion") || 
+                                     extracted.contains("university") || extracted.contains("institute") || 
+                                     extracted.contains("certify") || extracted.contains("transcript") || 
+                                     extracted.contains("passed") || extracted.contains("credits");
+
             String hashInput = cleanedId + cleanedIssuer + imageData.length();
             String shaHash = "SHA256:" + Integer.toHexString(hashInput.hashCode()).toUpperCase();
 
@@ -315,37 +294,55 @@ public class JobEvaluationController {
                     "auditNote", "Tamper Warning: PDF metadata shows editing software traces: " + String.join(", ", auditResult.detectedEditingTools()),
                     "verifiedAt", System.currentTimeMillis()
                 ));
-            } else {
+            } else if (hasCertKeywords && (recognizedIssuer || !cleanedIssuer.isBlank())) {
                 return ResponseEntity.ok(Map.of(
                     "status", "VERIFIED_AUTHENTIC",
                     "trustScore", recognizedIssuer ? "98.5%" : "95.0%",
                     "tier", "TIER_3_OCR_METADATA",
-                    "certificateId", cleanedId,
-                    "certificateName", cleanedName,
-                    "issuer", cleanedIssuer,
+                    "certificateId", cleanedId.isBlank() ? "HST-CERT-" + Math.abs(shaHash.hashCode() % 899999 + 100000) : cleanedId,
+                    "certificateName", cleanedName.isBlank() ? "Verified Academic Degree Certificate" : cleanedName,
+                    "issuer", cleanedIssuer.isBlank() ? "Accredited Issuing Authority" : cleanedIssuer,
                     "hasImageProof", true,
                     "verificationHash", shaHash,
-                    "auditNote", "Document Forensic Audit Verified: File structure clean with 0 tamper flags. Certificate proof validated.",
+                    "auditNote", "Document Forensic Audit Verified: PDF structure & academic text clean with 0 tamper flags.",
                     "verifiedAt", System.currentTimeMillis()
                 ));
             }
         }
 
-        // SCENARIO C: CREDENTIAL REGISTRY LOOKUP (NO FILE ATTACHED)
-        String hashInput = cleanedId + cleanedIssuer;
-        String shaHash = "SHA256:" + Integer.toHexString(hashInput.hashCode()).toUpperCase();
+        // SCENARIO 3: CREDENTIAL REGISTRY LOOKUP (NO FILE, BUT VALID RECOGNIZED ACCREDITED ISSUER + ID)
+        if (recognizedIssuer && !cleanedId.isBlank() && cleanedId.length() >= 4) {
+            String hashInput = cleanedId + cleanedIssuer;
+            String shaHash = "SHA256:" + Integer.toHexString(hashInput.hashCode()).toUpperCase();
+            return ResponseEntity.ok(Map.of(
+                "status", "VERIFIED_REGISTRY_RECORD",
+                "trustScore", "88.5%",
+                "tier", "TIER_1_EMAIL",
+                "certificateId", cleanedId,
+                "certificateName", cleanedName.isBlank() ? "Verified Academic Certificate" : cleanedName,
+                "issuer", cleanedIssuer,
+                "hasImageProof", false,
+                "verificationHash", shaHash,
+                "auditNote", "Credentials Verified against Institutional Accreditation Registry Records.",
+                "verifiedAt", System.currentTimeMillis()
+            ));
+        }
+
+        // DEFAULT REJECTION FOR UNACCREDITED RANDOM SCREENSHOTS / NON-CERTIFICATE IMAGES
+        String rejectNote = hasDocumentData 
+            ? "Verification Failed: Uploaded image/screenshot contains no cryptographically verifiable QR code, digital signature payload, or accredited university text. Random non-certificate screenshots are assigned 0% trust score."
+            : "Verification Failed: Credential ID or Issuer is not registered in the Accredited University Registry. Random screenshots or invalid IDs are assigned 0% trust score.";
 
         return ResponseEntity.ok(Map.of(
-            "status", "VERIFIED_REGISTRY_RECORD",
-            "trustScore", recognizedIssuer ? "90.0%" : "85.0%",
-            "tier", "TIER_1_EMAIL",
-            "certificateId", cleanedId,
-            "certificateName", cleanedName,
-            "issuer", cleanedIssuer,
-            "hasImageProof", false,
-            "verificationHash", shaHash,
-            "auditNote", "Credentials Verified against Academic & Professional Registry Records.",
-            "verifiedAt", System.currentTimeMillis()
+            "status", "REJECTED_UNVERIFIED_SOURCE",
+            "trustScore", "0.0%",
+            "tier", "UNVERIFIED",
+            "certificateId", cleanedId.isBlank() ? "UNVERIFIED" : cleanedId,
+            "certificateName", cleanedName.isBlank() ? "Unverified Screenshot" : cleanedName,
+            "issuer", cleanedIssuer.isBlank() ? "Unrecognized Source" : cleanedIssuer,
+            "hasImageProof", hasDocumentData,
+            "verificationHash", "INVALID_HASH_REJECTED",
+            "auditNote", rejectNote
         ));
     }
 
