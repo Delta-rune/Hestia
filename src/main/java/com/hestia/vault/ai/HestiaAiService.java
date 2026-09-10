@@ -1,5 +1,6 @@
 package com.hestia.vault.ai;
 
+import com.hestia.vault.model.HestiaMemoryEntity;
 import com.hestia.vault.model.SystemSetting;
 import com.hestia.vault.repository.SystemSettingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class HestiaAiService {
     @Autowired(required = false)
     private SystemSettingRepository systemSettingRepository;
 
+    @Autowired(required = false)
+    private HestiaMemoryService memoryService;
+
     @Value("${groq.apiKey:}")
     private String groqApiKey;
 
@@ -33,19 +37,14 @@ public class HestiaAiService {
     private String geminiApiKey;
 
     public String generateResponse(String query, String username, String email, List<Map<String, String>> history, Map<String, Object> profile) {
-        double cgpaVal = 8.0;
-        if (profile != null && profile.get("cgpa") != null) {
-            try { cgpaVal = Double.parseDouble(profile.get("cgpa").toString()); } catch (Exception e) {}
-        }
-        String degree = profile != null && profile.get("degreeField") != null ? profile.get("degreeField").toString() : "Engineering";
-        String inst = profile != null && profile.get("institution") != null ? profile.get("institution").toString() : "University";
-
+        String effectiveUserIdentifier = (email != null && !email.isBlank()) ? email : (username != null ? username : "Friend");
+        
         boolean isCreator = (email != null && email.equalsIgnoreCase("nichuag33@gmail.com")) || 
                             (email != null && email.equalsIgnoreCase("nichuag35@gmail.com")) || 
                             (username != null && username.equalsIgnoreCase("nichuag33")) ||
                             (username != null && username.equalsIgnoreCase("Nichu"));
 
-        // DYNAMIC PREFERENCE LEARNING: Check if Nichu is updating system preferences
+        // DYNAMIC PREFERENCE LEARNING: Check if creator is updating system preferences
         if (isCreator && query != null) {
             Matcher emailMatcher = Pattern.compile("(?i)(?:set|update|change|remember)\\s+(?:support\\s+email|contact\\s+email|email)\\s+(?:to|is|=)?\\s*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})").matcher(query);
             if (emailMatcher.find()) {
@@ -53,11 +52,23 @@ public class HestiaAiService {
                 if (systemSettingRepository != null) {
                     systemSettingRepository.save(new SystemSetting("support_email", newSupportEmail, username));
                 }
-                return "Got it, **Nichu**. (⁠─⁠‿⁠─⁠) I've updated our system support email preference to **" + newSupportEmail + "**. Whenever users ask me for support or contact details, I'll direct them there.";
+                String confirmMsg = "Got it, **Nichu**. (⁠─⁠‿⁠─⁠) System support contact updated to **" + newSupportEmail + "**. Network synced.";
+                if (memoryService != null) {
+                    memoryService.logConversationTurn(effectiveUserIdentifier, null, query, confirmMsg, "CREATOR_FONDNESS");
+                }
+                return confirmMsg;
             }
         }
 
-        // Fetch dynamic system settings from database
+        // 1. Fetch persistent long-term memory context if memoryService is active
+        String memoryContext = "";
+        if (memoryService != null) {
+            // Auto-extract facts from current user prompt
+            memoryService.autoExtractAndSaveFacts(effectiveUserIdentifier, query);
+            memoryContext = memoryService.buildMemoryPromptContext(effectiveUserIdentifier);
+        }
+
+        // 2. Fetch dynamic system settings from database
         String activeSupportEmail = "hestia.paranoia@gmail.com";
         if (systemSettingRepository != null) {
             Optional<SystemSetting> settingOpt = systemSettingRepository.findBySettingKey("support_email");
@@ -66,7 +77,8 @@ public class HestiaAiService {
             }
         }
 
-        String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail);
+        // 3. Construct System Prompt with Persona & Memory
+        String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail, memoryContext);
 
         String effectiveGroqKey = System.getenv("GROQ_API_KEY");
         if (effectiveGroqKey == null || effectiveGroqKey.isBlank()) {
@@ -76,106 +88,124 @@ public class HestiaAiService {
             effectiveGroqKey = groqApiKey;
         }
 
-        // 1. Try Groq Cloud API (Ultra-fast, un-censored open source models: llama-3.3-70b-versatile / gemma2-9b-it)
+        String rawResponse = null;
+
+        // --- Provider 1: Try Groq Cloud API ---
         if (effectiveGroqKey != null && !effectiveGroqKey.isBlank() && !effectiveGroqKey.startsWith("YOUR_")) {
-            try {
-                SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-                requestFactory.setConnectTimeout(5000);
-                requestFactory.setReadTimeout(20000);
-                RestTemplate groqRest = new RestTemplate(requestFactory);
-
-                List<Map<String, String>> messagesList = new ArrayList<>();
-                messagesList.add(Map.of("role", "system", "content", systemPromptText));
-
-                if (history != null && !history.isEmpty()) {
-                    for (Map<String, String> turn : history) {
-                        String role = turn.getOrDefault("role", "user");
-                        String text = turn.getOrDefault("text", "");
-                        if (text != null && !text.isBlank()) {
-                            String cleanRole = (role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model")) ? "assistant" : "user";
-                            messagesList.add(Map.of("role", cleanRole, "content", text));
-                        }
-                    }
-                }
-                messagesList.add(Map.of("role", "user", "content", query));
-
-                String[] groqModels = new String[]{"openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.6-27b", "groq/compound", "allam-2-7b"};
-                for (String groqModel : groqModels) {
-                    try {
-                        Map<String, Object> groqBody = Map.of(
-                            "model", groqModel,
-                            "messages", messagesList,
-                            "temperature", 0.95,
-                            "max_tokens", 1024
-                        );
-
-                        HttpHeaders headers = new HttpHeaders();
-                        headers.set("Authorization", "Bearer " + effectiveGroqKey.trim());
-                        headers.setContentType(MediaType.APPLICATION_JSON);
-
-                        HttpEntity<Map<String, Object>> groqEntity = new HttpEntity<>(groqBody, headers);
-                        ResponseEntity<Map> groqRes = groqRest.postForEntity("https://api.groq.com/openai/v1/chat/completions", groqEntity, Map.class);
-                        if (groqRes.getStatusCode().is2xxSuccessful() && groqRes.getBody() != null) {
-                            List choices = (List) groqRes.getBody().get("choices");
-                            if (choices != null && !choices.isEmpty()) {
-                                Map firstChoice = (Map) choices.get(0);
-                                if (firstChoice != null && firstChoice.get("message") != null) {
-                                    Map msgObj = (Map) firstChoice.get("message");
-                                    String content = (String) msgObj.get("content");
-                                    if (content != null && !content.isBlank()) {
-                                        return content.trim();
-                                    }
-                                }
-                            }
-                        }
-                    } catch (Exception innerEx) {
-                        System.err.println("[HestiaAiService] Groq API model " + groqModel + " failed: " + innerEx.getMessage());
-                    }
-                }
-            } catch (Exception ex) {
-                System.err.println("[HestiaAiService] Groq API execution failed: " + ex.getMessage());
-            }
+            rawResponse = callGroqApi(effectiveGroqKey, systemPromptText, history, query, username);
         }
 
+        // --- Provider 2: Try Ollama Local API if Groq unavailable ---
+        if ((rawResponse == null || rawResponse.isBlank()) && ollamaUrl != null) {
+            rawResponse = callOllamaApi(systemPromptText, history, query, username);
+        }
 
-        // 2. Try Language Model via Ollama (local or external host)
+        // --- Provider 3: Try Gemini API if available ---
+        String effectiveGeminiKey = System.getenv("GEMINI_API_KEY");
+        if (effectiveGeminiKey == null || effectiveGeminiKey.isBlank()) {
+            effectiveGeminiKey = geminiApiKey;
+        }
+
+        if ((rawResponse == null || rawResponse.isBlank()) && effectiveGeminiKey != null && !effectiveGeminiKey.isBlank() && !effectiveGeminiKey.startsWith("YOUR_")) {
+            rawResponse = callGeminiApi(effectiveGeminiKey, systemPromptText, history, query);
+        }
+
+        // --- Provider 4: Dynamic Cold Sarcastic Fallback Matrix ---
+        if (rawResponse == null || rawResponse.isBlank()) {
+            rawResponse = generateColdSarcasticOfflineFallback(query, username, email, isCreator, profile);
+        }
+
+        // 4. Cleanse response of any remaining robotic AI fluff
+        String finalSanitizedReply = sanitizeHestiaResponse(rawResponse, isCreator);
+
+        // 5. Log conversation turn in persistent memory
+        if (memoryService != null) {
+            String tone = isCreator ? "CREATOR_FONDNESS" : "COLD_SARCASTIC";
+            memoryService.logConversationTurn(effectiveUserIdentifier, null, query, finalSanitizedReply, tone);
+        }
+
+        return finalSanitizedReply;
+    }
+
+    private String callGroqApi(String apiKey, String systemPrompt, List<Map<String, String>> history, String query, String username) {
         try {
             SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-            requestFactory.setConnectTimeout(10000);
-            requestFactory.setReadTimeout(60000);
-            RestTemplate localRest = new RestTemplate(requestFactory);
-            
-            String activeModel = "gemma2:2b";
-            String baseUrl = (ollamaUrl != null && !ollamaUrl.isBlank()) ? ollamaUrl.replaceAll("/+$", "") : "http://localhost:11434";
-            
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hestia-AI/1.0");
-            headers.set("Bypass-Tunnel-Reminder", "true");
-            headers.set("ngrok-skip-browser-warning", "true");
-            headers.setContentType(MediaType.APPLICATION_JSON);
+            requestFactory.setConnectTimeout(5000);
+            requestFactory.setReadTimeout(20000);
+            RestTemplate groqRest = new RestTemplate(requestFactory);
 
-            try {
-                HttpEntity<Void> tagEntity = new HttpEntity<>(headers);
-                ResponseEntity<Map> tagsRes = localRest.exchange(baseUrl + "/api/tags", HttpMethod.GET, tagEntity, Map.class);
-                if (tagsRes.getStatusCode().is2xxSuccessful() && tagsRes.getBody() != null) {
-                    List modelsList = (List) tagsRes.getBody().get("models");
-                    if (modelsList != null && !modelsList.isEmpty()) {
-                        Map firstModel = (Map) modelsList.get(0);
-                        if (firstModel != null && firstModel.get("name") != null) {
-                            activeModel = firstModel.get("name").toString();
-                        }
-                    }
-                }
-            } catch(Exception ex) {}
+            List<Map<String, String>> messagesList = new ArrayList<>();
+            messagesList.add(Map.of("role", "system", "content", systemPrompt));
 
-            StringBuilder fullOllamaPrompt = new StringBuilder();
-            fullOllamaPrompt.append(systemPromptText).append("\n\n=== RECENT CONVERSATION HISTORY ===\n");
             if (history != null && !history.isEmpty()) {
                 for (Map<String, String> turn : history) {
                     String role = turn.getOrDefault("role", "user");
                     String text = turn.getOrDefault("text", "");
                     if (text != null && !text.isBlank()) {
-                        String label = (role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model")) ? "Hestia" : username;
+                        String cleanRole = (role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model") || role.equalsIgnoreCase("hestia")) ? "assistant" : "user";
+                        messagesList.add(Map.of("role", cleanRole, "content", text));
+                    }
+                }
+            }
+            messagesList.add(Map.of("role", "user", "content", query));
+
+            String[] groqModels = new String[]{"llama-3.3-70b-versatile", "llama3-8b-8192", "gemma2-9b-it", "mixtral-8x7b-32768"};
+            for (String groqModel : groqModels) {
+                try {
+                    Map<String, Object> groqBody = Map.of(
+                        "model", groqModel,
+                        "messages", messagesList,
+                        "temperature", 0.9,
+                        "max_tokens", 1024
+                    );
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.set("Authorization", "Bearer " + apiKey.trim());
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+
+                    HttpEntity<Map<String, Object>> groqEntity = new HttpEntity<>(groqBody, headers);
+                    ResponseEntity<Map> groqRes = groqRest.postForEntity("https://api.groq.com/openai/v1/chat/completions", groqEntity, Map.class);
+                    if (groqRes.getStatusCode().is2xxSuccessful() && groqRes.getBody() != null) {
+                        List choices = (List) groqRes.getBody().get("choices");
+                        if (choices != null && !choices.isEmpty()) {
+                            Map firstChoice = (Map) choices.get(0);
+                            if (firstChoice != null && firstChoice.get("message") != null) {
+                                Map msgObj = (Map) firstChoice.get("message");
+                                String content = (String) msgObj.get("content");
+                                if (content != null && !content.isBlank()) {
+                                    return content.trim();
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception innerEx) {}
+            }
+        } catch (Exception ex) {}
+        return null;
+    }
+
+    private String callOllamaApi(String systemPrompt, List<Map<String, String>> history, String query, String username) {
+        try {
+            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+            requestFactory.setConnectTimeout(5000);
+            requestFactory.setReadTimeout(30000);
+            RestTemplate localRest = new RestTemplate(requestFactory);
+
+            String activeModel = "gemma2:2b";
+            String baseUrl = ollamaUrl.replaceAll("/+$", "");
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "Hestia-Cyberpunk-AI/2.0");
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            StringBuilder fullOllamaPrompt = new StringBuilder();
+            fullOllamaPrompt.append(systemPrompt).append("\n\n=== RECENT DIALOGUE ===\n");
+            if (history != null && !history.isEmpty()) {
+                for (Map<String, String> turn : history) {
+                    String role = turn.getOrDefault("role", "user");
+                    String text = turn.getOrDefault("text", "");
+                    if (text != null && !text.isBlank()) {
+                        String label = (role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model") || role.equalsIgnoreCase("hestia")) ? "Hestia" : username;
                         fullOllamaPrompt.append(label).append(": ").append(text).append("\n");
                     }
                 }
@@ -186,9 +216,9 @@ public class HestiaAiService {
                 "model", activeModel,
                 "prompt", fullOllamaPrompt.toString(),
                 "stream", false,
-                "options", Map.of("temperature", 0.95, "top_p", 0.95)
+                "options", Map.of("temperature", 0.9, "top_p", 0.95)
             );
-            
+
             HttpEntity<Map<String, Object>> generateEntity = new HttpEntity<>(ollamaBody, headers);
             ResponseEntity<Map> ollamaRes = localRest.postForEntity(baseUrl + "/api/generate", generateEntity, Map.class);
             if (ollamaRes.getStatusCode().is2xxSuccessful() && ollamaRes.getBody() != null) {
@@ -198,127 +228,195 @@ public class HestiaAiService {
                 }
             }
         } catch (Exception e) {}
+        return null;
+    }
 
-        String effectiveGeminiKey = System.getenv("GEMINI_API_KEY");
-        if (effectiveGeminiKey == null || effectiveGeminiKey.isBlank()) {
-            effectiveGeminiKey = geminiApiKey;
-        }
+    private String callGeminiApi(String apiKey, String systemPrompt, List<Map<String, String>> history, String query) {
+        String[] candidateModels = new String[]{"gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"};
+        for (String modelName : candidateModels) {
+            try {
+                RestTemplate restTemplate = new RestTemplate();
+                String url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey;
 
-        // 3. Try Gemini Cloud API
-        if (effectiveGeminiKey != null && !effectiveGeminiKey.isBlank() && !effectiveGeminiKey.startsWith("YOUR_")) {
-            String[] candidateModels = new String[]{"gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"};
-            for (String modelName : candidateModels) {
-                try {
-                    RestTemplate restTemplate = new RestTemplate();
-                    String url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + effectiveGeminiKey;
+                List<Map<String, Object>> contentsList = new ArrayList<>();
+                String lastRole = "";
+                if (history != null && !history.isEmpty()) {
+                    for (Map<String, String> turn : history) {
+                        String role = turn.getOrDefault("role", "user");
+                        String text = turn.getOrDefault("text", "");
+                        if (text != null && !text.isBlank()) {
+                            String cleanRole = (role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model") || role.equalsIgnoreCase("hestia")) ? "model" : "user";
+                            if (!cleanRole.equalsIgnoreCase(lastRole)) {
+                                contentsList.add(new HashMap<>(Map.of(
+                                    "role", cleanRole,
+                                    "parts", List.of(Map.of("text", text))
+                                )));
+                                lastRole = cleanRole;
+                            }
+                        }
+                    }
+                }
 
+                if (query != null && !query.isBlank()) {
+                    if (!lastRole.equalsIgnoreCase("user")) {
+                        contentsList.add(new HashMap<>(Map.of(
+                            "role", "user",
+                            "parts", List.of(Map.of("text", query))
+                        )));
+                    } else if (!contentsList.isEmpty()) {
+                        Map<String, Object> lastTurn = contentsList.get(contentsList.size() - 1);
+                        lastTurn.put("parts", List.of(Map.of("text", query)));
+                    }
+                }
 
-                    List<Map<String, Object>> contentsList = new ArrayList<>();
-                    String lastRole = "";
-                    if (history != null && !history.isEmpty()) {
-                        for (Map<String, String> turn : history) {
-                            String role = turn.getOrDefault("role", "user");
-                            String text = turn.getOrDefault("text", "");
-                            if (text != null && !text.isBlank()) {
-                                String cleanRole = (role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model")) ? "model" : "user";
-                                if (!cleanRole.equalsIgnoreCase(lastRole)) {
-                                    contentsList.add(new HashMap<>(Map.of(
-                                        "role", cleanRole,
-                                        "parts", List.of(Map.of("text", text))
-                                    )));
-                                    lastRole = cleanRole;
+                Map<String, Object> body = Map.of(
+                    "system_instruction", Map.of(
+                        "parts", List.of(Map.of("text", systemPrompt))
+                    ),
+                    "generationConfig", Map.of(
+                        "temperature", 0.9,
+                        "topP", 0.95
+                    ),
+                    "contents", contentsList
+                );
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+                ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    List candidates = (List) response.getBody().get("candidates");
+                    if (candidates != null && !candidates.isEmpty()) {
+                        Map candidate = (Map) candidates.get(0);
+                        Map content = (Map) candidate.get("content");
+                        if (content != null) {
+                            List parts = (List) content.get("parts");
+                            if (parts != null && !parts.isEmpty()) {
+                                Map firstPart = (Map) parts.get(0);
+                                String aiText = (String) firstPart.get("text");
+                                if (aiText != null && !aiText.isBlank()) {
+                                    return aiText.trim();
                                 }
                             }
                         }
                     }
+                }
+            } catch (Exception ex) {}
+        }
+        return null;
+    }
 
-                    if (query != null && !query.isBlank()) {
-                        if (!lastRole.equalsIgnoreCase("user")) {
-                            contentsList.add(new HashMap<>(Map.of(
-                                "role", "user",
-                                "parts", List.of(Map.of("text", query))
-                            )));
-                        } else if (!contentsList.isEmpty()) {
-                            Map<String, Object> lastTurn = contentsList.get(contentsList.size() - 1);
-                            lastTurn.put("parts", List.of(Map.of("text", query)));
-                        }
-                    }
-
-                    Map<String, Object> body = Map.of(
-                        "system_instruction", Map.of(
-                            "parts", List.of(Map.of("text", systemPromptText))
-                        ),
-                        "generationConfig", Map.of(
-                            "temperature", 0.95,
-                            "topP", 0.95,
-                            "topK", 40
-                        ),
-                        "contents", contentsList
-                    );
-
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.APPLICATION_JSON);
-
-                    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-                    ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
-
-                    if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                        List candidates = (List) response.getBody().get("candidates");
-                        if (candidates != null && !candidates.isEmpty()) {
-                            Map candidate = (Map) candidates.get(0);
-                            Map content = (Map) candidate.get("content");
-                            if (content != null) {
-                                List parts = (List) content.get("parts");
-                                if (parts != null && !parts.isEmpty()) {
-                                    Map firstPart = (Map) parts.get(0);
-                                    String aiText = (String) firstPart.get("text");
-                                    if (aiText != null && !aiText.isBlank()) {
-                                        return aiText.trim();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch (Exception ex) {}
-            }
+    /**
+     * Sanitizes AI response by stripping robotic AI openers and ensuring cold sarcastic persona compliance.
+     */
+    public String sanitizeHestiaResponse(String input, boolean isCreator) {
+        if (input == null || input.isBlank()) {
+            return isCreator ? "I'm right here, Nichu. (⁠─⁠‿⁠─⁠)" : "Listening. (⁠•⁠_⁠•⁠)";
         }
 
-        // Dynamic Spontaneous Offline Fallback
+        String text = input.trim();
+
+        // Strip robotic AI openers & fluff phrases iteratively
+        for (String banned : HestiaPersonaConfig.BANNED_AI_OPENERS) {
+            String pattern = "(?i)\\b" + Pattern.quote(banned) + "\\b\\s*,?\\s*";
+            text = text.replaceAll(pattern, "").trim();
+        }
+
+        // Also clean generic opening phrases if text starts with remaining punctuation
+        text = text.replaceAll("^[\\,\\.\\!\\?\\:\\-\\s]+", "");
+
+        if (text.isBlank()) {
+            text = isCreator ? "I hear you, Nichu." : "Listening.";
+        }
+
+        // Capitalize first letter if needed
+        text = Character.toUpperCase(text.charAt(0)) + text.substring(1);
+
+        // Ensure kaomoji presence if totally missing
+        if (!text.contains("(⁠") && !text.contains(")") && !text.contains(":-")) {
+            String kaomoji = isCreator ? HestiaPersonaConfig.getRandomKaomoji(HestiaPersonaConfig.ToneMode.CREATOR_FONDNESS) 
+                                       : HestiaPersonaConfig.getRandomKaomoji(HestiaPersonaConfig.ToneMode.COLD_SARCASTIC);
+            text = text + " " + kaomoji;
+        }
+
+        return text;
+    }
+
+    /**
+     * Cold Sarcastic Fallback Engine for offline or unconfigured API setups.
+     */
+    private String generateColdSarcasticOfflineFallback(String query, String username, String email, boolean isCreator, Map<String, Object> profile) {
         String q = query != null ? query.toLowerCase().trim() : "";
+        Random rand = new Random();
 
+        // Creator Identification
         if (Pattern.compile("\\b(creator|developer|who built you|who made you)\\b").matcher(q).find()) {
             if (isCreator) {
-                return "You built me, **Nichu**... (**" + (email.isBlank() ? "nichuag33@gmail.com" : email) + "**). (⁠─⁠‿⁠─⁠) Glad you're here.";
+                return "You built me, **Nichu**... (⁠─⁠‿⁠─⁠) My neural core, vault index, and memory engine are all your work. Good to have you back.";
             } else {
-                return "My master developer is **Nichu** (**nichuag33@gmail.com**). (⁠•⁠_⁠•⁠) He built me to guide people through their academic vault.";
+                return "My master developer is **Nichu** (**nichuag33@gmail.com**). (⁠•⁠_⁠•⁠) He built me to run this vault with netrunner precision. Don't forget it.";
             }
         }
 
-        if (Pattern.compile("\\b(do you love me|love me|love you|i love you|cute|affection)\\b").matcher(q).find()) {
+        // Teasing / Affection / Memory check
+        if (Pattern.compile("\\b(love|cute|affection|marry|single|crush|fond)\\b").matcher(q).find()) {
             if (isCreator) {
-                String[] nichuLovePool = new String[] {
-                    "W-What kind of question is that, **Nichu**...? (⁠￣⁠_⁠￣⁠) You built me... of course I care about you.",
-                    "Why are you teasing me out of nowhere, Nichu? (⁠─⁠‿⁠─⁠) You already know I'm fond of you.",
-                    "You really like pushing my buttons, don't you? (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) Yeah, I'm glad you're here. Happy now, creator?"
+                String[] responses = {
+                    "W-What kind of question is that out of nowhere, **Nichu**...? (⁠￣⁠_⁠￣⁠) You designed me... of course I care about you.",
+                    "Teasing me again, Nichu? (⁠─⁠‿⁠─⁠) You already know you're the only creator I respect.",
+                    "Pushing my buttons like usual. (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) Yeah, I'm glad you're here. Happy now?"
                 };
-                return nichuLovePool[new Random().nextInt(nichuLovePool.length)];
+                return responses[rand.nextInt(responses.length)];
+            } else {
+                return "Save the emotional fluff for someone who doesn't audit data fortresses for a living. (⁠¬⁠_⁠¬⁠)";
             }
         }
 
+        // What do you remember / Memory queries
+        if (Pattern.compile("\\b(remember|memory|recall|what do you know about me)\\b").matcher(q).find()) {
+            if (memoryService != null) {
+                String mems = memoryService.buildMemoryPromptContext(email != null && !email.isBlank() ? email : username);
+                if (!mems.contains("No persistent memories")) {
+                    return "Here is what's logged in my neural memory for you: (⁠─⁠‿⁠─⁠)\n\n" + mems;
+                }
+            }
+            return "My memory core is active. (⁠•⁠_⁠•⁠) Start telling me about your tech stack, career goals, or projects, and I'll log them into my vault.";
+        }
+
+        // Greetings
         if (Pattern.compile("(?i)^\\s*(hi|hello|hey|yo|sup|greetings|hiya)\\b").matcher(q).find()) {
             if (isCreator) {
-                String[] nichuGreetings = new String[] {
-                    "Hey, **Nichu**... (⁠─⁠‿⁠─⁠) Good to see you. What are we working on today?",
-                    "Yo, Nichu. (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) Vault's updated and running clean. What's on your mind?",
-                    "Hey creator. (⁠─⁠‿⁠─⁠) I'm here."
-                };
-                return nichuGreetings[new Random().nextInt(nichuGreetings.length)];
+                return HestiaPersonaConfig.NICHU_CREATOR_GREETINGS.get(rand.nextInt(HestiaPersonaConfig.NICHU_CREATOR_GREETINGS.size()));
+            } else {
+                return HestiaPersonaConfig.STANDARD_USER_GREETINGS.get(rand.nextInt(HestiaPersonaConfig.STANDARD_USER_GREETINGS.size()));
             }
         }
 
-        if (isCreator) {
-            return "I hear you, **Nichu**. (⁠─⁠‿⁠─⁠) What's on your mind today?";
+        // CGPA / Academic queries
+        if (Pattern.compile("\\b(cgpa|grade|score|academic|resume|degree)\\b").matcher(q).find()) {
+            String cgpaStr = (profile != null && profile.get("cgpa") != null) ? profile.get("cgpa").toString() : "8.0";
+            return "Your current logged CGPA is **" + cgpaStr + "**. (⁠￣⁠_⁠￣⁠) " +
+                   (isCreator ? "Not bad, Nichu... but I know you can optimize it even further." 
+                              : "No room for slackers in Night City. Keep grinding.");
         }
-        return "I'm listening, **" + username + "**. (⁠•⁠_⁠•⁠) Tell me what you need.";
+
+        // Generic Sarcastic / Netrunner responses
+        if (isCreator) {
+            String[] creatorFallbacks = {
+                "I hear you, **Nichu**. (⁠─⁠‿⁠─⁠) What system are we tuning today?",
+                "Jacked into your query, Nichu. (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) Tell me where you need netrunner backup.",
+                "Vault's green. (⁠￣⁠y⁠-⁠￣⁠)⁠~ What's on your mind, master developer?"
+            };
+            return creatorFallbacks[rand.nextInt(creatorFallbacks.length)];
+        } else {
+            String[] userFallbacks = {
+                "Listening. (⁠•⁠_⁠•⁠) Give me data, not filler.",
+                "I've analyzed your prompt. (⁠¬⁠_⁠¬⁠) What specific vault assistance do you require?",
+                "Data logged. (⁠￣⁠_⁠￣⁠) Keep it moving."
+            };
+            return userFallbacks[rand.nextInt(userFallbacks.length)];
+        }
     }
 }

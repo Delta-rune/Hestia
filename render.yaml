@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: hestia-vault
+    env: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        value: https://xvwohnitmscicdkcldse.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2d29obml0bXNjaWNka2NsZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4MjQ0MTgsImV4cCI6MjEwMTQwMDQxOH0.WH11EnxmWCmpxM8QO9dicslStTFju3rrk1EaU8lQ3PM

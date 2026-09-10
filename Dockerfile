@@ -19,5 +19,5 @@ COPY --from=build /app/target/vault-0.0.1-SNAPSHOT.jar app.jar
 # Expose port 8080
 EXPOSE 8080
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the application with memory limit optimized for Render
+ENTRYPOINT ["java", "-Xmx400m", "-jar", "app.jar"]
