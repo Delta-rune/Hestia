@@ -6,15 +6,18 @@ import com.hestia.vault.repository.HestiaConversationRepository;
 import com.hestia.vault.repository.HestiaMemoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
+/**
+ * Associative Episodic Memory Service for Hestia 2.0.
+ * Extracts preferences, technical competencies, life milestones, stress triggers,
+ * and conversational commitments to maintain human-like cross-session awareness.
+ */
 @Service
 public class HestiaMemoryService {
 
@@ -24,15 +27,19 @@ public class HestiaMemoryService {
     @Autowired(required = false)
     private HestiaConversationRepository conversationRepository;
 
-    // Pattern matchers for automated fact extraction
+    // Pattern matchers for automated cognitive fact & episodic event extraction
     private static final List<FactExtractionPattern> PATTERNS = List.of(
-        new FactExtractionPattern("tech_stack", "(?i)(?:my tech stack is|i work with|i use|i build with|my stack is|proficient in|learning)\\s+([A-Za-z0-9,\\s+#\\.-]{3,60})", "PREFERENCE"),
+        new FactExtractionPattern("tech_stack", "(?i)(?:my tech stack is|i work with|i use|i build with|my stack is|proficient in|learning)\\s+([A-Za-z0-9,\\s+#\\.-]{3,60})", "TECHNICAL"),
         new FactExtractionPattern("favorite_language", "(?i)(?:my favorite language is|i love coding in|i prefer|favorite programming language is)\\s+([A-Za-z0-9#\\+]+)", "PREFERENCE"),
-        new FactExtractionPattern("career_goal", "(?i)(?:i want to become|my dream job is|aiming for|target role is|i work as a|my career goal is)\\s+([A-Za-z0-9\\s_-]{3,50})", "BACKGROUND"),
-        new FactExtractionPattern("current_project", "(?i)(?:i am working on|my project is|building a|currently developing)\\s+([A-Za-z0-9\\s_-]{3,60})", "BACKGROUND"),
-        new FactExtractionPattern("nickname", "(?i)(?:call me|my name is|my nickname is|you can refer to me as)\\s+([A-Za-z0-9_-]{2,30})", "PERSONALITY_TRAIT"),
-        new FactExtractionPattern("hobby", "(?i)(?:in my free time|my hobby is|i enjoy|i like playing|i love reading)\\s+([A-Za-z0-9\\s_-]{3,50})", "PREFERENCE"),
-        new FactExtractionPattern("user_promise", "(?i)(?:i promise|i will|i'll finish|i will complete|i'll deploy)\\s+([A-Za-z0-9\\s_-]{3,60})", "PROMISE")
+        new FactExtractionPattern("career_goal", "(?i)(?:i want to become|my dream job is|aiming for|target role is|i work as a|my career goal is)\\s+([A-Za-z0-9\\s_-]{3,50})", "CAREER"),
+        new FactExtractionPattern("current_project", "(?i)(?:i am working on|my project is|building a|currently developing)\\s+([A-Za-z0-9\\s_-]{3,60})", "PROJECT"),
+        new FactExtractionPattern("nickname", "(?i)(?:call me|my name is|my nickname is|you can refer to me as)\\s+([A-Za-z0-9_-]{2,30})", "IDENTITY"),
+        new FactExtractionPattern("hobby", "(?i)(?:in my free time|my hobby is|i enjoy|i like playing|i love reading)\\s+([A-Za-z0-9\\s_-]{3,50})", "PERSONAL"),
+        new FactExtractionPattern("stress_trigger", "(?i)(?:i am stressed about|worried about|anxious about|freaking out about|so nervous for)\\s+([A-Za-z0-9\\s_-]{3,60})", "EMOTION"),
+        new FactExtractionPattern("upcoming_milestone", "(?i)(?:my exam is on|submission is on|deadline is|viva is on|interview scheduled for)\\s+([A-Za-z0-9\\s_-]{3,60})", "MILESTONE"),
+        new FactExtractionPattern("proud_achievement", "(?i)(?:i finally fixed|i got selected|i cleared|i published|i finished building)\\s+([A-Za-z0-9\\s_-]{3,60})", "ACHIEVEMENT"),
+        new FactExtractionPattern("user_promise", "(?i)(?:i promise(?: to)?|i will|i'll finish|i will complete|i'll deploy)\\s+([A-Za-z0-9\\s_-]{3,60})", "PROMISE"),
+        new FactExtractionPattern("sleep_deprivation", "(?i)(?:pulled an all[- ]nighter|haven't slept|working all night|running on coffee|so exhausted)\\b", "HEALTH")
     );
 
     private static class FactExtractionPattern {
@@ -48,7 +55,7 @@ public class HestiaMemoryService {
     }
 
     /**
-     * Automatically extracts facts from user input and saves them to long-term memory.
+     * Automatically extracts facts and emotional cues from user input and updates episodic memory.
      */
     @Transactional
     public List<HestiaMemoryEntity> autoExtractAndSaveFacts(String userIdentifier, String userMessage) {
@@ -62,9 +69,13 @@ public class HestiaMemoryService {
         for (FactExtractionPattern p : PATTERNS) {
             Matcher matcher = p.pattern.matcher(userMessage);
             if (matcher.find()) {
-                String extractedVal = matcher.group(1).trim();
-                // Clean trailing punctuation
-                extractedVal = extractedVal.replaceAll("[\\.\\!\\?]+$", "");
+                String extractedVal;
+                if (matcher.groupCount() >= 1 && matcher.group(1) != null) {
+                    extractedVal = matcher.group(1).trim().replaceAll("[\\.\\!\\?]+$", "");
+                } else {
+                    extractedVal = "Logged during conversation: " + matcher.group(0).trim();
+                }
+
                 if (extractedVal.length() >= 2) {
                     HestiaMemoryEntity memory = saveOrUpdateMemory(normalizedId, p.key, extractedVal, p.category);
                     if (memory != null) {
@@ -102,16 +113,17 @@ public class HestiaMemoryService {
     public String buildMemoryPromptContext(String userIdentifier) {
         List<HestiaMemoryEntity> memories = getUserMemories(userIdentifier);
         if (memories.isEmpty()) {
-            return "No persistent memories logged yet for this user.";
+            return "No prior long-term memories logged. Treat this as a fresh, engaging conversation.";
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("=== LONG-TERM MEMORY & RECORDED FACTS ABOUT USER ===\n");
+        sb.append("=== LONG-TERM EPISODIC MEMORIES (THINGS YOU KNOW ABOUT THEM) ===\n");
         for (HestiaMemoryEntity mem : memories) {
             sb.append("• [").append(mem.getMemoryKey().toUpperCase()).append("]: ")
               .append(mem.getMemoryValue())
-              .append(" (Category: ").append(mem.getCategory()).append(")\n");
+              .append(" (Context: ").append(mem.getCategory()).append(")\n");
         }
+        sb.append("• INSTRUCTION: Weave these memories in effortlessly if relevant. Do not enumerate them mechanically; reference them naturally as a close friend would.");
         return sb.toString();
     }
 

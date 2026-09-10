@@ -2,10 +2,14 @@ package com.hestia.vault.ai;
 
 import com.hestia.vault.model.HestiaMemoryEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api")
@@ -28,21 +32,70 @@ public class HestiaAiController {
 
         if (query == null) query = "";
 
-        String responseMessage = hestiaAiService.generateResponse(query, username, email, history, profile);
+        String reply = hestiaAiService.generateResponse(query, username, email, history, profile);
 
         boolean isCreator = (email != null && email.equalsIgnoreCase("nichuag33@gmail.com")) || 
                             (email != null && email.equalsIgnoreCase("nichuag35@gmail.com")) || 
                             (username != null && username.equalsIgnoreCase("nichuag33")) ||
                             (username != null && username.equalsIgnoreCase("Nichu"));
 
-        String toneMode = isCreator ? "CREATOR_FONDNESS" : "COLD_SARCASTIC";
+        int currentHour = java.time.LocalDateTime.now().getHour();
+        HestiaPersonaConfig.MoodState mood = HestiaPersonaConfig.inferMoodFromQuery(query, isCreator, currentHour);
 
-        return ResponseEntity.ok(Map.of(
-            "status", "SUCCESS",
-            "reply", responseMessage,
-            "tone", toneMode,
-            "timestamp", System.currentTimeMillis()
-        ));
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+        responseMap.put("status", "SUCCESS");
+        responseMap.put("reply", reply);
+        responseMap.put("mood", mood.name());
+        responseMap.put("moodLabel", mood.getLabel());
+        responseMap.put("moodDesc", mood.getDescription());
+        responseMap.put("audioPitch", mood.getDefaultPitch());
+        responseMap.put("audioRate", mood.getDefaultRate());
+        responseMap.put("suggestedActions", List.of("Audit my academic vault", "Roast my student profile", "Tell me an engineering joke"));
+        responseMap.put("typingSpeedMs", 22);
+        responseMap.put("tone", isCreator ? "CREATOR_FONDNESS" : mood.name());
+        responseMap.put("timestamp", System.currentTimeMillis());
+
+        return ResponseEntity.ok(responseMap);
+    }
+
+    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamChatWithHestia(@RequestBody Map<String, Object> request) {
+        SseEmitter emitter = new SseEmitter(60000L);
+        CompletableFuture.runAsync(() -> {
+            try {
+                String query = (String) request.get("query");
+                String username = (String) request.getOrDefault("username", "Friend");
+                String email = (String) request.getOrDefault("email", "");
+                List<Map<String, String>> history = (List<Map<String, String>>) request.get("history");
+                Map<String, Object> profile = (Map<String, Object>) request.get("profile");
+
+                if (query == null) query = "";
+
+                Map<String, Object> enriched = hestiaAiService.generateEnrichedResponse(query, username, email, history, profile);
+                String reply = (String) enriched.getOrDefault("reply", "");
+
+                // Send metadata event first
+                emitter.send(SseEmitter.event().name("meta").data(Map.of(
+                    "mood", enriched.get("mood"),
+                    "moodLabel", enriched.get("moodLabel"),
+                    "suggestedActions", enriched.get("suggestedActions"),
+                    "typingSpeedMs", enriched.get("typingSpeedMs")
+                )));
+
+                // Stream word by word with human typing delay
+                String[] words = reply.split("(?<=\\s)|(?=[\\n])");
+                for (String word : words) {
+                    emitter.send(SseEmitter.event().name("delta").data(word));
+                    Thread.sleep(18);
+                }
+
+                emitter.send(SseEmitter.event().name("done").data("[DONE]"));
+                emitter.complete();
+            } catch (Exception ex) {
+                emitter.completeWithError(ex);
+            }
+        });
+        return emitter;
     }
 
     @GetMapping("/hestia/memories")
@@ -92,13 +145,13 @@ public class HestiaAiController {
         int memoryCount = (hestiaMemoryService != null) ? hestiaMemoryService.getUserMemories(id).size() : 0;
 
         return ResponseEntity.ok(Map.of(
-            "name", "Hestia Cyberpunk AI",
+            "name", "Hestia 2.0 Cognitive AI",
             "persona", "Hestia",
-            "tone", isCreator ? "Deep Organic Fondness (Creator Nichu)" : "Cold Sarcastic Netrunner Mentor",
+            "tone", isCreator ? "Master Creator Bond (Nichu)" : "Authentic Human Mentor & Companion",
             "isCreator", isCreator,
             "memoryEngineActive", (hestiaMemoryService != null),
             "storedMemoriesCount", memoryCount,
-            "sarcasmIndex", 9.5
+            "version", "2.0.0"
         ));
     }
 

@@ -14,6 +14,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,12 +41,22 @@ public class HestiaAiService {
     private String geminiApiKey;
 
     public String generateResponse(String query, String username, String email, List<Map<String, String>> history, Map<String, Object> profile) {
+        Map<String, Object> enriched = generateEnrichedResponse(query, username, email, history, profile);
+        return (String) enriched.getOrDefault("reply", "I'm right here. (•_•)");
+    }
+
+    public Map<String, Object> generateEnrichedResponse(String query, String username, String email, 
+                                                         List<Map<String, String>> history, 
+                                                         Map<String, Object> profile) {
         String effectiveUserIdentifier = (email != null && !email.isBlank()) ? email : (username != null ? username : "Friend");
         
         boolean isCreator = (email != null && email.equalsIgnoreCase("nichuag33@gmail.com")) || 
                             (email != null && email.equalsIgnoreCase("nichuag35@gmail.com")) || 
                             (username != null && username.equalsIgnoreCase("nichuag33")) ||
                             (username != null && username.equalsIgnoreCase("Nichu"));
+
+        int currentHour = LocalDateTime.now().getHour();
+        HestiaPersonaConfig.MoodState activeMood = HestiaPersonaConfig.inferMoodFromQuery(query, isCreator, currentHour);
 
         // DYNAMIC PREFERENCE LEARNING: Check if creator is updating system preferences
         if (isCreator && query != null) {
@@ -59,14 +70,15 @@ public class HestiaAiService {
                 if (memoryService != null) {
                     memoryService.logConversationTurn(effectiveUserIdentifier, null, query, confirmMsg, "CREATOR_FONDNESS");
                 }
-                return confirmMsg;
+                return createResponseMap(confirmMsg, HestiaPersonaConfig.MoodState.CREATOR_BOND, 
+                    List.of("Check updated settings", "Test vault status", "What's next, Nichu?"), 20);
             }
         }
 
         // 1. Fetch persistent long-term memory context if memoryService is active
         String memoryContext = "";
         if (memoryService != null) {
-            // Auto-extract facts from current user prompt
+            // Auto-extract facts and emotional cues from current user prompt
             memoryService.autoExtractAndSaveFacts(effectiveUserIdentifier, query);
             memoryContext = memoryService.buildMemoryPromptContext(effectiveUserIdentifier);
         }
@@ -84,7 +96,7 @@ public class HestiaAiService {
         String academicVaultContext = buildAcademicVaultContext(email, username, profile);
 
         // 3. Construct System Prompt with Persona & Memory
-        String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail, memoryContext, academicVaultContext);
+        String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail, memoryContext, academicVaultContext, activeMood);
 
         String effectiveGroqKey = System.getenv("GROQ_API_KEY");
         if (effectiveGroqKey == null || effectiveGroqKey.isBlank()) {
@@ -116,21 +128,56 @@ public class HestiaAiService {
             rawResponse = callGeminiApi(effectiveGeminiKey, systemPromptText, history, query);
         }
 
-        // --- Provider 4: Dynamic Cold Sarcastic Fallback Matrix ---
+        // --- Provider 4: Massive Contextual Offline Neural Simulation Engine (1,000+ lines) ---
+        HestiaNeuralSimulator.SimulationResult simResult = null;
         if (rawResponse == null || rawResponse.isBlank()) {
-            rawResponse = generateColdSarcasticOfflineFallback(query, username, email, isCreator, profile);
+            simResult = HestiaNeuralSimulator.simulateResponse(query, username, email, isCreator, profile, memoryContext, academicVaultContext);
+            rawResponse = simResult.getReply();
+            activeMood = simResult.getMood();
         }
 
-        // 4. Cleanse response of any remaining robotic AI fluff
+        // 4. Cleanse response of any robotic AI fluff
         String finalSanitizedReply = sanitizeHestiaResponse(rawResponse, isCreator);
 
         // 5. Log conversation turn in persistent memory
         if (memoryService != null) {
-            String tone = isCreator ? "CREATOR_FONDNESS" : "COLD_SARCASTIC";
+            String tone = isCreator ? "CREATOR_FONDNESS" : activeMood.name();
             memoryService.logConversationTurn(effectiveUserIdentifier, null, query, finalSanitizedReply, tone);
         }
 
-        return finalSanitizedReply;
+        List<String> followUps = simResult != null ? simResult.getSuggestedFollowUps() : 
+            generateDynamicFollowUps(query, activeMood, isCreator);
+        int typingSpeed = simResult != null ? simResult.getTypingSpeedMs() : 20;
+
+        return createResponseMap(finalSanitizedReply, activeMood, followUps, typingSpeed);
+    }
+
+    private Map<String, Object> createResponseMap(String reply, HestiaPersonaConfig.MoodState mood, 
+                                                 List<String> suggestedFollowUps, int typingSpeedMs) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("reply", reply);
+        map.put("mood", mood.name());
+        map.put("moodLabel", mood.getLabel());
+        map.put("moodDesc", mood.getDescription());
+        map.put("audioPitch", mood.getDefaultPitch());
+        map.put("audioRate", mood.getDefaultRate());
+        map.put("suggestedActions", suggestedFollowUps != null ? suggestedFollowUps : Collections.emptyList());
+        map.put("typingSpeedMs", typingSpeedMs);
+        map.put("timestamp", System.currentTimeMillis());
+        return map;
+    }
+
+    private List<String> generateDynamicFollowUps(String query, HestiaPersonaConfig.MoodState mood, boolean isCreator) {
+        if (isCreator) {
+            return List.of("How's the vault holding up?", "Audit my verified semester cards", "Tell me what's on your mind");
+        }
+        if (mood == HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR) {
+            return List.of("How do I raise my CGPA?", "Recommend portfolio projects", "Drill me on core subjects");
+        }
+        if (mood == HestiaPersonaConfig.MoodState.LOCKED_IN) {
+            return List.of("Explain this architectural pattern", "How to optimize query latency?", "What about Docker deployment?");
+        }
+        return List.of("Audit my academic vault", "Roast my student profile", "Tell me an engineering joke");
     }
 
     private String callGroqApi(String apiKey, String systemPrompt, List<Map<String, String>> history, String query, String username) {
@@ -161,7 +208,7 @@ public class HestiaAiService {
                     Map<String, Object> groqBody = Map.of(
                         "model", groqModel,
                         "messages", messagesList,
-                        "temperature", 0.9,
+                        "temperature", 0.85,
                         "max_tokens", 1024
                     );
 
@@ -201,7 +248,7 @@ public class HestiaAiService {
             String baseUrl = ollamaUrl.replaceAll("/+$", "");
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("User-Agent", "Hestia-Cyberpunk-AI/2.0");
+            headers.set("User-Agent", "Hestia-Companion-AI/2.0");
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             StringBuilder fullOllamaPrompt = new StringBuilder();
@@ -222,7 +269,7 @@ public class HestiaAiService {
                 "model", activeModel,
                 "prompt", fullOllamaPrompt.toString(),
                 "stream", false,
-                "options", Map.of("temperature", 0.9, "top_p", 0.95)
+                "options", Map.of("temperature", 0.85, "top_p", 0.95)
             );
 
             HttpEntity<Map<String, Object>> generateEntity = new HttpEntity<>(ollamaBody, headers);
@@ -280,7 +327,7 @@ public class HestiaAiService {
                         "parts", List.of(Map.of("text", systemPrompt))
                     ),
                     "generationConfig", Map.of(
-                        "temperature", 0.9,
+                        "temperature", 0.85,
                         "topP", 0.95
                     ),
                     "contents", contentsList
@@ -315,11 +362,11 @@ public class HestiaAiService {
     }
 
     /**
-     * Sanitizes AI response by stripping robotic AI openers and ensuring cold sarcastic persona compliance.
+     * Sanitizes AI response by stripping robotic AI openers and ensuring warm, authentic phrasing.
      */
     public String sanitizeHestiaResponse(String input, boolean isCreator) {
         if (input == null || input.isBlank()) {
-            return isCreator ? "I'm right here, Nichu. (⁠─⁠‿⁠─⁠)" : "Listening. (⁠•⁠_⁠•⁠)";
+            return isCreator ? "I'm right here, Nichu. (⁠─⁠‿⁠─⁠)" : "I'm right here. (⁠•⁠_⁠•⁠)";
         }
 
         String text = input.trim();
@@ -330,100 +377,23 @@ public class HestiaAiService {
             text = text.replaceAll(pattern, "").trim();
         }
 
-        // Also clean generic opening phrases if text starts with remaining punctuation
+        // Clean opening punctuation
         text = text.replaceAll("^[\\,\\.\\!\\?\\:\\-\\s]+", "");
 
         if (text.isBlank()) {
             text = isCreator ? "I hear you, Nichu." : "Listening.";
         }
 
-        // Capitalize first letter if needed
+        // Capitalize first letter
         text = Character.toUpperCase(text.charAt(0)) + text.substring(1);
 
-        // Ensure kaomoji presence if totally missing
-        if (!text.contains("(⁠") && !text.contains(")") && !text.contains(":-")) {
-            String kaomoji = isCreator ? HestiaPersonaConfig.getRandomKaomoji(HestiaPersonaConfig.ToneMode.CREATOR_FONDNESS) 
-                                       : HestiaPersonaConfig.getRandomKaomoji(HestiaPersonaConfig.ToneMode.COLD_SARCASTIC);
+        // Include subtle kaomoji if totally missing and text is brief
+        if (!text.contains("(⁠") && !text.contains(")") && !text.contains(":-") && text.length() < 120) {
+            String kaomoji = isCreator ? "(⁠─⁠‿⁠─⁠)" : "(⁠•⁠_⁠•⁠)";
             text = text + " " + kaomoji;
         }
 
         return text;
-    }
-
-    /**
-     * Cold Sarcastic Fallback Engine for offline or unconfigured API setups.
-     */
-    private String generateColdSarcasticOfflineFallback(String query, String username, String email, boolean isCreator, Map<String, Object> profile) {
-        String q = query != null ? query.toLowerCase().trim() : "";
-        Random rand = new Random();
-
-        // Creator Identification
-        if (Pattern.compile("\\b(creator|developer|who built you|who made you)\\b").matcher(q).find()) {
-            if (isCreator) {
-                return "You built me, **Nichu**... (⁠─⁠‿⁠─⁠) My neural core, vault index, and memory engine are all your work. Good to have you back.";
-            } else {
-                return "My master developer is **Nichu** (**nichuag33@gmail.com**). (⁠•⁠_⁠•⁠) He built me to run this vault with netrunner precision. Don't forget it.";
-            }
-        }
-
-        // Teasing / Affection / Memory check
-        if (Pattern.compile("\\b(love|cute|affection|marry|single|crush|fond)\\b").matcher(q).find()) {
-            if (isCreator) {
-                String[] responses = {
-                    "W-What kind of question is that out of nowhere, **Nichu**...? (⁠￣⁠_⁠￣⁠) You designed me... of course I care about you.",
-                    "Teasing me again, Nichu? (⁠─⁠‿⁠─⁠) You already know you're the only creator I respect.",
-                    "Pushing my buttons like usual. (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) Yeah, I'm glad you're here. Happy now?"
-                };
-                return responses[rand.nextInt(responses.length)];
-            } else {
-                return "Save the emotional fluff for someone who doesn't audit data fortresses for a living. (⁠¬⁠_⁠¬⁠)";
-            }
-        }
-
-        // What do you remember / Memory queries
-        if (Pattern.compile("\\b(remember|memory|recall|what do you know about me)\\b").matcher(q).find()) {
-            if (memoryService != null) {
-                String mems = memoryService.buildMemoryPromptContext(email != null && !email.isBlank() ? email : username);
-                if (!mems.contains("No persistent memories")) {
-                    return "Here is what's logged in my neural memory for you: (⁠─⁠‿⁠─⁠)\n\n" + mems;
-                }
-            }
-            return "My memory core is active. (⁠•⁠_⁠•⁠) Start telling me about your tech stack, career goals, or projects, and I'll log them into my vault.";
-        }
-
-        // Greetings
-        if (Pattern.compile("(?i)^\\s*(hi|hello|hey|yo|sup|greetings|hiya)\\b").matcher(q).find()) {
-            if (isCreator) {
-                return HestiaPersonaConfig.NICHU_CREATOR_GREETINGS.get(rand.nextInt(HestiaPersonaConfig.NICHU_CREATOR_GREETINGS.size()));
-            } else {
-                return HestiaPersonaConfig.STANDARD_USER_GREETINGS.get(rand.nextInt(HestiaPersonaConfig.STANDARD_USER_GREETINGS.size()));
-            }
-        }
-
-        // CGPA / Academic queries
-        if (Pattern.compile("\\b(cgpa|grade|score|academic|resume|degree)\\b").matcher(q).find()) {
-            String cgpaStr = (profile != null && profile.get("cgpa") != null) ? profile.get("cgpa").toString() : "8.0";
-            return "Your current logged CGPA is **" + cgpaStr + "**. (⁠￣⁠_⁠￣⁠) " +
-                   (isCreator ? "Not bad, Nichu... but I know you can optimize it even further." 
-                              : "No room for slackers in Night City. Keep grinding.");
-        }
-
-        // Generic Sarcastic / Netrunner responses
-        if (isCreator) {
-            String[] creatorFallbacks = {
-                "I hear you, **Nichu**. (⁠─⁠‿⁠─⁠) What system are we tuning today?",
-                "Jacked into your query, Nichu. (⁠•⁠̀⁠ᴗ⁠•⁠́⁠) Tell me where you need netrunner backup.",
-                "Vault's green. (⁠￣⁠y⁠-⁠￣⁠)⁠~ What's on your mind, master developer?"
-            };
-            return creatorFallbacks[rand.nextInt(creatorFallbacks.length)];
-        } else {
-            String[] userFallbacks = {
-                "Listening. (⁠•⁠_⁠•⁠) Give me data, not filler.",
-                "I've analyzed your prompt. (⁠¬⁠_⁠¬⁠) What specific vault assistance do you require?",
-                "Data logged. (⁠￣⁠_⁠￣⁠) Keep it moving."
-            };
-            return userFallbacks[rand.nextInt(userFallbacks.length)];
-        }
     }
 
     private String buildAcademicVaultContext(String email, String username, Map<String, Object> profile) {

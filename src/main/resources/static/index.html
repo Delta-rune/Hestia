@@ -938,72 +938,99 @@
       <!-- ========================================== -->
       <section id="section-companion" class="hidden space-y-6 py-6">
         
-        <div class="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
           <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-full border border-neutral-700 bg-neutral-950 flex items-center justify-center shrink-0 shadow-lg">
-              <i class="fa-solid fa-fire text-white text-xl"></i>
+            <div id="hestia-avatar-pulse" class="w-13 h-13 rounded-full border border-neutral-700 bg-neutral-950 flex items-center justify-center shrink-0 shadow-lg relative group transition-all duration-300">
+              <i class="fa-solid fa-fire text-white text-xl group-hover:scale-110 transition-transform"></i>
+              <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-neutral-950"></span>
             </div>
 
             <div>
-              <div class="flex items-center gap-3">
-                <h2 class="font-sans text-2xl font-bold text-white">Hestia AI Companion</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-neutral-900 text-cyan-400 border border-cyan-500/30 flex items-center gap-1.5 shadow-[0_0_10px_rgba(6,182,212,0.15)]">
-                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
-                  Cyberpunk Netrunner (Cold & Sarcastic)
+              <div class="flex items-center gap-3 flex-wrap">
+                <h2 class="font-sans text-2xl font-bold text-white tracking-wide">Hestia AI Companion</h2>
+                <span id="hestia-live-mood-badge" class="px-3 py-0.5 rounded-full text-[10px] font-mono bg-neutral-950 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  Mood: Attentive & Focused ⚡
                 </span>
               </div>
-              <p class="text-xs text-neutral-400 mt-1">Sharp, cool, and pragmatic AI netrunner companion with persistent memory. Direct truths, zero fluff.</p>
+              <p class="text-xs text-neutral-400 mt-1">Deeply perceptive human companion & academic mentor. Context-aware, spontaneous, and authentically grounded.</p>
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Audio Keyboard Click Feedback Toggle -->
+            <button id="hestia-audio-btn" onclick="toggleHestiaAudio()" title="Toggle tactile mechanical keyboard click audio" class="bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition shadow-sm">
+              <i class="fa-solid fa-volume-high text-cyan-400"></i>
+              <span id="hestia-audio-btn-label">Sound FX</span>
+            </button>
+
+            <!-- Text to Speech Voice Toggle -->
+            <button id="hestia-tts-btn" onclick="toggleHestiaTts()" title="Toggle Hestia voice output (Web Speech API)" class="bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition shadow-sm">
+              <i class="fa-solid fa-headphones text-indigo-400"></i>
+              <span id="hestia-tts-btn-label">Voice Off</span>
+            </button>
+
+            <!-- Memory Core Modal -->
             <button onclick="openHestiaMemoryModal()" class="bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 hover:text-cyan-100 border border-cyan-500/40 px-3.5 py-2 rounded-xl text-xs font-mono flex items-center gap-2 transition shadow-sm">
               <i class="fa-solid fa-brain text-cyan-400"></i> Memory Vault
             </button>
+
+            <!-- Clear Stream -->
             <button onclick="clearHestiaChat()" class="btn-outline-mono px-3 py-2 rounded-xl text-xs">
-              Clear Chat Stream
+              Clear Stream
             </button>
           </div>
         </div>
 
         <!-- Chat Stream Window -->
-        <div class="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 flex flex-col h-[560px] justify-between">
+        <div class="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 flex flex-col h-[600px] justify-between shadow-2xl relative">
           
-          <div id="hestia-chat-messages" class="flex-grow overflow-y-auto pr-3 space-y-4 my-2 text-xs leading-relaxed">
+          <div id="hestia-chat-messages" class="flex-grow overflow-y-auto pr-3 space-y-4 my-2 text-xs leading-relaxed custom-scrollbar">
             <div class="flex items-start gap-3">
               <div class="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center shrink-0">
                 <i class="fa-solid fa-fire text-white text-xs"></i>
               </div>
               <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 max-w-[85%] text-neutral-200 shadow-md">
-                <div class="text-[10px] font-mono text-neutral-400 mb-1 border-b border-neutral-800 pb-1">HESTIA AI</div>
-                <p>
-                  Hey. I'm **Hestia**. (⁠•⁠_⁠•⁠) Ask me about your degree, job compatibility, or skill roadmap. Don't expect fluff—I give it to you straight.
-                </p>
+                <div class="text-[10px] font-mono text-neutral-400 mb-1 border-b border-neutral-800 pb-1 flex justify-between">
+                  <span>HESTIA AI</span>
+                  <span class="text-[9px] text-cyan-400">Online & Grounded</span>
+                </div>
+                <p>Hey there. I'm **Hestia**. Ask me about your degree recovery, job scanner matches, or technical engineering architecture. No canned corporate scripts—I talk straight with you.</p>
               </div>
             </div>
           </div>
 
-          <!-- Quick Suggestion Chips -->
-          <div class="flex flex-wrap gap-2 py-2 border-t border-neutral-800/60 text-[11px] font-mono">
-            <button onclick="sendQuickPrompt('Roast my CGPA and academic profile')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-cyan-400 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5">
+          <!-- Dynamic Smart Suggestions -->
+          <div id="hestia-dynamic-suggestions" class="flex flex-wrap gap-2 py-2 border-t border-neutral-800/60 text-[11px] font-mono">
+            <button onclick="sendQuickPrompt('Audit my verified semester cards and give study advice')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-cyan-400 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-graduation-cap text-cyan-400"></i> <span>Grade Card Audit</span>
+            </button>
+            <button onclick="sendQuickPrompt('Roast my CGPA and academic profile')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-amber-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5 shadow-sm">
               <i class="fa-solid fa-fire text-amber-400"></i> <span>Roast Profile</span>
             </button>
-            <button onclick="sendQuickPrompt('What do you remember about me?')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5">
-              <i class="fa-solid fa-brain text-cyan-400"></i> <span>Memory Recall</span>
+            <button onclick="sendQuickPrompt('What do you remember about me?')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-brain text-purple-400"></i> <span>Memory Recall</span>
             </button>
-            <button onclick="sendQuickPrompt('Recommend skills for my degree')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5">
-              <i class="fa-solid fa-code text-indigo-400"></i> <span>Skill Audit</span>
+            <button onclick="sendQuickPrompt('Recommend high-yield portfolio projects for my branch')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-code text-indigo-400"></i> <span>Project Ideas</span>
             </button>
-            <button onclick="sendQuickPrompt('Who created you?')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5">
+            <button onclick="sendQuickPrompt('Who created you?')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5 shadow-sm">
               <i class="fa-solid fa-terminal text-emerald-400"></i> <span>Creator Info</span>
             </button>
           </div>
 
-          <!-- Chat Input -->
-          <form onsubmit="handleHestiaChatSubmit(event)" class="pt-3 border-t border-neutral-800 flex gap-3">
-            <input type="text" id="hestia-chat-input" placeholder="Type your message to Hestia..." class="flex-grow bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-white font-sans">
-            <button type="submit" class="btn-mono px-6 py-3 rounded-xl text-xs uppercase font-bold tracking-wider">
-              Send
+          <!-- Chat Input with Voice Input Button -->
+          <form onsubmit="handleHestiaChatSubmit(event)" class="pt-3 border-t border-neutral-800 flex gap-2.5 items-center">
+            <!-- Voice Input Button -->
+            <button type="button" id="hestia-voice-btn" onclick="toggleVoiceInput()" title="Voice Dictation (Speech-to-Text)" class="w-10 h-10 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-cyan-500/50 text-neutral-400 hover:text-cyan-300 flex items-center justify-center shrink-0 transition shadow-inner">
+              <i class="fa-solid fa-microphone text-xs"></i>
+            </button>
+
+            <input type="text" id="hestia-chat-input" placeholder="Type or speak to Hestia... (Enter to send)" class="flex-grow bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-white font-sans transition">
+            
+            <button type="submit" id="hestia-send-btn" class="btn-mono px-6 py-3 rounded-xl text-xs uppercase font-bold tracking-wider flex items-center gap-2 shrink-0">
+              <span>Send</span>
+              <i class="fa-solid fa-arrow-right text-[11px]"></i>
             </button>
           </form>
 
@@ -2076,7 +2103,7 @@
     }
 
     async function handleHestiaChatSubmit(e) {
-      e.preventDefault();
+      if (e && e.preventDefault) e.preventDefault();
       const input = document.getElementById('hestia-chat-input');
       const text = input.value.trim();
       if (!text) return;
@@ -2105,14 +2132,16 @@
         
         const replyText = data.reply || generateDynamicHestiaLocalResponse(text);
         hestiaChatHistory.push({ sender: 'bot', role: 'model', text: replyText });
-        appendChatMessage('bot', replyText);
-        saveChatHistoryToStorage();
+        appendStreamedHestiaMessage(replyText, data, () => {
+          saveChatHistoryToStorage();
+        });
       } catch (err) {
         removeThinkingIndicator(thinkingId);
         const replyText = generateDynamicHestiaLocalResponse(text);
         hestiaChatHistory.push({ sender: 'bot', role: 'model', text: replyText });
-        appendChatMessage('bot', replyText);
-        saveChatHistoryToStorage();
+        appendStreamedHestiaMessage(replyText, { moodLabel: 'Local Neural Simulation ⚡' }, () => {
+          saveChatHistoryToStorage();
+        });
       }
     }
 
@@ -2312,6 +2341,195 @@
 
 
 
+    // ==========================================
+    // HESTIA 2.0 SENSORY AUDIO & VOICE ENGINE
+    // ==========================================
+    let hestiaAudioEnabled = localStorage.getItem('hestia_audio_fx') === 'true';
+    let hestiaTtsEnabled = localStorage.getItem('hestia_tts_voice') === 'true';
+    let synthAudioCtx = null;
+
+    function getAudioContext() {
+      if (!synthAudioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) synthAudioCtx = new AudioCtx();
+      }
+      if (synthAudioCtx && synthAudioCtx.state === 'suspended') {
+        synthAudioCtx.resume();
+      }
+      return synthAudioCtx;
+    }
+
+    function playSyntheticKeyClick() {
+      if (!hestiaAudioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(650 + Math.random() * 200, ctx.currentTime);
+        gain.gain.setValueAtTime(0.015, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.035);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.035);
+      } catch(e) {}
+    }
+
+    function playSyntheticChime() {
+      if (!hestiaAudioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        [523.25, 783.99].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + (i * 0.09));
+          gain.gain.setValueAtTime(0.03, ctx.currentTime + (i * 0.09));
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (i * 0.09) + 0.25);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + (i * 0.09));
+          osc.stop(ctx.currentTime + (i * 0.09) + 0.25);
+        });
+      } catch(e) {}
+    }
+
+    function toggleHestiaAudio() {
+      hestiaAudioEnabled = !hestiaAudioEnabled;
+      localStorage.setItem('hestia_audio_fx', hestiaAudioEnabled);
+      updateAudioToggleUI();
+      if (hestiaAudioEnabled) {
+        playSyntheticChime();
+      }
+    }
+
+    function updateAudioToggleUI() {
+      const btn = document.getElementById('hestia-audio-btn');
+      const label = document.getElementById('hestia-audio-btn-label');
+      if (btn && label) {
+        if (hestiaAudioEnabled) {
+          btn.className = 'bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/50 px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition shadow-sm';
+          label.innerText = 'Sound FX On';
+        } else {
+          btn.className = 'bg-neutral-950 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition shadow-sm';
+          label.innerText = 'Sound FX Off';
+        }
+      }
+    }
+
+    function toggleHestiaTts() {
+      hestiaTtsEnabled = !hestiaTtsEnabled;
+      localStorage.setItem('hestia_tts_voice', hestiaTtsEnabled);
+      updateTtsToggleUI();
+      if (!hestiaTtsEnabled && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    function updateTtsToggleUI() {
+      const btn = document.getElementById('hestia-tts-btn');
+      const label = document.getElementById('hestia-tts-btn-label');
+      if (btn && label) {
+        if (hestiaTtsEnabled) {
+          btn.className = 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-500/50 px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition shadow-sm';
+          label.innerText = 'Voice On';
+        } else {
+          btn.className = 'bg-neutral-950 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition shadow-sm';
+          label.innerText = 'Voice Off';
+        }
+      }
+    }
+
+    function speakHestiaMessage(text, meta) {
+      if (!hestiaTtsEnabled || !window.speechSynthesis) return;
+      try {
+        window.speechSynthesis.cancel();
+        const cleanText = text.replace(/[*_#`]/g, '').replace(/\(.*?\)|\(.*?\)/g, '').trim();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = meta?.audioRate || 1.0;
+        utterance.pitch = meta?.audioPitch || 1.05;
+
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Samantha') || v.name.includes('Google') || v.name.includes('Female')));
+        if (preferredVoice) utterance.voice = preferredVoice;
+
+        window.speechSynthesis.speak(utterance);
+      } catch(e) {}
+    }
+
+    let speechRecognizer = null;
+    let isListening = false;
+
+    function toggleVoiceInput() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Voice speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+        return;
+      }
+
+      const voiceBtn = document.getElementById('hestia-voice-btn');
+      const chatInput = document.getElementById('hestia-chat-input');
+
+      if (isListening && speechRecognizer) {
+        speechRecognizer.stop();
+        return;
+      }
+
+      try {
+        speechRecognizer = new SpeechRecognition();
+        speechRecognizer.continuous = false;
+        speechRecognizer.interimResults = true;
+        speechRecognizer.lang = 'en-US';
+
+        speechRecognizer.onstart = () => {
+          isListening = true;
+          if (voiceBtn) {
+            voiceBtn.className = 'w-10 h-10 rounded-xl bg-rose-950 border border-rose-500 text-rose-300 flex items-center justify-center shrink-0 transition animate-pulse shadow-lg';
+            voiceBtn.innerHTML = '<i class="fa-solid fa-microphone-lines text-xs"></i>';
+          }
+          if (chatInput) chatInput.placeholder = 'Listening... Speak your mind to Hestia';
+        };
+
+        speechRecognizer.onresult = (evt) => {
+          let transcript = '';
+          for (let i = evt.resultIndex; i < evt.results.length; ++i) {
+            transcript += evt.results[i][0].transcript;
+          }
+          if (chatInput) chatInput.value = transcript;
+        };
+
+        speechRecognizer.onerror = () => {
+          stopVoiceInput();
+        };
+
+        speechRecognizer.onend = () => {
+          stopVoiceInput();
+          if (chatInput && chatInput.value.trim().length > 0) {
+            const fakeEvt = { preventDefault: () => {} };
+            handleHestiaChatSubmit(fakeEvt);
+          }
+        };
+
+        speechRecognizer.start();
+      } catch(e) {
+        stopVoiceInput();
+      }
+    }
+
+    function stopVoiceInput() {
+      isListening = false;
+      const voiceBtn = document.getElementById('hestia-voice-btn');
+      const chatInput = document.getElementById('hestia-chat-input');
+      if (voiceBtn) {
+        voiceBtn.className = 'w-10 h-10 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-cyan-500/50 text-neutral-400 hover:text-cyan-300 flex items-center justify-center shrink-0 transition shadow-inner';
+        voiceBtn.innerHTML = '<i class="fa-solid fa-microphone text-xs"></i>';
+      }
+      if (chatInput) chatInput.placeholder = 'Type or speak to Hestia... (Enter to send)';
+    }
+
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
@@ -2324,14 +2542,72 @@
 
     function renderMarkdown(text) {
       if (!text) return '';
-      let escaped = escapeHtml(text);
-      // Convert bold **text** to <strong>text</strong>
-      escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      // Convert italic *text* to <em>text</em>
-      escaped = escaped.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      // Convert newlines to <br>
-      escaped = escaped.replace(/\n/g, '<br>');
-      return escaped;
+      
+      // Protect code blocks first
+      const codeBlocks = [];
+      let processed = text.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+        const id = 'codeblock-' + Math.random().toString(36).substring(2, 9);
+        codeBlocks.push({ id, lang: lang || 'code', code: code.trim() });
+        return `__CODE_BLOCK_${id}__`;
+      });
+
+      // Escape HTML on remainder
+      processed = escapeHtml(processed);
+
+      // Inline code `code`
+      processed = processed.replace(/`([^`]+)`/g, '<code class="bg-neutral-900 border border-neutral-800 text-cyan-300 font-mono text-[10px] px-1.5 py-0.5 rounded">$1</code>');
+
+      // Bold **text**
+      processed = processed.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+      // Italic *text*
+      processed = processed.replace(/\*(.*?)\*/g, '<em class="text-neutral-300 italic">$1</em>');
+      // Line breaks
+      processed = processed.replace(/\n/g, '<br>');
+
+      // Restore code blocks with luxury cyberpunk code wrapper and copy button
+      codeBlocks.forEach(cb => {
+        const escapedCode = escapeHtml(cb.code);
+        const replacement = `
+          <div class="bg-neutral-900/90 border border-neutral-800 rounded-xl my-2.5 overflow-hidden shadow-inner">
+            <div class="flex items-center justify-between px-3 py-1.5 bg-neutral-950/80 border-b border-neutral-800 text-[10px] font-mono text-neutral-400">
+              <span class="text-cyan-400 uppercase tracking-wider font-bold">${escapeHtml(cb.lang)}</span>
+              <button type="button" onclick="copyCodeSnippet(this)" data-code="${encodeURIComponent(cb.code)}" class="hover:text-white flex items-center gap-1 text-[10px] bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded transition">
+                <i class="fa-solid fa-copy"></i> Copy
+              </button>
+            </div>
+            <pre class="p-3 text-[11px] font-mono overflow-x-auto text-emerald-400 leading-relaxed"><code>${escapedCode}</code></pre>
+          </div>
+        `;
+        processed = processed.replace(`__CODE_BLOCK_${cb.id}__`, replacement);
+      });
+
+      return processed;
+    }
+
+    function copyCodeSnippet(btn) {
+      const code = decodeURIComponent(btn.getAttribute('data-code') || '');
+      if (code && navigator.clipboard) {
+        navigator.clipboard.writeText(code);
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Copied!';
+        setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+      }
+    }
+
+    function toggleMessageReaction(btn, emoji) {
+      const countEl = btn.querySelector('.count');
+      if (!countEl) return;
+      let count = parseInt(countEl.innerText) || 0;
+      if (btn.classList.contains('active-reaction')) {
+        btn.classList.remove('active-reaction', 'bg-neutral-800', 'text-white');
+        btn.classList.add('text-neutral-400');
+        countEl.innerText = Math.max(0, count - 1);
+      } else {
+        btn.classList.add('active-reaction', 'bg-neutral-800', 'text-white');
+        btn.classList.remove('text-neutral-400');
+        countEl.innerText = count + 1;
+        playSyntheticKeyClick();
+      }
     }
 
     function appendChatMessage(sender, text) {
@@ -2365,13 +2641,111 @@
                 <span>HESTIA AI</span>
                 <span>${timeStr}</span>
               </div>
-              <p class="whitespace-pre-wrap">${renderMarkdown(text)}</p>
+              <div class="leading-relaxed text-xs">${renderMarkdown(text)}</div>
             </div>
           </div>
         `;
       }
       container.insertAdjacentHTML('beforeend', html);
       container.scrollTop = container.scrollHeight;
+    }
+
+    function appendStreamedHestiaMessage(fullText, meta, onDone) {
+      const container = document.getElementById('hestia-chat-messages');
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const msgId = 'msg-' + Date.now();
+
+      const moodLabel = meta?.moodLabel || 'Attentive & Focused ⚡';
+      const moodBadge = document.getElementById('hestia-live-mood-badge');
+      if (moodBadge) {
+        moodBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> Mood: ${escapeHtml(moodLabel)}`;
+      }
+
+      const html = `
+        <div id="${msgId}" class="flex items-start gap-3 transition-opacity duration-300">
+          <div class="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-fire text-white text-xs"></i>
+          </div>
+          <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 max-w-[85%] text-neutral-200 shadow-md flex flex-col justify-between">
+            <div class="text-[10px] font-mono text-neutral-400 mb-1 border-b border-neutral-800 pb-1 flex justify-between">
+              <span>HESTIA AI</span>
+              <span class="text-[9px] text-cyan-400 font-mono">${escapeHtml(moodLabel)} • ${timeStr}</span>
+            </div>
+            <div class="content-area leading-relaxed text-xs"><span class="typed-text"></span><span class="typing-cursor inline-block w-1.5 h-3.5 bg-cyan-400 animate-pulse ml-0.5 align-middle"></span></div>
+            <div class="reactions-area hidden flex items-center gap-2 mt-3 pt-2 border-t border-neutral-900 text-[11px]">
+              <button type="button" onclick="toggleMessageReaction(this, '❤️')" class="reaction-btn hover:bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-800 text-neutral-400 hover:text-rose-400 transition">❤️ <span class="count">0</span></button>
+              <button type="button" onclick="toggleMessageReaction(this, '🔥')" class="reaction-btn hover:bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-800 text-neutral-400 hover:text-amber-400 transition">🔥 <span class="count">0</span></button>
+              <button type="button" onclick="toggleMessageReaction(this, '💡')" class="reaction-btn hover:bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-800 text-neutral-400 hover:text-yellow-400 transition">💡 <span class="count">0</span></button>
+              <button type="button" onclick="toggleMessageReaction(this, '👏')" class="reaction-btn hover:bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-800 text-neutral-400 hover:text-emerald-400 transition">👏 <span class="count">0</span></button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', html);
+      container.scrollTop = container.scrollHeight;
+
+      const bubble = document.getElementById(msgId);
+      const textSpan = bubble.querySelector('.typed-text');
+      const cursor = bubble.querySelector('.typing-cursor');
+      const reactionsArea = bubble.querySelector('.reactions-area');
+      const contentArea = bubble.querySelector('.content-area');
+
+      let charIdx = 0;
+      const speed = meta?.typingSpeedMs || 16;
+
+      function typeNext() {
+        if (charIdx < fullText.length) {
+          const char = fullText[charIdx];
+          charIdx++;
+          textSpan.innerText = fullText.substring(0, charIdx);
+
+          if (charIdx % 3 === 0) {
+            playSyntheticKeyClick();
+          }
+
+          container.scrollTop = container.scrollHeight;
+
+          let delay = speed;
+          if (char === ',' || char === ';' || char === ':') delay += 80;
+          else if (char === '.' || char === '!' || char === '?') delay += 220;
+          else if (char === '\n') delay += 300;
+
+          setTimeout(typeNext, delay);
+        } else {
+          if (cursor) cursor.remove();
+          contentArea.innerHTML = renderMarkdown(fullText);
+          if (reactionsArea) reactionsArea.classList.remove('hidden');
+          playSyntheticChime();
+          speakHestiaMessage(fullText, meta);
+
+          if (meta?.suggestedActions && Array.isArray(meta.suggestedActions) && meta.suggestedActions.length > 0) {
+            updateDynamicSuggestions(meta.suggestedActions);
+          }
+
+          container.scrollTop = container.scrollHeight;
+          if (typeof onDone === 'function') onDone();
+        }
+      }
+
+      typeNext();
+    }
+
+    function updateDynamicSuggestions(actions) {
+      const container = document.getElementById('hestia-dynamic-suggestions');
+      if (!container || !actions || actions.length === 0) return;
+      let html = '';
+      const icons = ['fa-graduation-cap', 'fa-fire', 'fa-brain', 'fa-code', 'fa-terminal', 'fa-sparkles'];
+      actions.forEach((act, idx) => {
+        const icon = icons[idx % icons.length];
+        html += `
+          <button onclick="sendQuickPrompt('${escapeHtml(act).replace(/'/g, "\\'")}')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-cyan-300 px-3 py-1 rounded-full transition flex items-center gap-1.5 shadow-sm text-[11px] font-mono">
+            <i class="fa-solid ${icon} text-cyan-400"></i>
+            <span>${escapeHtml(act)}</span>
+          </button>
+        `;
+      });
+      container.innerHTML = html;
     }
 
     function clearHestiaChat() {
@@ -3541,6 +3915,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      if (typeof updateAudioToggleUI === 'function') updateAudioToggleUI();
+      if (typeof updateTtsToggleUI === 'function') updateTtsToggleUI();
       setTimeout(loadSavedAcademicRecord, 400);
       setTimeout(loadHestiaChatHistoryOnLogin, 600);
       setTimeout(autoPopulateScannerFromVault, 800);

@@ -77,4 +77,33 @@ public class HestiaMemoryAndPersonaTest {
         assertFalse(sanitized.toLowerCase().contains("i would be happy to help"));
         assertTrue(sanitized.contains("(⁠"));
     }
+
+    @Test
+    public void testHestiaNeuralSimulatorCapabilities() {
+        // Test Creator Bond
+        var creatorResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
+            "Do you care about me Hestia?", "Nichu", "nichuag33@gmail.com", true, Map.of(), "", ""
+        );
+        assertNotNull(creatorResult);
+        assertNotNull(creatorResult.getReply());
+        assertEquals(com.hestia.vault.ai.HestiaPersonaConfig.MoodState.CREATOR_BOND, creatorResult.getMood());
+        assertFalse(creatorResult.getSuggestedFollowUps().isEmpty());
+
+        // Test Technical Domain
+        var techResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
+            "Java vs Rust for backend development", "Student", "user@test.edu", false, Map.of(), "", ""
+        );
+        assertNotNull(techResult);
+        assertTrue(techResult.getReply().contains("Java") && techResult.getReply().contains("Rust"));
+        assertEquals(com.hestia.vault.ai.HestiaPersonaConfig.MoodState.LOCKED_IN, techResult.getMood());
+
+        // Test Academic Vault Math
+        Map<String, Object> profile = Map.of("cgpa", "7.2", "degreeField", "Computer Science", "institution", "KTU");
+        var academicResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
+            "How can I calculate my target SGPA to improve my CGPA?", "Student", "user@test.edu", false, profile, "", ""
+        );
+        assertNotNull(academicResult);
+        assertTrue(academicResult.getReply().contains("CGPA"));
+        assertEquals(com.hestia.vault.ai.HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR, academicResult.getMood());
+    }
 }
