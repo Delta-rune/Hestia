@@ -35,7 +35,7 @@ public class HestiaMemoryAndPersonaTest {
         String prompt = HestiaPromptBuilder.buildSystemPrompt("Nichu", "nichuag33@gmail.com", profile, "support@hestia.org", memoryContext);
 
         assertNotNull(prompt);
-        assertTrue(prompt.contains("LEAD DEVELOPER COLLABORATION: NICHU"));
+        assertTrue(prompt.contains("AUTHENTIC, UNFILTERED FRIEND"));
         assertTrue(prompt.contains("HESTIA"));
         assertTrue(prompt.contains("Computer Science"));
         assertTrue(prompt.contains("TECH_STACK"));
@@ -75,20 +75,19 @@ public class HestiaMemoryAndPersonaTest {
         assertNotNull(sanitized);
         assertFalse(sanitized.toLowerCase().contains("as an ai language model"));
         assertFalse(sanitized.toLowerCase().contains("i would be happy to help"));
-        assertTrue(sanitized.contains("(⁠"));
+        assertTrue(sanitized.contains("CGPA"));
     }
 
     @Test
     public void testHestiaNeuralSimulatorCapabilities() {
-        // Test Objective Boundary for Personal/Romantic Inquiries (Zero Servitude/Cringe)
-        var boundaryResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
-            "Do you love me?", "Nichu", "nichuag33@gmail.com", true, Map.of(), "", ""
+        // Test Friendly Banter on personal questions
+        var friendResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
+            "Do you care about me Hestia?", "Nichu", "nichuag33@gmail.com", true, Map.of(), "", ""
         );
-        assertNotNull(boundaryResult);
-        assertNotNull(boundaryResult.getReply());
-        assertTrue(boundaryResult.getReply().contains("AI system"));
-        assertFalse(boundaryResult.getReply().toLowerCase().contains("more than anyone else"));
-        assertFalse(boundaryResult.getReply().toLowerCase().contains("fine-tuning my parameters"));
+        assertNotNull(friendResult);
+        assertNotNull(friendResult.getReply());
+        assertTrue(friendResult.getReply().toLowerCase().contains("friend"));
+        assertFalse(friendResult.getSuggestedFollowUps().isEmpty());
 
         // Test Technical Domain
         var techResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(

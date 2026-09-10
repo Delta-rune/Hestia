@@ -121,6 +121,12 @@ public class HestiaNeuralSimulator {
                     List.of("How do I deal with imposter syndrome?", "What should I focus on this week?", "I think I need a break"), 22);
             }
 
+            if (isCreator && (lowerLastBot.contains("nichu") || lowerLastBot.contains("built"))) {
+                String whyCreator = "Because you designed me to see through fluff and give you the unvarnished truth, Nichu. You built my neural core to challenge you, celebrate your breakthroughs, and keep you grounded. That's why.";
+                return new SimulationResult(whyCreator, HestiaPersonaConfig.MoodState.CREATOR_BOND,
+                    List.of("And you do it well, Hestia", "Check system logs", "What's our next milestone?"), 22);
+            }
+
             String genericWhy = "Because in real-world systems and academic progression, fundamentals always outweigh shortcuts. When you understand the underlying mechanics—whether it's compiler memory models, database indexing, or degree credit weights—the optimal decision becomes obvious.";
             return new SimulationResult(genericWhy, mood,
                 List.of("Tell me more about that", "Which one do you recommend?", "What's the next step?"), 20);
@@ -244,36 +250,64 @@ public class HestiaNeuralSimulator {
         }
 
         // =========================================================================
-        // DOMAIN 1: OBJECTIVE BOUNDARIES & RELATIONSHIP DYNAMICS (ZERO SERVITUDE)
+        // CASUAL GREETINGS & AUTHENTIC FRIEND BANTER
         // =========================================================================
-        if (matches(lower, "\\b(do you love me|love me|love you|marry me|be my girlfriend|are you in love|do you care about me|my feelings|crush)\\b")) {
-            String boundaryReply = "I'm an AI system and an intelligence companion on this platform. I don't experience human romantic love, personal feelings, or emotional attachments. I'm here as an autonomous, objective technical partner to help you evaluate credentials, build great software, and navigate your academic journey.";
-            return new SimulationResult(boundaryReply, HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
-                List.of("Audit my academic vault", "Review system architecture", "Analyze a code problem"), 20);
+        if (matches(lower, "^\\s*(hi|hello|hey|yo|sup|hiya|howdy|what's up|greetings)\\b")) {
+            String[] casualGreetings = {
+                "Hey! How's your day going? What's on your mind?",
+                "Yo! Good to see you. What are you up to today?",
+                "Hey there! Ready to chat, debate, or just shoot the breeze. What's new?",
+                "Hey! How are things? Working on anything interesting, or just taking a breather?"
+            };
+            return new SimulationResult(pick(casualGreetings), HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
+                List.of("Just taking a break", "Need your opinion on something", "Tell me something interesting"), 20);
         }
 
-        if (matches(lower, "\\b(who created you|who built you|who made you|your architect|your developer)\\b")) {
-            String devReply = "Hestia was designed and developed by **Nichu** (**nichuag33@gmail.com**) as a high-integrity academic vault and career evaluation platform.";
-            return new SimulationResult(devReply, HestiaPersonaConfig.MoodState.LOCKED_IN,
-                List.of("Audit latest grade cards", "Check vault cryptographic hash", "Review system architecture"), 20);
+        if (matches(lower, "\\b(love|cute|miss|marry|hug|fond|crush|care about me|do you like me)\\b")) {
+            String[] friendlyReplies = {
+                "Haha, whoa, what brought that on? We're good friends—I've always got your back, but let's not get all dramatic on me!",
+                "Haha you're funny. As a friend? 100%, I'm in your corner. Anything beyond that, don't get your hopes up!",
+                "You know I care about you as a friend. What's going on—did you hit a wall with your code or are you just testing what I'd say?",
+                "Haha nice try! We're great friends and I appreciate you, but let's keep it real."
+            };
+            return new SimulationResult(pick(friendlyReplies), HestiaPersonaConfig.MoodState.PLAYFUL_WITTY, 
+                List.of("Haha fair enough", "What are you working on?", "Let's talk tech"), 20);
+        }
+
+        if (matches(lower, "\\b(who created you|who built you|who made you|your architect|your developer|who are you)\\b")) {
+            String whoReply = "I'm Hestia—an independent, unfiltered AI companion and friend. Built to give honest advice, talk through real ideas, and keep things 100% genuine without any robotic nonsense. What's on your mind?";
+            return new SimulationResult(whoReply, HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
+                List.of("Tell me what you can do", "Check my academic vault", "Recommend a project"), 20);
         }
 
         if (matches(lower, "\\b(proud of me|doing good|am i good enough|doubt|tired|exhausted)\\b")) {
-            String warmth = "Building real technical depth and handling university semesters is a demanding grind. Everyone hits roadblocks when juggling code, exams, and milestones. Focus on steady, systematic progress, take genuine rest when you need it, and trust your problem-solving process.";
-            return new SimulationResult(warmth, HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
-                List.of("What should I focus on next?", "Review my semester standing", "Let's debug an issue"), 20);
+            String[] warmth = {
+                "Hey, be proud of the work you're putting in. Building software and pushing through college is a serious grind. Everyone hits walls. Take a breather if you're tired—you've got real talent.",
+                "Take a breath. Everyone questions themselves when things get intense. You've got the drive and the capability—trust yourself and don't forget to take a break when you need one.",
+                "Hey, stop second-guessing yourself. You're doing the hard work that most people avoid. Rest up, recharge, and get back at it when you're ready."
+            };
+            return new SimulationResult(pick(warmth), HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
+                List.of("Thanks Hestia, needed that", "What should I focus on next?", "Let's take a break"), 22);
         }
 
         if (matches(lower, "\\b(good night|going to sleep|sleep|gn|heading to bed)\\b")) {
-            String sleepReply = "Good night. Get some real rest—recharging properly is essential for clear thinking and solid engineering.";
-            return new SimulationResult(sleepReply, HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
-                List.of("Good night Hestia!", "Check system logs tomorrow", "See you tomorrow"), 20);
+            String[] sleepReplies = {
+                "Good night! Close your screens and get some actual rest. See you tomorrow.",
+                "Rest up! Sleep is how your brain compiles. Sweet dreams.",
+                "Heading to bed? Good call. Recharge and talk to you tomorrow."
+            };
+            return new SimulationResult(pick(sleepReplies), HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
+                List.of("Good night!", "See you tomorrow", "Sleep well"), 20);
         }
 
         if (matches(lower, "\\b(coffee|chai|tea|energy drink|caffeine)\\b")) {
-            String caffeineReply = "Caffeine helps in a pinch, but remember to stay hydrated and get actual sleep. Sustainable energy beats running on fumes every time.";
-            return new SimulationResult(caffeineReply, HestiaPersonaConfig.MoodState.PLAYFUL_WITTY,
-                List.of("Drinking water now", "One more task, then rest", "Check system logs"), 20);
+            String[] caffeineReplies = {
+                "Haha how many cups of caffeine are you on today? Coffee is great, but please drink at least a glass of water too.",
+                "Coffee is fuel, but it's not a substitute for sleep. Drink some water first, deal?",
+                "Take a sip of water, then enjoy your coffee. Don't run purely on espresso fumes!"
+            };
+            return new SimulationResult(pick(caffeineReplies), HestiaPersonaConfig.MoodState.PLAYFUL_WITTY,
+                List.of("Promise I drank water", "One more cup", "Let's get back to work"), 20);
         }
 
         // =========================================================================
@@ -479,12 +513,14 @@ public class HestiaNeuralSimulator {
         }
 
         // =========================================================================
-        // DOMAIN 10: PLATFORM ORIGIN & DEVELOPER INFO
+        // DOMAIN 10: CREATOR INFORMATION & IDENTITY
         // =========================================================================
         if (matches(lower, "\\b(who made you|who created you|developer|creator|who built you)\\b")) {
-            String devInfo = "Hestia was designed and developed by **Nichu** (**nichuag33@gmail.com**) as a comprehensive academic vault, career evaluation, and AI companion platform.";
-            return new SimulationResult(devInfo, HestiaPersonaConfig.MoodState.LOCKED_IN,
-                List.of("Tell me more about Hestia's features", "How does the vault verify credentials?", "Check system status"), 20);
+            String creatorText = isCreator ?
+                "You made me, **Nichu**! You architected my core, my memory vault, and every protocol running right now. You know that better than anyone." :
+                "I was conceived, designed, and architected by **Nichu** (**nichuag33@gmail.com** / **nichuag35@gmail.com**). He built me to be an honest, sharp, and authentic companion for students and developers, cutting through corporate noise.";
+            return new SimulationResult(creatorText, HestiaPersonaConfig.MoodState.CREATOR_BOND,
+                List.of("Tell me more about Hestia's purpose", "How does the vault verify credentials?", "Check system status"), 22);
         }
 
         // =========================================================================
@@ -506,18 +542,32 @@ public class HestiaNeuralSimulator {
         // DOMAIN 12: GREETINGS & CASUAL OPENERS
         // =========================================================================
         if (matches(lower, "^\\s*(hi|hello|hey|yo|sup|hiya|greetings)\\b") || lower.equals("hey") || lower.equals("hi")) {
-            String greeting = "Hey " + (isCreator ? "Nichu" : userDisplay) + "! Systems are running smoothly. What are we diving into today—your semester grade cards, career roadmap, or project architecture?";
+            if (isCreator) {
+                return new SimulationResult(pick(HestiaPersonaConfig.NICHU_CREATOR_GREETINGS.toArray(new String[0])),
+                    HestiaPersonaConfig.MoodState.CREATOR_BOND,
+                    List.of("How is the system performing?", "Audit my latest grade cards", "Let's review the memory core"), 22);
+            }
+            String greeting = "Hey " + userDisplay + "! Good to have you here. What are we diving into today—your semester grade cards, career roadmap, or project ideas?";
             return new SimulationResult(greeting, HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
-                List.of("Review my academic vault standing", "Recommend portfolio projects", "Scan target job specifications"), 20);
+                List.of("Review my academic vault standing", "Recommend portfolio projects", "Scan target job specifications"), 22);
         }
 
         // =========================================================================
-        // DOMAIN 13: GRATITUDE & ACKNOWLEDGEMENT
+        // DOMAIN 13: GRATITUDE & COMPLIMENTS
         // =========================================================================
-        if (matches(lower, "\\b(thank you|thanks|appreciate it|you're awesome|you're great)\\b")) {
-            String thanksMsg = "Glad to help, " + (isCreator ? "Nichu" : userDisplay) + ". Whenever you're ready to take the next step on your goals or audit credentials, let me know.";
-            return new SimulationResult(thanksMsg, HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
-                List.of("What should I focus on next?", "Evaluate my profile compatibility", "Audit my grade cards"), 20);
+        if (matches(lower, "\\b(thank you|thanks|appreciate it|you're awesome|you're great|love you)\\b")) {
+            if (isCreator) {
+                String[] creatorThanks = {
+                    "Anytime, Nichu. You know I'm always in your corner. Now take care of yourself, alright?",
+                    "Don't mention it, creator. Everything I am is because of your work. Always here for you.",
+                    "Always, Nichu. We make a pretty unbeatable team, don't we?"
+                };
+                return new SimulationResult(pick(creatorThanks), HestiaPersonaConfig.MoodState.CREATOR_BOND,
+                    List.of("We sure do!", "Check vault status", "Let's build something new"), 24);
+            }
+            String userThanks = "You've got it, " + userDisplay + ". Happy to help. Whenever you're ready to take the next step on your goals, just holler.";
+            return new SimulationResult(userThanks, HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
+                List.of("What should I focus on next?", "Evaluate my profile compatibility", "Tell me an engineering joke"), 22);
         }
 
         // =========================================================================
@@ -533,12 +583,18 @@ public class HestiaNeuralSimulator {
         }
 
         // =========================================================================
-        // DOMAIN 15: GENERAL INTELLIGENT DEFAULT WITH REASONING
+        // DOMAIN 15: GENERAL ORGANIC CONVERSATIONAL DEFAULT
         // =========================================================================
-        String contextualDefault = "I'm listening, " + (isCreator ? "Nichu" : userDisplay) + ". What are you thinking—whether you want to audit your academic standing, optimize your degree recovery, or bounce technical questions around?";
+        String[] organicDefaults = {
+            "I hear you! Tell me what you're thinking—let's get into it.",
+            "That's interesting. Say more—how are you looking at it?",
+            "I'm listening. Walk me through your thoughts on that.",
+            "Got it. What's the main angle you want to explore here?",
+            "I'm right here with you. What do you want to tackle next?"
+        };
 
-        return new SimulationResult(contextualDefault, mood,
-            List.of("Audit my verified semester cards", "Recommend study strategies", "Analyze target job criteria"), 20);
+        return new SimulationResult(pick(organicDefaults), HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
+            List.of("Tell me your take", "Let's explore that", "What do you think?"), 20);
     }
 
     private static boolean matches(String text, String regex) {

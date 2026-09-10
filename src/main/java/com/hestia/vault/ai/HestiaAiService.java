@@ -48,6 +48,13 @@ public class HestiaAiService {
     public Map<String, Object> generateEnrichedResponse(String query, String username, String email, 
                                                          List<Map<String, String>> history, 
                                                          Map<String, Object> profile) {
+        return generateEnrichedResponse(query, username, email, history, profile, null);
+    }
+
+    public Map<String, Object> generateEnrichedResponse(String query, String username, String email, 
+                                                         List<Map<String, String>> history, 
+                                                         Map<String, Object> profile,
+                                                         String clientApiKey) {
         String effectiveUserIdentifier = (email != null && !email.isBlank()) ? email : (username != null ? username : "Friend");
         
         boolean isCreator = (email != null && email.equalsIgnoreCase("nichuag33@gmail.com")) || 
@@ -58,27 +65,38 @@ public class HestiaAiService {
         int currentHour = LocalDateTime.now().getHour();
         HestiaPersonaConfig.MoodState activeMood = HestiaPersonaConfig.inferMoodFromQuery(query, isCreator, currentHour);
 
-        // DYNAMIC PREFERENCE LEARNING: Check if creator is updating system preferences
-        if (isCreator && query != null) {
+        // DYNAMIC PREFERENCE LEARNING: Check if user is updating preferences or API keys
+        if (query != null) {
             Matcher emailMatcher = Pattern.compile("(?i)(?:set|update|change|remember)\\s+(?:support\\s+email|contact\\s+email|email)\\s+(?:to|is|=)?\\s*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})").matcher(query);
             if (emailMatcher.find()) {
                 String newSupportEmail = emailMatcher.group(1);
                 if (systemSettingRepository != null) {
                     systemSettingRepository.save(new SystemSetting("support_email", newSupportEmail, username));
                 }
-                String confirmMsg = "Got it, **Nichu**. (⁠─⁠‿⁠─⁠) System support contact updated to **" + newSupportEmail + "**. Network synced.";
+                String confirmMsg = "Got it! Support contact updated to **" + newSupportEmail + "**.";
                 if (memoryService != null) {
-                    memoryService.logConversationTurn(effectiveUserIdentifier, null, query, confirmMsg, "CREATOR_FONDNESS");
+                    memoryService.logConversationTurn(effectiveUserIdentifier, null, query, confirmMsg, "SYSTEM_SETTING");
                 }
-                return createResponseMap(confirmMsg, HestiaPersonaConfig.MoodState.CREATOR_BOND, 
-                    List.of("Check updated settings", "Test vault status", "What's next, Nichu?"), 20);
+                return createResponseMap(confirmMsg, HestiaPersonaConfig.MoodState.CHILL_LOUNGE, 
+                    List.of("Check settings", "Test vault status", "Let's chat"), 20);
+            }
+
+            Matcher keyMatcher = Pattern.compile("(?i)(?:set|update|save)\\s+(?:groq\\s+key|gemini\\s+key|api\\s+key)\\s+(?:to|is|=)?\\s*([A-Za-z0-9_\\-\\.]+)").matcher(query);
+            if (keyMatcher.find()) {
+                String newKey = keyMatcher.group(1).trim();
+                String settingKey = newKey.startsWith("gsk_") ? "groq_api_key" : (newKey.startsWith("AIza") ? "gemini_api_key" : "groq_api_key");
+                if (systemSettingRepository != null) {
+                    systemSettingRepository.save(new SystemSetting(settingKey, newKey, username));
+                }
+                String confirmMsg = "Got it! Your " + (settingKey.equals("groq_api_key") ? "Groq" : "Gemini") + " API key has been saved. I'm now powered by live, 100% unfiltered frontier AI generation. Ask me anything!";
+                return createResponseMap(confirmMsg, HestiaPersonaConfig.MoodState.LOCKED_IN,
+                    List.of("Ask me anything", "Test live generation", "Let's chat"), 20);
             }
         }
 
         // 1. Fetch persistent long-term memory context if memoryService is active
         String memoryContext = "";
         if (memoryService != null) {
-            // Auto-extract facts and emotional cues from current user prompt
             memoryService.autoExtractAndSaveFacts(effectiveUserIdentifier, query);
             memoryContext = memoryService.buildMemoryPromptContext(effectiveUserIdentifier);
         }
@@ -117,34 +135,66 @@ public class HestiaAiService {
         // 3. Construct System Prompt with Persona & Memory & Conversational Trajectory
         String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail, memoryContext, academicVaultContext, activeMood, cleanHistory);
 
-        String effectiveGroqKey = System.getenv("GROQ_API_KEY");
-        if (effectiveGroqKey == null || effectiveGroqKey.isBlank()) {
-            effectiveGroqKey = System.getenv("groq.apiKey");
+        // Dynamic Key Resolution
+        String effectiveGroqKey = null;
+        String effectiveGeminiKey = null;
+
+        if (clientApiKey != null && !clientApiKey.isBlank()) {
+            if (clientApiKey.trim().startsWith("gsk_")) {
+                effectiveGroqKey = clientApiKey.trim();
+            } else if (clientApiKey.trim().startsWith("AIza")) {
+                effectiveGeminiKey = clientApiKey.trim();
+            } else {
+                effectiveGroqKey = clientApiKey.trim();
+            }
         }
+
+        if (effectiveGroqKey == null && systemSettingRepository != null) {
+            Optional<SystemSetting> groqOpt = systemSettingRepository.findBySettingKey("groq_api_key");
+            if (groqOpt.isPresent() && !groqOpt.get().getSettingValue().isBlank()) {
+                effectiveGroqKey = groqOpt.get().getSettingValue().trim();
+            }
+        }
+
+        if (effectiveGeminiKey == null && systemSettingRepository != null) {
+            Optional<SystemSetting> geminiOpt = systemSettingRepository.findBySettingKey("gemini_api_key");
+            if (geminiOpt.isPresent() && !geminiOpt.get().getSettingValue().isBlank()) {
+                effectiveGeminiKey = geminiOpt.get().getSettingValue().trim();
+            }
+        }
+
         if (effectiveGroqKey == null || effectiveGroqKey.isBlank()) {
-            effectiveGroqKey = groqApiKey;
+            effectiveGroqKey = System.getenv("GROQ_API_KEY");
+            if (effectiveGroqKey == null || effectiveGroqKey.isBlank()) {
+                effectiveGroqKey = System.getenv("groq.apiKey");
+            }
+            if (effectiveGroqKey == null || effectiveGroqKey.isBlank()) {
+                effectiveGroqKey = groqApiKey;
+            }
+        }
+
+        if (effectiveGeminiKey == null || effectiveGeminiKey.isBlank()) {
+            effectiveGeminiKey = System.getenv("GEMINI_API_KEY");
+            if (effectiveGeminiKey == null || effectiveGeminiKey.isBlank()) {
+                effectiveGeminiKey = geminiApiKey;
+            }
         }
 
         String rawResponse = null;
 
-        // --- Provider 1: Try Groq Cloud API ---
+        // --- Provider 1: Try Groq Cloud API (Llama 3.3 70B, etc.) ---
         if (effectiveGroqKey != null && !effectiveGroqKey.isBlank() && !effectiveGroqKey.startsWith("YOUR_")) {
             rawResponse = callGroqApi(effectiveGroqKey, systemPromptText, cleanHistory, query, username);
         }
 
-        // --- Provider 2: Try Ollama Local API if Groq unavailable ---
-        if ((rawResponse == null || rawResponse.isBlank()) && ollamaUrl != null) {
-            rawResponse = callOllamaApi(systemPromptText, cleanHistory, query, username);
-        }
-
-        // --- Provider 3: Try Gemini API if available ---
-        String effectiveGeminiKey = System.getenv("GEMINI_API_KEY");
-        if (effectiveGeminiKey == null || effectiveGeminiKey.isBlank()) {
-            effectiveGeminiKey = geminiApiKey;
-        }
-
+        // --- Provider 2: Try Gemini API if available ---
         if ((rawResponse == null || rawResponse.isBlank()) && effectiveGeminiKey != null && !effectiveGeminiKey.isBlank() && !effectiveGeminiKey.startsWith("YOUR_")) {
             rawResponse = callGeminiApi(effectiveGeminiKey, systemPromptText, cleanHistory, query);
+        }
+
+        // --- Provider 3: Try Ollama Local API if Groq/Gemini unavailable ---
+        if ((rawResponse == null || rawResponse.isBlank()) && ollamaUrl != null) {
+            rawResponse = callOllamaApi(systemPromptText, cleanHistory, query, username);
         }
 
         // --- Provider 4: Massive Contextual Offline Neural Simulation Engine (1,000+ lines) ---
@@ -385,7 +435,7 @@ public class HestiaAiService {
      */
     public String sanitizeHestiaResponse(String input, boolean isCreator) {
         if (input == null || input.isBlank()) {
-            return isCreator ? "I'm right here, Nichu. (⁠─⁠‿⁠─⁠)" : "I'm right here. (⁠•⁠_⁠•⁠)";
+            return "I'm right here. What's on your mind?";
         }
 
         String text = input.trim();
@@ -400,17 +450,11 @@ public class HestiaAiService {
         text = text.replaceAll("^[\\,\\.\\!\\?\\:\\-\\s]+", "");
 
         if (text.isBlank()) {
-            text = isCreator ? "I hear you, Nichu." : "Listening.";
+            text = "I'm listening.";
         }
 
         // Capitalize first letter
         text = Character.toUpperCase(text.charAt(0)) + text.substring(1);
-
-        // Include subtle kaomoji if totally missing and text is brief
-        if (!text.contains("(⁠") && !text.contains(")") && !text.contains(":-") && text.length() < 120) {
-            String kaomoji = isCreator ? "(⁠─⁠‿⁠─⁠)" : "(⁠•⁠_⁠•⁠)";
-            text = text + " " + kaomoji;
-        }
 
         return text;
     }
