@@ -99,7 +99,7 @@ public class HestiaAiService {
                 }
                 messagesList.add(Map.of("role", "user", "content", query));
 
-                String[] groqModels = new String[]{"llama-3.3-70b-versatile", "llama-3.1-8b-instant", "gemma2-9b-it", "mixtral-8x7b-32768", "llama3-8b-8192"};
+                String[] groqModels = new String[]{"openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.6-27b", "groq/compound", "allam-2-7b"};
                 for (String groqModel : groqModels) {
                     try {
                         Map<String, Object> groqBody = Map.of(
