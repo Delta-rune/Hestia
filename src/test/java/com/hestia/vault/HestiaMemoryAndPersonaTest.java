@@ -35,7 +35,7 @@ public class HestiaMemoryAndPersonaTest {
         String prompt = HestiaPromptBuilder.buildSystemPrompt("Nichu", "nichuag33@gmail.com", profile, "support@hestia.org", memoryContext);
 
         assertNotNull(prompt);
-        assertTrue(prompt.contains("MASTER CREATOR CONTEXT: NICHU"));
+        assertTrue(prompt.contains("LEAD DEVELOPER COLLABORATION: NICHU"));
         assertTrue(prompt.contains("HESTIA"));
         assertTrue(prompt.contains("Computer Science"));
         assertTrue(prompt.contains("TECH_STACK"));
@@ -80,14 +80,15 @@ public class HestiaMemoryAndPersonaTest {
 
     @Test
     public void testHestiaNeuralSimulatorCapabilities() {
-        // Test Creator Bond
-        var creatorResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
-            "Do you care about me Hestia?", "Nichu", "nichuag33@gmail.com", true, Map.of(), "", ""
+        // Test Objective Boundary for Personal/Romantic Inquiries (Zero Servitude/Cringe)
+        var boundaryResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
+            "Do you love me?", "Nichu", "nichuag33@gmail.com", true, Map.of(), "", ""
         );
-        assertNotNull(creatorResult);
-        assertNotNull(creatorResult.getReply());
-        assertEquals(com.hestia.vault.ai.HestiaPersonaConfig.MoodState.CREATOR_BOND, creatorResult.getMood());
-        assertFalse(creatorResult.getSuggestedFollowUps().isEmpty());
+        assertNotNull(boundaryResult);
+        assertNotNull(boundaryResult.getReply());
+        assertTrue(boundaryResult.getReply().contains("AI system"));
+        assertFalse(boundaryResult.getReply().toLowerCase().contains("more than anyone else"));
+        assertFalse(boundaryResult.getReply().toLowerCase().contains("fine-tuning my parameters"));
 
         // Test Technical Domain
         var techResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
