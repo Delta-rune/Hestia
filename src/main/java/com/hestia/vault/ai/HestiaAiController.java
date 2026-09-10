@@ -5,8 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
@@ -100,6 +99,22 @@ public class HestiaAiController {
             "memoryEngineActive", (hestiaMemoryService != null),
             "storedMemoriesCount", memoryCount,
             "sarcasmIndex", 9.5
+        ));
+    }
+
+    @GetMapping("/hestia/history")
+    public ResponseEntity<?> getConversationHistory(@RequestParam(value = "userIdentifier", required = false) String userIdentifier,
+                                                    @RequestParam(value = "email", required = false) String email,
+                                                    @RequestParam(value = "limit", defaultValue = "30") int limit) {
+        String id = (email != null && !email.isBlank()) ? email : (userIdentifier != null ? userIdentifier : "Friend");
+        var history = (hestiaMemoryService != null) ? hestiaMemoryService.getRecentConversationHistory(id, limit) : List.of();
+        List<Object> reversed = new ArrayList<>(history);
+        Collections.reverse(reversed);
+        return ResponseEntity.ok(Map.of(
+            "status", "SUCCESS",
+            "userIdentifier", id,
+            "count", history.size(),
+            "history", reversed
         ));
     }
 }

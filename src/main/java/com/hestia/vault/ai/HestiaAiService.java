@@ -27,6 +27,9 @@ public class HestiaAiService {
     @Autowired(required = false)
     private HestiaMemoryService memoryService;
 
+    @Autowired(required = false)
+    private com.hestia.vault.service.AcademicRecordService academicRecordService;
+
     @Value("${groq.apiKey:}")
     private String groqApiKey;
 
@@ -77,8 +80,11 @@ public class HestiaAiService {
             }
         }
 
+        // 2b. Fetch dynamic academic vault context
+        String academicVaultContext = buildAcademicVaultContext(email, username, profile);
+
         // 3. Construct System Prompt with Persona & Memory
-        String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail, memoryContext);
+        String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail, memoryContext, academicVaultContext);
 
         String effectiveGroqKey = System.getenv("GROQ_API_KEY");
         if (effectiveGroqKey == null || effectiveGroqKey.isBlank()) {
@@ -417,6 +423,60 @@ public class HestiaAiService {
                 "Data logged. (⁠￣⁠_⁠￣⁠) Keep it moving."
             };
             return userFallbacks[rand.nextInt(userFallbacks.length)];
+        }
+    }
+
+    private String buildAcademicVaultContext(String email, String username, Map<String, Object> profile) {
+        if (academicRecordService == null) return "";
+        try {
+            Long userId = null;
+            if (profile != null && profile.get("userId") != null) {
+                try {
+                    userId = Long.parseLong(profile.get("userId").toString());
+                } catch (Exception ignored) {}
+            }
+            if (userId == null) {
+                userId = 1L;
+            }
+            Optional<com.hestia.vault.model.AcademicRecord> recOpt = academicRecordService.getAcademicRecordByUserId(userId);
+            if (recOpt.isEmpty()) return "";
+            com.hestia.vault.model.AcademicRecord rec = recOpt.get();
+            StringBuilder sb = new StringBuilder();
+            if (rec.getCurrentCgpa() != null) {
+                sb.append("• Cumulative CGPA: ").append(rec.getCurrentCgpa()).append("/10.0\n");
+            }
+            if (rec.getTotalCreditsEarned() != null && rec.getTotalCreditsEarned() > 0) {
+                sb.append("• Total Credits Earned: ").append(rec.getTotalCreditsEarned()).append("\n");
+            }
+            String semJson = rec.getSemesterDataJson();
+            if (semJson != null && !semJson.isBlank() && !semJson.equals("{}")) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                Map<String, Object> semData = mapper.readValue(semJson, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                if (semData.containsKey("currentYear") && semData.containsKey("currentSem")) {
+                    sb.append("• Academic Standing: Year ").append(semData.get("currentYear")).append(", Semester ").append(semData.get("currentSem")).append("\n");
+                }
+                if (semData.get("semesters") instanceof Map<?, ?> sems) {
+                    List<String> weakAreas = new ArrayList<>();
+                    for (Map.Entry<?, ?> entry : sems.entrySet()) {
+                        if (entry.getValue() instanceof Map<?, ?> s) {
+                            String semKey = entry.getKey().toString();
+                            Object sgpa = s.get("sgpa");
+                            sb.append("• Semester ").append(semKey).append(": SGPA ").append(sgpa != null ? sgpa : "N/A").append("\n");
+                            if (s.get("focusAreas") instanceof List<?> fa) {
+                                for (Object f : fa) {
+                                    if (f != null) weakAreas.add("Sem " + semKey + " " + f.toString());
+                                }
+                            }
+                        }
+                    }
+                    if (!weakAreas.isEmpty()) {
+                        sb.append("• Identified Focus Areas (Courses with room for improvement): ").append(String.join(", ", weakAreas)).append("\n");
+                    }
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
         }
     }
 }

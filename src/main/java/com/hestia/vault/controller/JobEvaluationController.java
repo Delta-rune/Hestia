@@ -321,6 +321,8 @@ public class JobEvaluationController {
             String finalCertId = !cleanedId.isBlank() ? cleanedId : "HST-CERT-" + Math.abs(shaHash.hashCode() % 899999 + 100000);
             String finalName = !cleanedName.isBlank() ? cleanedName : "Cryptographically Verified Certificate";
 
+            saveVerifiedCertificateToProfile(request.get("userId"), finalName, finalIssuer, finalCertId);
+
             return ResponseEntity.ok(Map.of(
                 "status", "VERIFIED_AUTHENTIC",
                 "trustScore", "99.8%",
@@ -366,6 +368,8 @@ public class JobEvaluationController {
                 String finalName = !cleanedName.isBlank() ? cleanedName : "Verified Academic & Skill Certificate";
                 String finalCertId = !cleanedId.isBlank() ? cleanedId : "HST-CERT-" + Math.abs(shaHash.hashCode() % 899999 + 100000);
 
+                saveVerifiedCertificateToProfile(request.get("userId"), finalName, finalIssuer, finalCertId);
+
                 return ResponseEntity.ok(Map.of(
                     "status", "VERIFIED_AUTHENTIC",
                     "trustScore", (recognizedIssuer || !cleanedIssuer.isBlank()) ? "98.5%" : "96.5%",
@@ -385,12 +389,16 @@ public class JobEvaluationController {
         if (recognizedIssuer && !cleanedId.isBlank() && cleanedId.length() >= 4) {
             String hashInput = cleanedId + cleanedIssuer;
             String shaHash = "SHA256:" + Integer.toHexString(hashInput.hashCode()).toUpperCase();
+            String certTitle = cleanedName.isBlank() ? "Verified Academic Certificate" : cleanedName;
+
+            saveVerifiedCertificateToProfile(request.get("userId"), certTitle, cleanedIssuer, cleanedId);
+
             return ResponseEntity.ok(Map.of(
                 "status", "VERIFIED_REGISTRY_RECORD",
                 "trustScore", "88.5%",
                 "tier", "TIER_1_EMAIL",
                 "certificateId", cleanedId,
-                "certificateName", cleanedName.isBlank() ? "Verified Academic Certificate" : cleanedName,
+                "certificateName", certTitle,
                 "issuer", cleanedIssuer,
                 "hasImageProof", false,
                 "verificationHash", shaHash,
@@ -417,6 +425,22 @@ public class JobEvaluationController {
         ));
     }
 
+    private void saveVerifiedCertificateToProfile(String userIdStr, String title, String issuer, String certId) {
+        if (userIdStr == null || userIdStr.isBlank()) return;
+        try {
+            Long userId = Long.parseLong(userIdStr);
+            Optional<UserProfile> pOpt = userProfileRepository.findByUserId(userId);
+            if (pOpt.isPresent()) {
+                UserProfile p = pOpt.get();
+                String existing = p.getCertificates() != null ? p.getCertificates() : "";
+                String entry = title + " (" + issuer + " #" + certId + ")";
+                if (!existing.contains(certId)) {
+                    p.setCertificates(existing.isBlank() ? entry : existing + " | " + entry);
+                    userProfileRepository.save(p);
+                }
+            }
+        } catch (Exception ignored) {}
+    }
 
     private boolean isGibberish(String input) {
 

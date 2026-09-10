@@ -10,6 +10,10 @@ import java.util.Map;
 public class HestiaPromptBuilder {
 
     public static String buildSystemPrompt(String username, String email, Map<String, Object> profile, String activeSupportEmail, String longTermMemoryContext) {
+        return buildSystemPrompt(username, email, profile, activeSupportEmail, longTermMemoryContext, null);
+    }
+
+    public static String buildSystemPrompt(String username, String email, Map<String, Object> profile, String activeSupportEmail, String longTermMemoryContext, String academicVaultContext) {
         String degree = profile != null && profile.get("degreeField") != null ? profile.get("degreeField").toString() : "Engineering";
         String inst = profile != null && profile.get("institution") != null ? profile.get("institution").toString() : "University";
         String cgpa = profile != null && profile.get("cgpa") != null ? profile.get("cgpa").toString() : "8.0";
@@ -25,13 +29,19 @@ public class HestiaPromptBuilder {
         prompt.append(HestiaPersonaConfig.getMasterPersonaDirectives()).append("\n");
 
         // 2. Active User Context & Academic Vault Profile
-        prompt.append("=== CURRENT USER SESSION & ACADEMIC VAULT ===\n");
-        prompt.append("• USERNAME: ").append(username != null ? username : "Netrunner").append("\n");
+        prompt.append("=== CURRENT USER SESSION & ACADEMIC PROFILE ===\n");
+        prompt.append("• USERNAME: ").append(username != null ? username : "Student").append("\n");
         prompt.append("• EMAIL: ").append(email != null && !email.isBlank() ? email : "Unlinked").append("\n");
         prompt.append("• DEGREE FIELD: ").append(degree).append("\n");
         prompt.append("• INSTITUTION: ").append(inst).append("\n");
         prompt.append("• CURRENT CGPA: ").append(cgpa).append("\n");
         prompt.append("• SYSTEM SUPPORT CONTACT: ").append(activeSupportEmail != null ? activeSupportEmail : "hestia.paranoia@gmail.com").append("\n\n");
+
+        // 2b. Detailed Semester Grade Card & Course Breakdown
+        if (academicVaultContext != null && !academicVaultContext.isBlank()) {
+            prompt.append("=== OFFICIAL SEMESTER PERFORMANCE & FOCUS AREAS ===\n");
+            prompt.append(academicVaultContext).append("\n\n");
+        }
 
         // 3. Persistent Long-Term Memory Context
         if (longTermMemoryContext != null && !longTermMemoryContext.isBlank()) {

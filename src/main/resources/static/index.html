@@ -573,279 +573,180 @@
       <section id="section-vault" class="hidden space-y-8 py-6">
         <div class="border-b border-neutral-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 class="font-sans text-3xl font-bold text-white">Academic Qualifications Vault</h2>
-            <p class="text-xs text-neutral-400 mt-1">Manually self-report your verified academic details, degree, institution, CGPA, and total credits earned.</p>
+            <h2 class="font-sans text-3xl font-bold text-white flex items-center gap-3">
+              <i class="fa-solid fa-graduation-cap text-emerald-400"></i> Academic Grade Card Vault
+            </h2>
+            <p class="text-xs text-neutral-400 mt-1">Zero manual labor. Drop your official semester grade card PDFs to auto-extract course grades, compute cumulative CGPA, and track focus areas.</p>
           </div>
-          <div id="vault-verification-badge" class="text-xs font-mono px-3 py-1.5 rounded-lg border border-emerald-800 bg-emerald-950/80 text-emerald-400 font-semibold">
-            FLOW: MANUAL SELF-REPORTED
+          <div class="flex items-center gap-2">
+            <span id="vault-cloud-sync-badge" class="text-xs font-mono px-3 py-1.5 rounded-lg border border-emerald-700/60 bg-emerald-950/80 text-emerald-300 font-semibold flex items-center gap-1.5 shadow-lg">
+              <i class="fa-solid fa-cloud-check text-emerald-400"></i> CLOUD PERSISTENT
+            </span>
+            <span class="text-xs font-mono px-3 py-1.5 rounded-lg border border-sky-700/60 bg-sky-950/80 text-sky-300 font-semibold flex items-center gap-1.5">
+              <i class="fa-solid fa-file-circle-check text-sky-400"></i> 1-CLICK PDF AUDIT
+            </span>
           </div>
         </div>
 
-        <!-- MANUAL ACADEMIC RECORD ENTRY FLOW (PIVOT ARCHITECTURE) -->
+        <!-- 1. ACADEMIC STANDING & SEMESTER CONFIGURATION -->
         <div class="bg-neutral-900/80 border border-neutral-700/80 rounded-2xl p-6 md:p-8 space-y-6 shadow-2xl">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-neutral-800 pb-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-neutral-950 border border-neutral-700 flex items-center justify-center text-emerald-400">
-                <i class="fa-solid fa-graduation-cap text-lg"></i>
+                <i class="fa-solid fa-calendar-check text-lg"></i>
               </div>
               <div>
-                <h3 class="text-base font-bold text-white uppercase tracking-wider">Manual Academic Data Entry</h3>
-                <p class="text-xs text-neutral-400 font-mono">Self-report your verified academic credentials & credit history</p>
+                <h3 class="text-base font-bold text-white uppercase tracking-wider">Your Academic Standing</h3>
+                <p class="text-xs text-neutral-400 font-mono">Select your current academic year & semester to configure completed grade card slots</p>
               </div>
             </div>
-            <span class="text-xs font-mono px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700/80 text-emerald-300 flex items-center gap-1.5 font-semibold">
-              <i class="fa-solid fa-user-check"></i> Self-Reported Flow
+            <span id="academic-slot-summary-badge" class="text-xs font-mono px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700/80 text-emerald-300 font-semibold">
+              Ready for Semester Cards
             </span>
           </div>
 
-          <!-- Alert / Error / Success Message Container -->
-          <div id="academic-form-alert" class="hidden p-4 rounded-xl text-xs font-mono border"></div>
-
-          <!-- MANUAL DATA ENTRY FORM -->
-          <form id="manual-academic-form" onsubmit="handleSaveAcademicRecord(event)" class="space-y-6">
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-              <!-- Field 0: Student Academic Status Selector -->
-              <div class="space-y-1.5 md:col-span-2">
-                <label class="block text-xs font-semibold text-neutral-300">
-                  Student Academic Status / Level *
-                </label>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <button type="button" onclick="setStudentStatus('PRE_GRADUATE')" id="status-btn-PRE_GRADUATE" class="student-status-btn px-4 py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 border-emerald-500 bg-emerald-950/80 text-emerald-300 shadow-lg">
-                    <i class="fa-solid fa-user-graduate text-emerald-400"></i> Pre-Graduate
-                  </button>
-                  <button type="button" onclick="setStudentStatus('UNDERGRADUATE')" id="status-btn-UNDERGRADUATE" class="student-status-btn px-4 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-book-open"></i> Undergraduate
-                  </button>
-                  <button type="button" onclick="setStudentStatus('POST_GRADUATE')" id="status-btn-POST_GRADUATE" class="student-status-btn px-4 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-award"></i> Post-Graduate
-                  </button>
-                  <button type="button" onclick="setStudentStatus('GRADUATED')" id="status-btn-GRADUATED" class="student-status-btn px-4 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-graduation-cap"></i> Graduated / Alumni
-                  </button>
-                </div>
-                <input type="hidden" id="academic-student-status-val" value="PRE_GRADUATE">
-                <span class="text-[11px] text-emerald-400 font-mono block mt-1" id="status-hint-text">
-                  ✨ Pre-Graduate & Undergraduate statuses unlock your 8-Semester Grade & Focus Tracker below!
-                </span>
-              </div>
-              
-              <!-- Field 0B: Student Full Name / Username -->
-              <div class="space-y-1.5 md:col-span-2">
-                <label for="academic-student-name" class="block text-xs font-semibold text-neutral-300">
-                  Student Full Name / Username *
-                </label>
-                <input type="text" id="academic-student-name" required placeholder="e.g. Nichu" oninput="handleStudentNameChange(this.value)" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
-                <span class="text-[10px] text-neutral-500 font-mono block">Your display username and official student identity name.</span>
-              </div>
-
-              <!-- Field 1: APAAR ID -->
-              <div class="space-y-1.5">
-                <label for="academic-apaar-id" class="block text-xs font-semibold text-neutral-300">
-                  APAAR ID <span class="text-neutral-500 font-normal">(12-Digit Format)</span> *
-                </label>
-                <input type="text" id="academic-apaar-id" required placeholder="e.g. 9876-5432-1012 or 987654321012" maxlength="14" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono tracking-wider transition">
-                <span class="text-[10px] text-neutral-500 font-mono block">Must contain standard 12 numerical digits.</span>
-              </div>
-
-              <!-- Field 2: Institution Name -->
-              <div class="space-y-1.5">
-                <label for="academic-institution-name" class="block text-xs font-semibold text-neutral-300">
-                  Institution / University Name *
-                </label>
-                <input type="text" id="academic-institution-name" required placeholder="e.g. APJ Abdul Kalam Technological University" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
-                <span class="text-[10px] text-neutral-500 font-mono block">Full official name of your university or institute.</span>
-              </div>
-
-              <!-- Field 3: Degree Name -->
-              <div class="space-y-1.5">
-                <label for="academic-degree-name" class="block text-xs font-semibold text-neutral-300">
-                  Degree Name *
-                </label>
-                <input type="text" id="academic-degree-name" required placeholder="e.g. B.Tech Computer Science and Engineering" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
-                <span class="text-[10px] text-neutral-500 font-mono block">Official name of your degree or discipline.</span>
-              </div>
-
-              <!-- Field 4: Current CGPA -->
-              <div class="space-y-1.5">
-                <label for="academic-current-cgpa" class="block text-xs font-semibold text-neutral-300">
-                  Current CGPA <span class="text-neutral-500 font-normal">(0.0 to 10.0 Scale)</span> *
-                </label>
-                <input type="number" step="0.01" min="0.0" max="10.0" id="academic-current-cgpa" required placeholder="e.g. 8.75" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
-                <span class="text-[10px] text-neutral-500 font-mono block">Cumulative GPA between 0.00 and 10.00.</span>
-              </div>
-
-              <!-- Field 5: Total Credits Earned -->
-              <div class="space-y-1.5 md:col-span-2">
-                <label for="academic-total-credits" class="block text-xs font-semibold text-neutral-300">
-                  Total Credits Earned *
-                </label>
-                <input type="number" min="0" id="academic-total-credits" required placeholder="e.g. 160" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
-                <span class="text-[10px] text-neutral-500 font-mono block">Total academic credits accumulated in your degree program.</span>
-              </div>
-
-            </div>
-
-            <!-- Mandatory Self-Certification Checkbox -->
-            <div class="p-4 bg-neutral-950/80 border border-neutral-800 rounded-xl space-y-2">
-              <label class="flex items-start gap-3 cursor-pointer select-none">
-                <input type="checkbox" id="academic-certify-checkbox" required class="mt-0.5 w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-white focus:ring-1 focus:ring-white cursor-pointer shrink-0">
-                <span class="text-xs text-neutral-300 leading-relaxed font-sans">
-                  I certify that the academic information provided above is true and accurate. I understand that submitting false data is my sole responsibility.
-                </span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Academic Year Selector -->
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-neutral-300 uppercase tracking-wider font-mono">
+                Academic Year *
               </label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="academic-year-buttons">
+                <button type="button" onclick="setAcademicYear(1)" id="year-btn-1" class="year-btn px-3 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-mono font-bold transition flex flex-col items-center gap-1">
+                  <span class="text-sm">1st Year</span>
+                  <span class="text-[10px] text-neutral-500 font-normal">Freshman</span>
+                </button>
+                <button type="button" onclick="setAcademicYear(2)" id="year-btn-2" class="year-btn px-3 py-3 rounded-xl border border-emerald-500 bg-emerald-950/80 text-emerald-300 text-xs font-mono font-bold transition flex flex-col items-center gap-1 shadow-lg">
+                  <span class="text-sm">2nd Year</span>
+                  <span class="text-[10px] text-emerald-400/80 font-normal">Sophomore</span>
+                </button>
+                <button type="button" onclick="setAcademicYear(3)" id="year-btn-3" class="year-btn px-3 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-mono font-bold transition flex flex-col items-center gap-1">
+                  <span class="text-sm">3rd Year</span>
+                  <span class="text-[10px] text-neutral-500 font-normal">Junior</span>
+                </button>
+                <button type="button" onclick="setAcademicYear(4)" id="year-btn-4" class="year-btn px-3 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-mono font-bold transition flex flex-col items-center gap-1">
+                  <span class="text-sm">4th Year</span>
+                  <span class="text-[10px] text-neutral-500 font-normal">Senior</span>
+                </button>
+              </div>
             </div>
 
-            <!-- Submit Button & Controls -->
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-              <button type="submit" id="academic-submit-btn" class="btn-mono w-full sm:w-auto px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-2">
-                <i class="fa-solid fa-floppy-disk text-emerald-400"></i> Save Academic Record
-              </button>
-              <button type="button" onclick="loadSavedAcademicRecord()" class="w-full sm:w-auto btn-outline-mono px-5 py-3.5 rounded-xl text-xs font-mono flex items-center justify-center gap-2">
-                <i class="fa-solid fa-arrows-rotate"></i> Refresh Record
-              </button>
+            <!-- Current Semester Dropdown -->
+            <div class="space-y-2">
+              <label for="current-semester-select" class="block text-xs font-bold text-neutral-300 uppercase tracking-wider font-mono">
+                Current Semester Enrolled *
+              </label>
+              <select id="current-semester-select" onchange="handleCurrentSemesterChange(this.value)" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3.5 text-sm text-white font-mono focus:outline-none focus:border-emerald-400 transition cursor-pointer">
+                <option value="1">Semester 1 (Just Started - 0 Completed Cards)</option>
+                <option value="2">Semester 2 (1 Completed: Sem 1)</option>
+                <option value="3" selected>Semester 3 (2 Completed: Sem 1 & 2)</option>
+                <option value="4">Semester 4 (3 Completed: Sem 1, 2 & 3)</option>
+                <option value="5">Semester 5 (4 Completed: Sem 1 to 4)</option>
+                <option value="6">Semester 6 (5 Completed: Sem 1 to 5)</option>
+                <option value="7">Semester 7 (6 Completed: Sem 1 to 6)</option>
+                <option value="8">Semester 8 (7 Completed: Sem 1 to 7)</option>
+              </select>
+              <div id="academic-standing-hint" class="text-[11px] text-emerald-400 font-mono flex items-center gap-1.5 pt-1">
+                <i class="fa-solid fa-sparkles"></i> 2nd Year student on Semester 3: Slots for Semester 1 and 2 grade cards active below.
+              </div>
             </div>
+          </div>
+        </div>
 
-          </form>
-
-          <!-- SAVED ACADEMIC RECORD DISPLAY CARD -->
-          <div id="academic-saved-record-card" class="hidden mt-6 p-5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-3 font-mono">
+        <!-- 2. CUMULATIVE CGPA & DEGREE DASHBOARD -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- Card 1: Cumulative CGPA Overview -->
+          <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-4 shadow-xl">
             <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <span class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <i class="fa-solid fa-id-card-clip text-emerald-400"></i> Self-Reported Academic Record
+              <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-2 font-mono">
+                <i class="fa-solid fa-chart-line text-emerald-400"></i> Cumulative CGPA
               </span>
-              <span class="text-[10px] text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded border border-emerald-800 font-bold">SAVED & ACTIVE</span>
+              <span id="vault-verified-sems-badge" class="text-[10px] text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800 font-mono font-bold">
+                0 Cards
+              </span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-              <div>
-                <span class="text-neutral-500 block text-[10px]">APAAR ID:</span>
-                <span id="display-apaar-id" class="text-white font-bold">--</span>
+            <div class="flex items-baseline gap-3">
+              <span id="vault-cumulative-cgpa" class="text-4xl font-extrabold text-white font-mono tracking-tight">0.00</span>
+              <span class="text-xs text-neutral-500 font-mono">/ 10.00 Scale</span>
+            </div>
+            <div class="space-y-1.5 pt-1">
+              <div class="flex justify-between text-[11px] text-neutral-400 font-mono">
+                <span>Earned Credits</span>
+                <span id="vault-credits-progress-text" class="text-emerald-400 font-bold">0 / 160 Credits</span>
               </div>
-              <div>
-                <span class="text-neutral-500 block text-[10px]">INSTITUTION:</span>
-                <span id="display-institution" class="text-white font-bold">--</span>
-              </div>
-              <div>
-                <span class="text-neutral-500 block text-[10px]">DEGREE:</span>
-                <span id="display-degree" class="text-white font-bold">--</span>
-              </div>
-              <div>
-                <span class="text-neutral-500 block text-[10px]">CURRENT CGPA:</span>
-                <span id="display-cgpa" class="text-emerald-400 font-bold">--</span>
-              </div>
-              <div>
-                <span class="text-neutral-500 block text-[10px]">TOTAL CREDITS:</span>
-                <span id="display-credits" class="text-white font-bold">--</span>
-              </div>
-              <div>
-                <span class="text-neutral-500 block text-[10px]">USER ID:</span>
-                <span id="display-user-id" class="text-neutral-400 font-bold">--</span>
+              <div class="w-full h-2 bg-neutral-900 rounded-full overflow-hidden border border-neutral-800">
+                <div id="vault-credits-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500" style="width: 0%"></div>
               </div>
             </div>
-          <!-- PRE-GRADUATE SEMESTER GRADE & FOCUS TRACKER INTERFACE -->
-          <div id="pregrad-semester-tracker" class="mt-8 pt-6 border-t border-neutral-800 space-y-6">
+            <div id="vault-semester-pills" class="flex flex-wrap gap-1.5 pt-2">
+              <!-- Dynamically populated semester pills -->
+            </div>
+          </div>
+
+          <!-- Card 2: Academic Attention Spotlight & AI Companion Advisor -->
+          <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-4 md:col-span-2 flex flex-col justify-between shadow-xl">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-neutral-800 pb-3">
+              <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2 font-mono">
+                <i class="fa-solid fa-bullseye text-amber-400"></i> Academic Focus & Weakness Spotlight
+              </span>
+              <button type="button" onclick="askLucyAboutFocus()" class="btn-mono text-[11px] px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shadow-md">
+                <i class="fa-solid fa-comment-dots text-emerald-400"></i> Ask Lucy for Study Advice
+              </button>
+            </div>
             
-            <!-- HEADER BAR -->
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-emerald-950/60 via-neutral-900 to-neutral-950 p-6 rounded-2xl border border-emerald-900/60 shadow-2xl">
-              <div class="space-y-1">
-                <div class="flex items-center gap-2">
-                  <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 uppercase tracking-widest">Student Focus Suite</span>
-                  <h3 class="text-xl font-bold text-white tracking-wide flex items-center gap-2">
-                    <i class="fa-solid fa-graduation-cap text-emerald-400"></i> Pre-Graduate Semester Grade & Focus Analytics
-                  </h3>
-                </div>
-                <p class="text-xs text-neutral-400 font-mono">Track semester GPAs, log course grades, isolate subjects pulling down your CGPA, and calculate target recovery GPAs.</p>
-              </div>
-              <div class="flex items-center gap-3">
-                <button type="button" onclick="addNewSemester()" class="btn-mono px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                  <i class="fa-solid fa-plus text-emerald-400"></i> Add Semester
-                </button>
-                <button type="button" onclick="calculateSemesterAnalytics()" class="btn-outline-mono px-4 py-2.5 rounded-xl text-xs font-mono flex items-center gap-2">
-                  <i class="fa-solid fa-calculator"></i> Re-Calculate CGPA
-                </button>
+            <div id="vault-focus-attention-list" class="space-y-2.5 font-mono text-xs max-h-44 overflow-y-auto pr-1">
+              <div class="p-3.5 bg-neutral-900/60 border border-neutral-800 rounded-xl text-neutral-400 italic text-[11px] flex items-center gap-2.5">
+                <i class="fa-solid fa-info-circle text-sky-400 text-sm shrink-0"></i>
+                Drop your official semester grade cards below. Hestia will automatically analyze courses with lower grades and give you strategic recommendations.
               </div>
             </div>
 
-            <!-- ANALYTICS HIGHLIGHT DASHBOARD: FOCUS SPOTLIGHT & TARGET CALCULATOR -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              <!-- Card 1: CGPA & Semester Trend -->
-              <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-5 space-y-4 shadow-xl">
-                <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
-                  <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-2 font-mono">
-                    <i class="fa-solid fa-chart-line text-emerald-400"></i> CGPA Overview
-                  </span>
-                  <span id="tracker-completed-semesters-badge" class="text-[10px] text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800 font-mono font-bold">0 Semesters</span>
-                </div>
-                <div class="flex items-baseline gap-3">
-                  <span id="tracker-calculated-cgpa" class="text-4xl font-extrabold text-white font-mono">0.00</span>
-                  <span class="text-xs text-neutral-500 font-mono">/ 10.00 CGPA</span>
-                </div>
-                <div id="tracker-progress-bar-container" class="space-y-1.5">
-                  <div class="flex justify-between text-[11px] text-neutral-400 font-mono">
-                    <span>Cumulative Progress</span>
-                    <span id="tracker-progress-pct" class="text-emerald-400 font-bold">0%</span>
-                  </div>
-                  <div class="w-full h-2 bg-neutral-900 rounded-full overflow-hidden border border-neutral-800">
-                    <div id="tracker-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500" style="width: 0%"></div>
-                  </div>
-                </div>
-                <div id="tracker-semester-pills" class="flex flex-wrap gap-1.5 pt-2">
-                  <!-- Dynamic pills for Semesters -->
+            <!-- Target CGPA Goal & Recovery Calculator -->
+            <div class="pt-3 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-neutral-900/40 p-3 rounded-xl border border-neutral-800/60">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-calculator text-sky-400 text-sm shrink-0"></i>
+                <div>
+                  <label class="text-[11px] font-bold text-white block">Target CGPA Recovery Calculator</label>
+                  <span class="text-[10px] text-neutral-400 font-mono">Calculates required future SGPA to achieve target</span>
                 </div>
               </div>
-
-              <!-- Card 2: Weakness & Attention Spotlight ("where I should focus my attention on") -->
-              <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-5 space-y-4 md:col-span-2 flex flex-col justify-between shadow-xl">
-                <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
-                  <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2 font-mono">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-400 animate-pulse"></i> Academic Attention Spotlight
-                  </span>
-                  <span class="text-[10px] text-amber-400 bg-amber-950/60 px-2.5 py-0.5 rounded border border-amber-800/80 font-mono font-bold">Focus Recommendation Engine</span>
+              <div class="flex items-center gap-2 w-full sm:w-auto">
+                <input type="number" id="vault-target-cgpa-input" min="0.0" max="10.0" step="0.1" value="8.5" oninput="calculateVaultTargetRecovery()" placeholder="8.5" class="w-20 bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white text-center font-mono focus:outline-none focus:border-sky-400">
+                <div id="vault-target-cgpa-result" class="text-xs font-bold text-sky-300 font-mono px-3 py-1 rounded bg-sky-950/80 border border-sky-800 shrink-0">
+                  Target SGPA: --
                 </div>
-                
-                <div id="focus-attention-list" class="space-y-2.5 font-mono text-xs max-h-48 overflow-y-auto pr-1">
-                  <div class="p-3 bg-neutral-900/60 border border-neutral-800 rounded-xl text-neutral-400 italic text-[11px]">
-                    Enter your semester GPAs and course grades below to automatically analyze weak areas, lowest scoring courses, and targeted focus recommendations.
-                  </div>
-                </div>
-                
-                <!-- Target CGPA Goal & Recovery Calculator -->
-                <div class="pt-3 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-neutral-900/40 p-3 rounded-xl border border-neutral-800/60">
-                  <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-bullseye text-sky-400 text-sm shrink-0"></i>
-                    <div>
-                      <label class="text-[11px] font-bold text-white block">Target CGPA Goal Calculator</label>
-                      <span class="text-[10px] text-neutral-400 font-mono">Computes required future SGPA</span>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2 w-full sm:w-auto">
-                    <input type="number" id="target-cgpa-input" min="0.0" max="10.0" step="0.1" value="8.5" oninput="calculateTargetRecoverySGPA()" placeholder="e.g. 8.5" class="w-24 bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white text-center font-mono focus:outline-none focus:border-sky-400">
-                    <div id="target-cgpa-result" class="text-xs font-bold text-sky-300 font-mono px-3 py-1 rounded bg-sky-950/80 border border-sky-800 shrink-0">
-                      Target SGPA: --
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- SEMESTER TABS & COURSE GRADE EDITORS -->
-            <div class="space-y-4 pt-2">
-              <div id="semester-tabs-header" class="flex gap-2 border-b border-neutral-800 overflow-x-auto pb-2 font-mono">
-                <!-- Dynamic semester tab buttons: Sem 1, Sem 2, etc. -->
-              </div>
-
-              <!-- Container for active semester details -->
-              <div id="semester-details-container" class="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-6 shadow-xl">
-                <!-- Dynamically populated per semester -->
               </div>
             </div>
-
           </div>
 
         </div>
+
+        <!-- 3. OFFICIAL SEMESTER GRADE CARD SLOTS -->
+        <div class="space-y-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-neutral-800 pb-4">
+            <div>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-layer-group text-emerald-400"></i> Official Semester Grade Cards
+              </h3>
+              <p class="text-xs text-neutral-400 font-mono">Drop your university grade card PDF into each semester slot below. Zero manual typing required.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="addNewCustomSemesterSlot()" class="btn-outline-mono px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5">
+                <i class="fa-solid fa-plus text-emerald-400"></i> Add Semester Slot
+              </button>
+              <button type="button" onclick="loadSavedAcademicRecord()" class="btn-outline-mono px-4 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5">
+                <i class="fa-solid fa-arrows-rotate"></i> Sync Cloud Record
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Container for Semester Grade Card Slots -->
+          <div id="semester-grade-cards-container" class="space-y-6">
+            <!-- Dynamically populated via renderSemesterGradeCards() -->
+          </div>
+        </div>
+
       </section>
 
       <!-- ========================================== -->
@@ -1759,6 +1660,8 @@
         </div>
       `;
       loadChatHistoryFromStorage();
+      loadSavedAcademicRecord();
+      loadHestiaChatHistoryOnLogin();
       showSection('vault');
     }
 
@@ -3007,450 +2910,514 @@
       if (settingsInput) settingsInput.value = cleaned;
     }
 
-    let currentStudentStatus = 'PRE_GRADUATE';
-    let semesterTrackerState = [
-      {
-        semNumber: 1,
-        sgpa: 8.50,
-        credits: 20,
-        courses: [
-          { code: 'CS101', name: 'Programming in C/C++', credits: 4, grade: 'S', points: 10.0 },
-          { code: 'MA101', name: 'Linear Algebra & Calculus', credits: 4, grade: 'A', points: 9.0 },
-          { code: 'EE100', name: 'Basic Electrical Engineering', credits: 3, grade: 'B', points: 8.0 },
-          { code: 'PH100', name: 'Engineering Physics', credits: 3, grade: 'C', points: 6.0 }
-        ]
-      },
-      {
-        semNumber: 2,
-        sgpa: 8.75,
-        credits: 20,
-        courses: [
-          { code: 'CS102', name: 'Data Structures & Algorithms', credits: 4, grade: 'S', points: 10.0 },
-          { code: 'MA102', name: 'Differential Equations', credits: 4, grade: 'A', points: 9.0 },
-          { code: 'CS104', name: 'Object Oriented Programming', credits: 3, grade: 'A', points: 9.0 }
-        ]
-      },
-      { semNumber: 3, sgpa: 0.00, credits: 0, courses: [] },
-      { semNumber: 4, sgpa: 0.00, credits: 0, courses: [] },
-      { semNumber: 5, sgpa: 0.00, credits: 0, courses: [] },
-      { semNumber: 6, sgpa: 0.00, credits: 0, courses: [] },
-      { semNumber: 7, sgpa: 0.00, credits: 0, courses: [] },
-      { semNumber: 8, sgpa: 0.00, credits: 0, courses: [] }
-    ];
-    let activeSemesterIndex = 0;
+    /* ========================================================== */
+    /* DYNAMIC SEMESTER GRADE CARD HUB & VAULT ENGINE             */
+    /* ========================================================== */
 
-    const GRADE_POINTS_MAP = {
-      'S': 10.0,
-      'O': 10.0,
-      'A+': 9.5,
-      'A': 9.0,
-      'B+': 8.5,
-      'B': 8.0,
-      'C+': 7.5,
-      'C': 6.0,
-      'D': 5.0,
-      'F': 0.0
+    let academicVaultState = {
+      currentYear: 2,
+      currentSem: 3,
+      semesters: {},
+      cumulativeCgpa: 0.00,
+      totalCredits: 0
     };
 
-    function setStudentStatus(status) {
-      currentStudentStatus = status;
-      const statusInput = document.getElementById('academic-student-status-val');
-      if (statusInput) statusInput.value = status;
-
-      const buttons = document.querySelectorAll('.student-status-btn');
-      buttons.forEach(btn => {
-        btn.classList.remove('border-emerald-500', 'bg-emerald-950/80', 'text-emerald-300', 'shadow-lg');
-        btn.classList.add('border-neutral-800', 'bg-neutral-950', 'text-neutral-400');
-      });
-
-      const activeBtn = document.getElementById(`status-btn-${status}`);
-      if (activeBtn) {
-        activeBtn.classList.remove('border-neutral-800', 'bg-neutral-950', 'text-neutral-400');
-        activeBtn.classList.add('border-emerald-500', 'bg-emerald-950/80', 'text-emerald-300', 'shadow-lg');
-      }
-
-      const hintText = document.getElementById('status-hint-text');
-      const trackerContainer = document.getElementById('pregrad-semester-tracker');
-
-      if (status === 'PRE_GRADUATE' || status === 'UNDERGRADUATE' || status === 'POST_GRADUATE') {
-        if (hintText) hintText.innerHTML = '✨ <strong>' + status.replace('_', ' ') + '</strong> status unlocks your 8-Semester Grade & Focus Tracker below!';
-        if (trackerContainer) trackerContainer.classList.remove('hidden');
-        renderSemesterTracker();
-      } else {
-        if (hintText) hintText.innerText = `Selected status: ${status.replace('_', ' ')}`;
-        if (trackerContainer) trackerContainer.classList.add('hidden');
-      }
-
-      if (currentUser) {
-        currentUser.studentStatus = status;
-        localStorage.setItem('hestia_user', JSON.stringify(currentUser));
-      }
-    }
-
-    function renderSemesterTracker() {
-      renderSemesterTabs();
-      renderActiveSemesterDetails();
-      calculateSemesterAnalytics();
-    }
-
-    function renderSemesterTabs() {
-      const header = document.getElementById('semester-tabs-header');
-      if (!header) return;
-
-      let html = '';
-      semesterTrackerState.forEach((sem, idx) => {
-        const isActive = idx === activeSemesterIndex;
-        const activeClass = isActive
-          ? 'border-emerald-500 bg-emerald-950/80 text-emerald-300 font-bold shadow-md'
-          : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white';
-
-        html += `
-          <button type="button" onclick="selectSemesterTab(${idx})" class="px-4 py-2.5 rounded-xl border text-xs font-mono transition flex items-center gap-2 shrink-0 ${activeClass}">
-            <i class="fa-solid fa-book-bookmark text-xs ${isActive ? 'text-emerald-400' : 'text-neutral-500'}"></i>
-            Semester ${sem.semNumber}
-            <span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${isActive ? 'bg-emerald-900/80 text-emerald-300' : 'bg-neutral-950 text-neutral-500'}">
-              ${(sem.sgpa || 0.00).toFixed(2)} SGPA
-            </span>
-          </button>
-        `;
-      });
-
-      header.innerHTML = html;
-    }
-
-    function selectSemesterTab(idx) {
-      activeSemesterIndex = idx;
-      renderSemesterTracker();
-    }
-
-    function addNewSemester() {
-      const nextSemNum = semesterTrackerState.length + 1;
-      semesterTrackerState.push({
-        semNumber: nextSemNum,
-        sgpa: 0.00,
-        credits: 0,
-        courses: []
-      });
-      activeSemesterIndex = semesterTrackerState.length - 1;
-      renderSemesterTracker();
-    }
-
-    function removeSemester(semIdx) {
-      if (semesterTrackerState.length <= 1) {
-        alert('You must maintain at least one semester in your record.');
-        return;
-      }
-      semesterTrackerState.splice(semIdx, 1);
-      // Renumber semesters
-      semesterTrackerState.forEach((s, i) => s.semNumber = i + 1);
-      activeSemesterIndex = Math.max(0, semIdx - 1);
-      renderSemesterTracker();
-    }
-
-    function renderActiveSemesterDetails() {
-      const container = document.getElementById('semester-details-container');
-      if (!container || !semesterTrackerState[activeSemesterIndex]) return;
-
-      const sem = semesterTrackerState[activeSemesterIndex];
-
-      let coursesHtml = '';
-      if (sem.courses && sem.courses.length > 0) {
-        sem.courses.forEach((c, cIdx) => {
-          let gradeBadgeColor = 'text-emerald-400 border-emerald-800 bg-emerald-950';
-          if (c.grade === 'C' || c.grade === 'D' || c.grade === 'F' || c.points <= 6.0) {
-            gradeBadgeColor = 'text-rose-400 border-rose-800 bg-rose-950';
-          } else if (c.grade === 'B' || c.points < 8.5) {
-            gradeBadgeColor = 'text-amber-400 border-amber-800 bg-amber-950';
-          }
-
-          coursesHtml += `
-            <tr class="border-b border-neutral-800/80 hover:bg-neutral-900/40 font-mono text-xs">
-              <td class="py-3 px-3">
-                <input type="text" value="${escapeHtml(c.code)}" onchange="updateCourseField(${activeSemesterIndex}, ${cIdx}, 'code', this.value)" placeholder="e.g. CS101" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400">
-              </td>
-              <td class="py-3 px-3">
-                <input type="text" value="${escapeHtml(c.name)}" onchange="updateCourseField(${activeSemesterIndex}, ${cIdx}, 'name', this.value)" placeholder="e.g. Operating Systems" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400">
-              </td>
-              <td class="py-3 px-3 text-center">
-                <input type="number" min="1" max="10" value="${c.credits}" onchange="updateCourseField(${activeSemesterIndex}, ${cIdx}, 'credits', this.value)" class="w-16 bg-neutral-900 border border-neutral-800 rounded-lg px-2 py-1.5 text-xs text-white text-center focus:outline-none focus:border-emerald-400">
-              </td>
-              <td class="py-3 px-3">
-                <select onchange="updateCourseField(${activeSemesterIndex}, ${cIdx}, 'grade', this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400">
-                  <option value="S" ${c.grade === 'S' ? 'selected' : ''}>S (10.0)</option>
-                  <option value="A+" ${c.grade === 'A+' ? 'selected' : ''}>A+ (9.5)</option>
-                  <option value="A" ${c.grade === 'A' ? 'selected' : ''}>A (9.0)</option>
-                  <option value="B+" ${c.grade === 'B+' ? 'selected' : ''}>B+ (8.5)</option>
-                  <option value="B" ${c.grade === 'B' ? 'selected' : ''}>B (8.0)</option>
-                  <option value="C+" ${c.grade === 'C+' ? 'selected' : ''}>C+ (7.5)</option>
-                  <option value="C" ${c.grade === 'C' ? 'selected' : ''}>C (6.0) - Focus Needed</option>
-                  <option value="D" ${c.grade === 'D' ? 'selected' : ''}>D (5.0) - Low Grade</option>
-                  <option value="F" ${c.grade === 'F' ? 'selected' : ''}>F (0.0) - Re-appear</option>
-                </select>
-              </td>
-              <td class="py-3 px-3 text-center">
-                <span class="px-2 py-1 rounded text-[11px] font-bold border ${gradeBadgeColor}">
-                  ${(c.points || 0.0).toFixed(1)} Pts
-                </span>
-              </td>
-              <td class="py-3 px-3 text-right">
-                <button type="button" onclick="removeCourseFromSemester(${activeSemesterIndex}, ${cIdx})" title="Delete Course" class="text-neutral-500 hover:text-rose-400 transition p-1">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
-              </td>
-            </tr>
-          `;
-        });
-      } else {
-        coursesHtml = `
-          <tr>
-            <td colspan="6" class="py-6 text-center text-neutral-500 font-mono text-xs">
-              No subjects logged for Semester ${sem.semNumber}. Click "+ Add Course" below to enter subject grades.
-            </td>
-          </tr>
-        `;
-      }
-
-      container.innerHTML = `
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-800 pb-4">
-          <div>
-            <h4 class="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <i class="fa-solid fa-book-open text-emerald-400"></i> Semester ${sem.semNumber} Detailed Breakdown
-            </h4>
-            <p class="text-xs text-neutral-400 font-mono">Logged Subjects: ${sem.courses ? sem.courses.length : 0} | SGPA: ${(sem.sgpa || 0.00).toFixed(2)} | Credits: ${sem.credits || 0}</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="addCourseToSemester(${activeSemesterIndex})" class="btn-mono px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <i class="fa-solid fa-plus text-emerald-400"></i> Add Course
-            </button>
-            <button type="button" onclick="removeSemester(${activeSemesterIndex})" class="btn-outline-mono px-3.5 py-2 rounded-xl text-xs text-rose-400 border-rose-900/60 hover:border-rose-500 flex items-center gap-1.5">
-              <i class="fa-solid fa-trash-can"></i> Delete Semester
-            </button>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead>
-              <tr class="border-b border-neutral-800 text-[10px] uppercase tracking-wider text-neutral-400 font-mono">
-                <th class="py-2.5 px-3">Course Code</th>
-                <th class="py-2.5 px-3">Subject / Course Name</th>
-                <th class="py-2.5 px-3 text-center">Credits</th>
-                <th class="py-2.5 px-3">Grade Obtained</th>
-                <th class="py-2.5 px-3 text-center">Grade Points</th>
-                <th class="py-2.5 px-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${coursesHtml}
-            </tbody>
-          </table>
-        </div>
-      `;
-    }
-
-    function addCourseToSemester(semIdx) {
-      if (!semesterTrackerState[semIdx]) return;
-      if (!semesterTrackerState[semIdx].courses) semesterTrackerState[semIdx].courses = [];
-
-      semesterTrackerState[semIdx].courses.push({
-        code: `CS${100 + semesterTrackerState[semIdx].courses.length + 1}`,
-        name: 'New Core Subject',
-        credits: 3,
-        grade: 'A',
-        points: 9.0
-      });
-
-      renderSemesterTracker();
-    }
-
-    function removeCourseFromSemester(semIdx, courseIdx) {
-      if (!semesterTrackerState[semIdx] || !semesterTrackerState[semIdx].courses) return;
-      semesterTrackerState[semIdx].courses.splice(courseIdx, 1);
-      renderSemesterTracker();
-    }
-
-    function updateCourseField(semIdx, courseIdx, field, val) {
-      if (!semesterTrackerState[semIdx] || !semesterTrackerState[semIdx].courses[courseIdx]) return;
-
-      const course = semesterTrackerState[semIdx].courses[courseIdx];
-      if (field === 'credits') {
-        course.credits = Math.max(1, parseInt(val, 10) || 3);
-      } else if (field === 'grade') {
-        course.grade = val;
-        course.points = GRADE_POINTS_MAP[val] !== undefined ? GRADE_POINTS_MAP[val] : 8.0;
-      } else {
-        course[field] = val;
-      }
-
-      calculateSemesterAnalytics();
-      renderSemesterTabs();
-    }
-
-    function calculateSemesterAnalytics() {
-      let totalEarnedPoints = 0;
-      let totalCreditsAll = 0;
-      let completedSemestersCount = 0;
-      const focusRecommendations = [];
-
-      semesterTrackerState.forEach((sem) => {
-        let semPoints = 0;
-        let semCredits = 0;
-
-        if (sem.courses && sem.courses.length > 0) {
-          sem.courses.forEach(c => {
-            const cr = c.credits || 3;
-            const pts = c.points !== undefined ? c.points : (GRADE_POINTS_MAP[c.grade] || 8.0);
-            semPoints += cr * pts;
-            semCredits += cr;
-
-            // Weakness spotlight detection (Grade C or lower or <= 6.0 points)
-            if (pts <= 6.0 || c.grade === 'C' || c.grade === 'D' || c.grade === 'F') {
-              focusRecommendations.push({
-                type: 'WEAK_SUBJECT',
-                semNum: sem.semNumber,
-                code: c.code,
-                name: c.name,
-                grade: c.grade,
-                points: pts
-              });
-            }
-          });
-
-          if (semCredits > 0) {
-            sem.sgpa = parseFloat((semPoints / semCredits).toFixed(2));
-            sem.credits = semCredits;
-            completedSemestersCount++;
+    function setAcademicYear(year) {
+      academicVaultState.currentYear = year;
+      
+      // Update UI year buttons
+      for (let y = 1; y <= 4; y++) {
+        const btn = document.getElementById(`year-btn-${y}`);
+        if (btn) {
+          if (y === year) {
+            btn.className = 'year-btn px-3 py-3 rounded-xl border border-emerald-500 bg-emerald-950/80 text-emerald-300 text-xs font-mono font-bold transition flex flex-col items-center gap-1 shadow-lg';
+          } else {
+            btn.className = 'year-btn px-3 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-mono font-bold transition flex flex-col items-center gap-1';
           }
         }
-
-        totalEarnedPoints += semPoints;
-        totalCreditsAll += semCredits;
-
-        // Semesters with low overall SGPA (< 7.5)
-        if (sem.sgpa > 0 && sem.sgpa < 7.5) {
-          focusRecommendations.push({
-            type: 'LOW_SGPA_SEM',
-            semNum: sem.semNumber,
-            sgpa: sem.sgpa
-          });
-        }
-      });
-
-      const overallCGPA = totalCreditsAll > 0 ? (totalEarnedPoints / totalCreditsAll) : 0.00;
-      const formattedCGPA = overallCGPA.toFixed(2);
-
-      // Update UI elements
-      const calculatedCgpaEl = document.getElementById('tracker-calculated-cgpa');
-      if (calculatedCgpaEl) calculatedCgpaEl.innerText = formattedCGPA;
-
-      const progressPctEl = document.getElementById('tracker-progress-pct');
-      const progressBarEl = document.getElementById('tracker-progress-bar');
-      const pct = Math.min(100, Math.round((totalCreditsAll / 160) * 100));
-
-      if (progressPctEl) progressPctEl.innerText = `${pct}% (${totalCreditsAll}/160 Credits)`;
-      if (progressBarEl) progressBarEl.style.width = `${pct}%`;
-
-      const completedBadge = document.getElementById('tracker-completed-semesters-badge');
-      if (completedBadge) completedBadge.innerText = `${completedSemestersCount} Semesters Logged`;
-
-      // Update Form CGPA & Total Credits fields
-      if (document.getElementById('academic-current-cgpa')) document.getElementById('academic-current-cgpa').value = formattedCGPA;
-      if (document.getElementById('academic-total-credits')) document.getElementById('academic-total-credits').value = totalCreditsAll;
-
-      // Render Semester Pills
-      const pillsContainer = document.getElementById('tracker-semester-pills');
-      if (pillsContainer) {
-        let pillsHtml = '';
-        semesterTrackerState.forEach(s => {
-          let pillBg = 'bg-emerald-950/80 border-emerald-800 text-emerald-300';
-          if (s.sgpa < 7.5) pillBg = 'bg-amber-950/80 border-amber-800 text-amber-300';
-          pillsHtml += `
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded border ${pillBg}">
-              Sem ${s.semNumber}: ${(s.sgpa || 0).toFixed(2)}
-            </span>
-          `;
-        });
-        pillsContainer.innerHTML = pillsHtml;
       }
 
-      // Render Focus Attention Spotlight List ("where I should focus my attention on")
-      renderFocusAttentionList(focusRecommendations, overallCGPA);
-
-      // Recalculate Target Recovery SGPA
-      calculateTargetRecoverySGPA();
+      // Default semester selection based on year
+      const defaultSem = (year - 1) * 2 + 1;
+      const semSelect = document.getElementById('current-semester-select');
+      if (semSelect) {
+        semSelect.value = String(defaultSem);
+        handleCurrentSemesterChange(defaultSem);
+      } else {
+        saveYearAndSemToBackend();
+        renderSemesterGradeCards();
+      }
     }
 
-    function renderFocusAttentionList(recommendations, currentCGPA) {
-      const container = document.getElementById('focus-attention-list');
+    function handleCurrentSemesterChange(semVal) {
+      const semNum = parseInt(semVal, 10) || 3;
+      academicVaultState.currentSem = semNum;
+
+      // Update Year based on semester
+      const computedYear = Math.min(4, Math.ceil(semNum / 2));
+      academicVaultState.currentYear = computedYear;
+      for (let y = 1; y <= 4; y++) {
+        const btn = document.getElementById(`year-btn-${y}`);
+        if (btn) {
+          if (y === computedYear) {
+            btn.className = 'year-btn px-3 py-3 rounded-xl border border-emerald-500 bg-emerald-950/80 text-emerald-300 text-xs font-mono font-bold transition flex flex-col items-center gap-1 shadow-lg';
+          } else {
+            btn.className = 'year-btn px-3 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-mono font-bold transition flex flex-col items-center gap-1';
+          }
+        }
+      }
+
+      // Update Hint text
+      const hint = document.getElementById('academic-standing-hint');
+      const completedCount = Math.max(0, semNum - 1);
+      if (hint) {
+        if (completedCount === 0) {
+          hint.innerHTML = `<i class="fa-solid fa-sparkles"></i> 1st Year student on Semester 1: You just started your degree! Upload cards as soon as your first semester results release.`;
+        } else {
+          hint.innerHTML = `<i class="fa-solid fa-sparkles"></i> Year ${computedYear} student on Semester ${semNum}: Upload slots ready for Semester 1 to ${completedCount} grade cards below.`;
+        }
+      }
+
+      const summaryBadge = document.getElementById('academic-slot-summary-badge');
+      if (summaryBadge) {
+        summaryBadge.innerText = `${completedCount} Completed Semesters`;
+      }
+
+      saveYearAndSemToBackend();
+      renderSemesterGradeCards();
+    }
+
+    async function saveYearAndSemToBackend() {
+      const activeUserId = currentUser?.id || 1;
+      try {
+        await fetch(`${API_BASE}/api/academic-records/update-year-sem`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: activeUserId,
+            currentYear: academicVaultState.currentYear,
+            currentSem: academicVaultState.currentSem
+          })
+        });
+      } catch (err) {
+        console.log('Error updating year/sem on cloud:', err);
+      }
+    }
+
+    function renderSemesterGradeCards() {
+      const container = document.getElementById('semester-grade-cards-container');
       if (!container) return;
 
-      if (!recommendations || recommendations.length === 0) {
-        container.innerHTML = `
-          <div class="p-3 bg-emerald-950/40 border border-emerald-800/80 rounded-xl text-emerald-300 flex items-center gap-3">
-            <i class="fa-solid fa-circle-check text-emerald-400 text-lg shrink-0"></i>
-            <div>
-              <div class="font-bold text-white uppercase tracking-wider text-[11px]">Strong Academic Standing</div>
-              <div class="text-[11px] text-emerald-400/90">All logged courses have high grades! No low-scoring bottlenecks detected pulling down your CGPA.</div>
-            </div>
-          </div>
-        `;
-        return;
+      const currentSem = academicVaultState.currentSem || 3;
+      const completedCount = Math.max(1, currentSem - 1);
+
+      // Determine all semester slots: 1 to completedCount, plus any extra uploaded semesters
+      const semesterNumbers = new Set();
+      for (let s = 1; s <= completedCount; s++) semesterNumbers.add(s);
+      if (academicVaultState.semesters) {
+        Object.keys(academicVaultState.semesters).forEach(k => {
+          const num = parseInt(k, 10);
+          if (!isNaN(num)) semesterNumbers.add(num);
+        });
       }
 
+      const sortedSems = Array.from(semesterNumbers).sort((a, b) => a - b);
+
       let html = '';
-      recommendations.forEach(rec => {
-        if (rec.type === 'WEAK_SUBJECT') {
+      sortedSems.forEach(semNum => {
+        const semKey = String(semNum);
+        const data = academicVaultState.semesters ? academicVaultState.semesters[semKey] : null;
+
+        if (data && (data.verified || data.courses)) {
+          // VERIFIED GRADE CARD STATE
+          const sgpa = data.sgpa !== undefined ? parseFloat(data.sgpa).toFixed(2) : '0.00';
+          const credits = data.credits || 0;
+          const regNo = data.registerNo || 'KTU-VERIFIED';
+          const inst = data.institution || 'APJ Abdul Kalam Technological University (KTU)';
+          const student = data.studentName || currentUser?.username || 'Student';
+          const fileName = data.fileName || `Semester_${semNum}_GradeCard.pdf`;
+
+          let courseRows = '';
+          if (data.courses && Array.isArray(data.courses)) {
+            data.courses.forEach(c => {
+              const grade = (c.grade || 'A').toUpperCase();
+              let gradeBadge = 'bg-emerald-950/80 text-emerald-400 border-emerald-800';
+              let isWeak = false;
+              if (grade === 'C' || grade === 'P' || grade === 'F') {
+                gradeBadge = 'bg-rose-950/80 text-rose-400 border-rose-800';
+                isWeak = true;
+              } else if (grade === 'B' || grade === 'B+') {
+                gradeBadge = 'bg-amber-950/80 text-amber-400 border-amber-800';
+                isWeak = true;
+              }
+
+              courseRows += `
+                <tr class="border-b border-neutral-800/80 hover:bg-neutral-900/40 text-xs font-mono">
+                  <td class="py-2.5 px-3 font-bold text-neutral-300">${escapeHtml(c.code || '--')}</td>
+                  <td class="py-2.5 px-3 text-white">
+                    ${escapeHtml(c.name || 'Core Course')}
+                    ${isWeak ? `<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800 font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> Focus Area</span>` : ''}
+                  </td>
+                  <td class="py-2.5 px-3 text-center text-neutral-400">${c.credits || 3}</td>
+                  <td class="py-2.5 px-3 text-center">
+                    <span class="px-2 py-0.5 rounded border text-xs font-bold ${gradeBadge}">
+                      ${grade}
+                    </span>
+                  </td>
+                  <td class="py-2.5 px-3 text-center text-neutral-300 font-bold">${c.gradePoints !== undefined ? c.gradePoints : '--'}</td>
+                </tr>
+              `;
+            });
+          }
+
           html += `
-            <div class="p-3 bg-rose-950/40 border border-rose-900/60 rounded-xl text-rose-200 flex items-start gap-2.5">
-              <i class="fa-solid fa-triangle-exclamation text-rose-400 text-base shrink-0 mt-0.5"></i>
-              <div class="space-y-0.5">
-                <div class="font-bold text-white text-[11px]">
-                  Focus Needed: Sem ${rec.semNum} - ${escapeHtml(rec.code)} (${escapeHtml(rec.name)})
+            <div id="semester-card-${semNum}" class="bg-neutral-950 border border-emerald-700/60 rounded-2xl p-6 space-y-5 shadow-2xl transition-all duration-300">
+              <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-neutral-800 pb-4">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono px-2.5 py-0.5 rounded bg-emerald-950 border border-emerald-800 text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                      <i class="fa-solid fa-circle-check"></i> Official Grade Card Verified
+                    </span>
+                    <span class="text-xs text-neutral-500 font-mono">ID: ${escapeHtml(regNo)}</span>
+                  </div>
+                  <h4 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-file-invoice text-emerald-400"></i> Semester ${semNum} Official Grade Card
+                  </h4>
+                  <p class="text-xs text-neutral-400 font-mono">
+                    Institution: <strong class="text-neutral-300">${escapeHtml(inst)}</strong> | Student: <strong class="text-neutral-300">${escapeHtml(student)}</strong>
+                  </p>
                 </div>
-                <div class="text-[10px] text-rose-300">
-                  Grade: <strong class="underline">${rec.grade} (${rec.points} Pts)</strong>. This course is pulling down your Cumulative GPA. Recommend revising concepts in this discipline for technical interviews & upcoming semesters.
+
+                <div class="flex flex-wrap items-center gap-3">
+                  <div class="px-3.5 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-center font-mono">
+                    <span class="text-[10px] text-neutral-400 uppercase block">Semester SGPA</span>
+                    <span class="text-lg font-extrabold text-emerald-400">${sgpa}</span>
+                  </div>
+                  <div class="px-3.5 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-center font-mono">
+                    <span class="text-[10px] text-neutral-400 uppercase block">Credits Earned</span>
+                    <span class="text-lg font-extrabold text-white">${credits}</span>
+                  </div>
+                  <button type="button" onclick="triggerSemesterCardUpload(${semNum})" title="Re-upload PDF" class="btn-outline-mono px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrows-rotate text-emerald-400"></i> Re-upload PDF
+                  </button>
+                  <button type="button" onclick="deleteSemesterCard(${semNum})" title="Remove Semester Card" class="p-2 rounded-xl text-neutral-500 hover:text-rose-400 transition hover:bg-neutral-900">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
                 </div>
               </div>
+
+              <!-- Collapsible Course Details Table -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead>
+                    <tr class="border-b border-neutral-800 text-[10px] uppercase tracking-wider text-neutral-400 font-mono">
+                      <th class="py-2.5 px-3">Course Code</th>
+                      <th class="py-2.5 px-3">Subject / Course Name</th>
+                      <th class="py-2.5 px-3 text-center">Credits</th>
+                      <th class="py-2.5 px-3 text-center">Grade</th>
+                      <th class="py-2.5 px-3 text-center">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${courseRows}
+                  </tbody>
+                </table>
+              </div>
+
+              <input type="file" id="sem-file-input-${semNum}" accept="application/pdf" onchange="uploadSemesterCardFile(${semNum}, this.files[0])" class="hidden">
             </div>
           `;
-        } else if (rec.type === 'LOW_SGPA_SEM') {
+        } else {
+          // PENDING DROP-ZONE STATE
           html += `
-            <div class="p-3 bg-amber-950/40 border border-amber-900/60 rounded-xl text-amber-200 flex items-start gap-2.5">
-              <i class="fa-solid fa-chart-line-down text-amber-400 text-base shrink-0 mt-0.5"></i>
-              <div class="space-y-0.5">
-                <div class="font-bold text-white text-[11px]">
-                  Attention Alert: Semester ${rec.semNum} SGPA (${rec.sgpa})
-                </div>
-                <div class="text-[10px] text-amber-300">
-                  Semester ${rec.semNum} has an SGPA below 7.50. Check individual course credits in Semester ${rec.semNum} to identify heavy-credit bottlenecks.
-                </div>
+            <div id="semester-card-${semNum}" class="bg-neutral-950/70 border-2 border-dashed border-neutral-700/90 hover:border-emerald-500/80 rounded-2xl p-8 space-y-4 text-center transition-all duration-300 shadow-xl group"
+                 ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, ${semNum})">
+              <div class="w-14 h-14 rounded-2xl bg-neutral-900 border border-neutral-700 flex items-center justify-center mx-auto text-emerald-400 group-hover:scale-110 group-hover:border-emerald-500 transition duration-300">
+                <i class="fa-solid fa-file-arrow-up text-2xl"></i>
               </div>
+              <div class="space-y-1">
+                <h4 class="text-base font-bold text-white uppercase tracking-wider">
+                  Semester ${semNum} Official Grade Card
+                </h4>
+                <p class="text-xs text-neutral-400 font-mono">
+                  Drop your official university Grade Card PDF here or browse from your computer.
+                </p>
+                <p class="text-[11px] text-emerald-400/90 font-mono">
+                  ✨ Zero manual effort: Auto-extracts courses, letter grades, credits, and SGPA.
+                </p>
+              </div>
+
+              <div class="pt-2 flex flex-col sm:flex-row justify-center items-center gap-3">
+                <button type="button" onclick="triggerSemesterCardUpload(${semNum})" class="btn-mono px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider font-bold flex items-center gap-2">
+                  <i class="fa-solid fa-upload text-emerald-400"></i> Choose Grade Card PDF
+                </button>
+              </div>
+
+              <input type="file" id="sem-file-input-${semNum}" accept="application/pdf" onchange="uploadSemesterCardFile(${semNum}, this.files[0])" class="hidden">
             </div>
           `;
         }
       });
 
       container.innerHTML = html;
+      updateVaultOverviewAndFocusSpotlight();
     }
 
-    function calculateTargetRecoverySGPA() {
-      const targetInput = document.getElementById('target-cgpa-input');
-      const resultEl = document.getElementById('target-cgpa-result');
+    function triggerSemesterCardUpload(semNum) {
+      const input = document.getElementById(`sem-file-input-${semNum}`);
+      if (input) {
+        input.value = '';
+        input.click();
+      }
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('border-emerald-400', 'bg-neutral-900/60');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('border-emerald-400', 'bg-neutral-900/60');
+    }
+
+    function handleDrop(e, semNum) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('border-emerald-400', 'bg-neutral-900/60');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        uploadSemesterCardFile(semNum, e.dataTransfer.files[0]);
+      }
+    }
+
+    async function uploadSemesterCardFile(semNum, file) {
+      if (!file) return;
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        alert('Please drop an official Grade Card PDF document.');
+        return;
+      }
+
+      const cardEl = document.getElementById(`semester-card-${semNum}`);
+      if (cardEl) {
+        cardEl.innerHTML = `
+          <div class="p-8 text-center space-y-4">
+            <div class="inline-block animate-spin text-3xl text-emerald-400">
+              <i class="fa-solid fa-circle-notch"></i>
+            </div>
+            <div class="font-mono text-xs text-white font-bold tracking-wider">
+              PARSING OFFICIAL GRADE CARD (SEMESTER ${semNum})...
+            </div>
+            <p class="text-[11px] text-neutral-400 font-mono">
+              Extracting course codes, letter grades, credits & calculating SGPA via Hestia Neural Audit Engine...
+            </p>
+          </div>
+        `;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64 = e.target.result;
+        const activeUserId = currentUser?.id || 1;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/academic-records/upload-semester`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: activeUserId,
+              semesterNum: semNum,
+              pdfBase64: base64,
+              fileName: file.name
+            })
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            alert(data.error || 'Failed to parse grade card PDF.');
+            renderSemesterGradeCards();
+            return;
+          }
+
+          // Update local state
+          if (!academicVaultState.semesters) academicVaultState.semesters = {};
+          academicVaultState.semesters[String(semNum)] = data;
+          academicVaultState.cumulativeCgpa = data.cumulativeCgpa || 8.50;
+          academicVaultState.totalCredits = data.totalCreditsEarned || 20;
+
+          // Update UserProfile CGPA so scanner & AI companion sync
+          userProfile.cgpa = data.cumulativeCgpa;
+          if (data.institution) userProfile.institution = data.institution;
+
+          renderSemesterGradeCards();
+        } catch (err) {
+          console.error('Error uploading semester card:', err);
+          alert('Network error while processing grade card. Please try again.');
+          renderSemesterGradeCards();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function deleteSemesterCard(semNum) {
+      if (!confirm(`Are you sure you want to remove your Semester ${semNum} Grade Card?`)) return;
+
+      const activeUserId = currentUser?.id || 1;
+      try {
+        const res = await fetch(`${API_BASE}/api/academic-records/delete-semester`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: activeUserId,
+            semesterNum: semNum
+          })
+        });
+
+        if (academicVaultState.semesters) {
+          delete academicVaultState.semesters[String(semNum)];
+        }
+        renderSemesterGradeCards();
+      } catch (err) {
+        console.error('Error deleting semester card:', err);
+      }
+    }
+
+    function addNewCustomSemesterSlot() {
+      const currentSem = academicVaultState.currentSem || 3;
+      const nextSem = currentSem + 1;
+      const semSelect = document.getElementById('current-semester-select');
+      if (semSelect) {
+        semSelect.value = String(nextSem);
+        handleCurrentSemesterChange(nextSem);
+      }
+    }
+
+    function updateVaultOverviewAndFocusSpotlight() {
+      // 1. Calculate Cumulative CGPA & Credits
+      let totalWeightedPoints = 0;
+      let totalCredits = 0;
+      let verifiedCount = 0;
+      const allFocusAreas = [];
+
+      if (academicVaultState.semesters) {
+        Object.entries(academicVaultState.semesters).forEach(([sNum, sem]) => {
+          if (sem && (sem.verified || sem.courses)) {
+            verifiedCount++;
+            const sgpa = sem.sgpa !== undefined ? parseFloat(sem.sgpa) : 0;
+            const cr = sem.credits !== undefined ? parseInt(sem.credits, 10) : 0;
+            totalWeightedPoints += (sgpa * cr);
+            totalCredits += cr;
+
+            // Collect focus areas from courses
+            if (sem.courses && Array.isArray(sem.courses)) {
+              sem.courses.forEach(c => {
+                const g = (c.grade || '').toUpperCase();
+                if (g === 'C' || g === 'P' || g === 'F' || g === 'B') {
+                  allFocusAreas.push({
+                    semNum: sNum,
+                    code: c.code || '--',
+                    name: c.name || 'Core Course',
+                    grade: g,
+                    points: c.gradePoints !== undefined ? c.gradePoints : 7.0
+                  });
+                }
+              });
+            } else if (sem.focusAreas && Array.isArray(sem.focusAreas)) {
+              sem.focusAreas.forEach(fa => {
+                allFocusAreas.push({ semNum: sNum, name: fa, grade: 'B/C', points: 7.0 });
+              });
+            }
+          }
+        });
+      }
+
+      const calculatedCgpa = totalCredits > 0 ? (totalWeightedPoints / totalCredits) : (academicVaultState.cumulativeCgpa || 0.00);
+      const formattedCgpa = calculatedCgpa.toFixed(2);
+      academicVaultState.cumulativeCgpa = parseFloat(formattedCgpa);
+      academicVaultState.totalCredits = totalCredits;
+
+      // Update CGPA display
+      const cgpaEl = document.getElementById('vault-cumulative-cgpa');
+      if (cgpaEl) cgpaEl.innerText = formattedCgpa;
+
+      const verifiedBadge = document.getElementById('vault-verified-sems-badge');
+      if (verifiedBadge) verifiedBadge.innerText = `${verifiedCount} Cards Verified`;
+
+      // Update Credits progress
+      const progressText = document.getElementById('vault-credits-progress-text');
+      const progressBar = document.getElementById('vault-credits-progress-bar');
+      const pct = Math.min(100, Math.round((totalCredits / 160) * 100));
+      if (progressText) progressText.innerText = `${totalCredits} / 160 Credits (${pct}%)`;
+      if (progressBar) progressBar.style.width = `${pct}%`;
+
+      // Update Semester pills
+      const pillsContainer = document.getElementById('vault-semester-pills');
+      if (pillsContainer && academicVaultState.semesters) {
+        let pillsHtml = '';
+        Object.entries(academicVaultState.semesters).forEach(([sNum, s]) => {
+          if (s && s.sgpa !== undefined) {
+            pillsHtml += `
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-800 bg-emerald-950/80 text-emerald-300">
+                Sem ${sNum}: ${parseFloat(s.sgpa).toFixed(2)} SGPA
+              </span>
+            `;
+          }
+        });
+        pillsContainer.innerHTML = pillsHtml;
+      }
+
+      // Update Focus Spotlight list
+      const focusList = document.getElementById('vault-focus-attention-list');
+      if (focusList) {
+        if (allFocusAreas.length === 0) {
+          if (verifiedCount === 0) {
+            focusList.innerHTML = `
+              <div class="p-3.5 bg-neutral-900/60 border border-neutral-800 rounded-xl text-neutral-400 italic text-[11px] flex items-center gap-2.5">
+                <i class="fa-solid fa-info-circle text-sky-400 text-sm shrink-0"></i>
+                Drop your official semester grade cards below. Hestia will automatically analyze courses with lower grades and pinpoint focus recommendations.
+              </div>
+            `;
+          } else {
+            focusList.innerHTML = `
+              <div class="p-3.5 bg-emerald-950/40 border border-emerald-800/80 rounded-xl text-emerald-300 flex items-center gap-3">
+                <i class="fa-solid fa-circle-check text-emerald-400 text-lg shrink-0"></i>
+                <div>
+                  <div class="font-bold text-white uppercase tracking-wider text-[11px]">Strong Academic Standing</div>
+                  <div class="text-[11px] text-emerald-400/90">All verified courses have stellar grades! No weak bottlenecks detected in your degree.</div>
+                </div>
+              </div>
+            `;
+          }
+        } else {
+          let fHtml = '';
+          allFocusAreas.forEach(fa => {
+            fHtml += `
+              <div class="p-3 bg-rose-950/40 border border-rose-900/60 rounded-xl text-rose-200 flex items-start gap-2.5">
+                <i class="fa-solid fa-triangle-exclamation text-rose-400 text-base shrink-0 mt-0.5"></i>
+                <div class="space-y-0.5">
+                  <div class="font-bold text-white text-[11px]">
+                    Focus Recommendation: Sem ${fa.semNum} - ${escapeHtml(fa.code ? fa.code + ' ' : '')}${escapeHtml(fa.name)}
+                  </div>
+                  <div class="text-[10px] text-rose-300">
+                    Grade: <strong class="underline">${fa.grade}</strong>. Identified as a lower-scoring bottleneck. Lucy can advise you on study strategies and project revision.
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+          focusList.innerHTML = fHtml;
+        }
+      }
+
+      calculateVaultTargetRecovery();
+    }
+
+    function calculateVaultTargetRecovery() {
+      const targetInput = document.getElementById('vault-target-cgpa-input');
+      const resultEl = document.getElementById('vault-target-cgpa-result');
       if (!targetInput || !resultEl) return;
 
       const targetCGPA = parseFloat(targetInput.value) || 8.5;
-      
-      let totalEarnedPoints = 0;
-      let totalCreditsEarned = 0;
-
-      semesterTrackerState.forEach(s => {
-        if (s.courses) {
-          s.courses.forEach(c => {
-            totalEarnedPoints += (c.credits || 3) * (c.points || 8.0);
-            totalCreditsEarned += (c.credits || 3);
-          });
-        }
-      });
+      const totalCreditsEarned = academicVaultState.totalCredits || 0;
+      const totalEarnedPoints = (academicVaultState.cumulativeCgpa || 0) * totalCreditsEarned;
 
       const DEGREE_TOTAL_CREDITS = 160;
       const remainingCredits = Math.max(0, DEGREE_TOTAL_CREDITS - totalCreditsEarned);
@@ -3458,170 +3425,124 @@
       const remainingPointsNeeded = totalPointsNeeded - totalEarnedPoints;
 
       if (remainingCredits <= 0) {
-        const finalCGPA = totalCreditsEarned > 0 ? (totalEarnedPoints / totalCreditsEarned).toFixed(2) : '0.00';
-        resultEl.innerText = `Degree Completed! Final CGPA: ${finalCGPA}`;
+        resultEl.innerText = `Degree Completed! CGPA: ${academicVaultState.cumulativeCgpa.toFixed(2)}`;
         resultEl.className = 'text-xs font-bold text-emerald-300 font-mono px-3 py-1 rounded bg-emerald-950/80 border border-emerald-800 shrink-0';
       } else {
         const requiredSGPA = remainingPointsNeeded / remainingCredits;
         if (requiredSGPA > 10.0) {
-          resultEl.innerText = `Required SGPA: ${requiredSGPA.toFixed(2)} (Exceeds 10.0 Max)`;
+          resultEl.innerText = `Required: ${requiredSGPA.toFixed(2)} (Exceeds 10.0 Max)`;
           resultEl.className = 'text-xs font-bold text-rose-300 font-mono px-3 py-1 rounded bg-rose-950/80 border border-rose-800 shrink-0';
         } else if (requiredSGPA <= 0) {
-          resultEl.innerText = `Already on track for ${targetCGPA} CGPA!`;
+          resultEl.innerText = `On track for ${targetCGPA} CGPA!`;
           resultEl.className = 'text-xs font-bold text-emerald-300 font-mono px-3 py-1 rounded bg-emerald-950/80 border border-emerald-800 shrink-0';
         } else {
-          resultEl.innerText = `Required Future SGPA: ${requiredSGPA.toFixed(2)}`;
+          resultEl.innerText = `Target SGPA: ${requiredSGPA.toFixed(2)}`;
           resultEl.className = 'text-xs font-bold text-sky-300 font-mono px-3 py-1 rounded bg-sky-950/80 border border-sky-800 shrink-0';
         }
       }
     }
 
-    async function handleSaveAcademicRecord(e) {
-      if (e) e.preventDefault();
+    function askLucyAboutFocus() {
+      showSection('companion');
 
-      const alertBox = document.getElementById('academic-form-alert');
-      if (alertBox) alertBox.classList.add('hidden');
-
-      const apaarInput = (document.getElementById('academic-apaar-id')?.value || '').trim();
-      const institutionName = (document.getElementById('academic-institution-name')?.value || '').trim();
-      const degreeName = (document.getElementById('academic-degree-name')?.value || '').trim();
-      const currentCgpaRaw = document.getElementById('academic-current-cgpa')?.value;
-      const totalCreditsRaw = document.getElementById('academic-total-credits')?.value;
-      const isCertified = document.getElementById('academic-certify-checkbox')?.checked;
-      const studentStatusVal = document.getElementById('academic-student-status-val')?.value || 'PRE_GRADUATE';
-
-      // 1. Mandatory certification checkbox validation
-      if (!isCertified) {
-        showAcademicAlert('You must certify that the academic information provided is true and accurate.', 'error');
-        return;
-      }
-
-      // 2. APAAR ID validation (12-digit format check)
-      const apaarDigits = apaarInput.replace(/[^0-9]/g, '');
-      if (apaarDigits.length !== 12) {
-        showAcademicAlert('APAAR ID must follow the standard 12-digit format (e.g. 9876-5432-1012).', 'error');
-        return;
-      }
-
-      // 3. Institution Name validation
-      if (!institutionName) {
-        showAcademicAlert('Please enter your Institution / University Name.', 'error');
-        return;
-      }
-
-      // 4. Degree Name validation
-      if (!degreeName) {
-        showAcademicAlert('Please enter your Degree Name.', 'error');
-        return;
-      }
-
-      // 5. CGPA validation (between 0.0 and 10.0)
-      const currentCgpa = parseFloat(currentCgpaRaw);
-      if (isNaN(currentCgpa) || currentCgpa < 0.0 || currentCgpa > 10.0) {
-        showAcademicAlert('CGPA must be between 0.0 and 10.0.', 'error');
-        return;
-      }
-
-      // 6. Total Credits validation
-      const totalCreditsEarned = parseInt(totalCreditsRaw, 10);
-      if (isNaN(totalCreditsEarned) || totalCreditsEarned < 0) {
-        showAcademicAlert('Total Credits Earned must be a valid non-negative integer.', 'error');
-        return;
-      }
-
-      const activeUserId = currentUser?.id || 1;
-
-      const payload = {
-        userId: activeUserId,
-        apaarId: apaarDigits,
-        institutionName,
-        degreeName,
-        currentCgpa,
-        totalCreditsEarned,
-        studentStatus: studentStatusVal,
-        semesterDataJson: JSON.stringify(semesterTrackerState)
-      };
-
-      try {
-        const res = await fetch(`${API_BASE}/api/academic-records`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+      const weakItems = [];
+      if (academicVaultState.semesters) {
+        Object.entries(academicVaultState.semesters).forEach(([sNum, s]) => {
+          if (s && s.courses) {
+            s.courses.forEach(c => {
+              const g = (c.grade || '').toUpperCase();
+              if (g === 'C' || g === 'P' || g === 'F' || g === 'B') {
+                weakItems.push(`${c.name} (${g}) in Sem ${sNum}`);
+              }
+            });
+          }
         });
+      }
 
-        const data = await res.json();
-        if (!res.ok) {
-          showAcademicAlert(data.error || 'Failed to save academic record.', 'error');
-          return;
-        }
+      let prompt = "Hey Lucy, can you look over my academic vault and semester grade cards? Give me your honest, authentic advice on what subjects I should focus on and how I can level up.";
+      if (weakItems.length > 0) {
+        prompt = `Hey Lucy, looking at my verified semester cards, I notice my grades were lower in ${weakItems.slice(0, 3).join(', ')}. What's your honest, practical advice on how I should tackle these areas and balance them with my projects?`;
+      }
 
-        localStorage.setItem('hestia_academic_record', JSON.stringify(payload));
-        showAcademicAlert('Academic record self-reported and saved successfully!', 'success');
-        updateAcademicDisplayCard(data);
-      } catch (err) {
-        localStorage.setItem('hestia_academic_record', JSON.stringify(payload));
-        showAcademicAlert('Saved academic record locally!', 'success');
-        updateAcademicDisplayCard(payload);
+      const input = document.getElementById('hestia-chat-input');
+      if (input) {
+        input.value = prompt;
+        const fakeEvt = { preventDefault: () => {} };
+        handleHestiaChatSubmit(fakeEvt);
       }
     }
 
     async function loadSavedAcademicRecord() {
       const activeUserId = currentUser?.id || 1;
-      let data = null;
-
       try {
         const res = await fetch(`${API_BASE}/api/academic-records/${activeUserId}`);
         if (res.ok) {
-          data = await res.json();
+          const data = await res.json();
+          if (data && data.semesterDataJson) {
+            try {
+              const parsed = JSON.parse(data.semesterDataJson);
+              if (parsed.currentYear) academicVaultState.currentYear = parsed.currentYear;
+              if (parsed.currentSem) academicVaultState.currentSem = parsed.currentSem;
+              if (parsed.semesters) academicVaultState.semesters = parsed.semesters;
+              academicVaultState.cumulativeCgpa = data.currentCgpa || 0.00;
+              academicVaultState.totalCredits = data.totalCreditsEarned || 0;
+            } catch (e) {
+              console.log('Error parsing semester data JSON:', e);
+            }
+          }
+
+          // Sync selector
+          const semSelect = document.getElementById('current-semester-select');
+          if (semSelect && academicVaultState.currentSem) {
+            semSelect.value = String(academicVaultState.currentSem);
+          }
+
+          // Sync year buttons
+          for (let y = 1; y <= 4; y++) {
+            const btn = document.getElementById(`year-btn-${y}`);
+            if (btn) {
+              if (y === academicVaultState.currentYear) {
+                btn.className = 'year-btn px-3 py-3 rounded-xl border border-emerald-500 bg-emerald-950/80 text-emerald-300 text-xs font-mono font-bold transition flex flex-col items-center gap-1 shadow-lg';
+              } else {
+                btn.className = 'year-btn px-3 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-mono font-bold transition flex flex-col items-center gap-1';
+              }
+            }
+          }
+
+          renderSemesterGradeCards();
         }
       } catch (err) {
-        console.log('Fetching backend academic record:', err);
+        console.log('Fetching backend academic record error:', err);
       }
+    }
 
-      if (!data || !data.userId) {
-        const localSaved = localStorage.getItem('hestia_academic_record');
-        if (localSaved) {
-          try { data = JSON.parse(localSaved); } catch (e) {}
-        }
-      }
-
-      if (document.getElementById('academic-student-name')) {
-        document.getElementById('academic-student-name').value = currentUser?.username || 'Nichu';
-      }
-
-      if (data) {
-        if (document.getElementById('academic-apaar-id')) document.getElementById('academic-apaar-id').value = data.apaarId || '';
-        if (document.getElementById('academic-institution-name')) document.getElementById('academic-institution-name').value = data.institutionName || '';
-        if (document.getElementById('academic-degree-name')) document.getElementById('academic-degree-name').value = data.degreeName || '';
-        if (document.getElementById('academic-current-cgpa')) document.getElementById('academic-current-cgpa').value = data.currentCgpa !== undefined && data.currentCgpa !== null ? data.currentCgpa : '';
-        if (document.getElementById('academic-total-credits')) document.getElementById('academic-total-credits').value = data.totalCreditsEarned !== undefined && data.totalCreditsEarned !== null ? data.totalCreditsEarned : '';
-        if (document.getElementById('academic-certify-checkbox')) document.getElementById('academic-certify-checkbox').checked = true;
-
-        if (data.studentStatus) {
-          setStudentStatus(data.studentStatus);
-        } else {
-          setStudentStatus('PRE_GRADUATE');
-        }
-
-        if (data.semesterDataJson) {
-          try {
-            semesterTrackerState = JSON.parse(data.semesterDataJson);
-            renderSemesterTracker();
-          } catch (e) {
-            console.log('Error parsing semester json:', e);
+    async function loadHestiaChatHistoryOnLogin() {
+      const activeIdentifier = currentUser?.email || currentUser?.username || 'Friend';
+      try {
+        const res = await fetch(`${API_BASE}/api/hestia/history?userIdentifier=${encodeURIComponent(activeIdentifier)}&limit=30`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.history && Array.isArray(data.history) && data.history.length > 0) {
+            hestiaChatHistory = [];
+            data.history.forEach(item => {
+              hestiaChatHistory.push({
+                sender: (item.sender === 'USER') ? 'user' : 'bot',
+                role: (item.sender === 'USER') ? 'user' : 'model',
+                text: item.messageText
+              });
+            });
+            renderFullChatHistory();
+            saveChatHistoryToStorage();
           }
-        } else {
-          renderSemesterTracker();
         }
-
-        updateAcademicDisplayCard(data);
-      } else {
-        setStudentStatus('PRE_GRADUATE');
+      } catch (err) {
+        console.log('Chat history load error:', err);
       }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(loadSavedAcademicRecord, 500);
+      setTimeout(loadSavedAcademicRecord, 400);
+      setTimeout(loadHestiaChatHistoryOnLogin, 600);
       setTimeout(autoPopulateScannerFromVault, 800);
     });
 
