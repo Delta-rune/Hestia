@@ -68,8 +68,16 @@ public class HestiaAiService {
 
         String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail);
 
+        String effectiveGroqKey = System.getenv("GROQ_API_KEY");
+        if (effectiveGroqKey == null || effectiveGroqKey.isBlank()) {
+            effectiveGroqKey = System.getenv("groq.apiKey");
+        }
+        if (effectiveGroqKey == null || effectiveGroqKey.isBlank()) {
+            effectiveGroqKey = groqApiKey;
+        }
+
         // 1. Try Groq Cloud API (Ultra-fast, un-censored open source models: llama-3.3-70b-versatile / gemma2-9b-it)
-        if (groqApiKey != null && !groqApiKey.isBlank() && !groqApiKey.startsWith("YOUR_")) {
+        if (effectiveGroqKey != null && !effectiveGroqKey.isBlank() && !effectiveGroqKey.startsWith("YOUR_")) {
             try {
                 SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
                 requestFactory.setConnectTimeout(5000);
@@ -102,7 +110,7 @@ public class HestiaAiService {
                         );
 
                         HttpHeaders headers = new HttpHeaders();
-                        headers.set("Authorization", "Bearer " + groqApiKey.trim());
+                        headers.set("Authorization", "Bearer " + effectiveGroqKey.trim());
                         headers.setContentType(MediaType.APPLICATION_JSON);
 
                         HttpEntity<Map<String, Object>> groqEntity = new HttpEntity<>(groqBody, headers);
@@ -120,10 +128,15 @@ public class HestiaAiService {
                                 }
                             }
                         }
-                    } catch (Exception innerEx) {}
+                    } catch (Exception innerEx) {
+                        System.err.println("[HestiaAiService] Groq API model " + groqModel + " failed: " + innerEx.getMessage());
+                    }
                 }
-            } catch (Exception ex) {}
+            } catch (Exception ex) {
+                System.err.println("[HestiaAiService] Groq API execution failed: " + ex.getMessage());
+            }
         }
+
 
         // 2. Try Language Model via Ollama (local or external host)
         try {
@@ -186,13 +199,19 @@ public class HestiaAiService {
             }
         } catch (Exception e) {}
 
+        String effectiveGeminiKey = System.getenv("GEMINI_API_KEY");
+        if (effectiveGeminiKey == null || effectiveGeminiKey.isBlank()) {
+            effectiveGeminiKey = geminiApiKey;
+        }
+
         // 3. Try Gemini Cloud API
-        if (geminiApiKey != null && !geminiApiKey.isBlank() && !geminiApiKey.startsWith("YOUR_")) {
+        if (effectiveGeminiKey != null && !effectiveGeminiKey.isBlank() && !effectiveGeminiKey.startsWith("YOUR_")) {
             String[] candidateModels = new String[]{"gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"};
             for (String modelName : candidateModels) {
                 try {
                     RestTemplate restTemplate = new RestTemplate();
-                    String url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + geminiApiKey;
+                    String url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + effectiveGeminiKey;
+
 
                     List<Map<String, Object>> contentsList = new ArrayList<>();
                     String lastRole = "";
