@@ -2583,6 +2583,11 @@
     let synthAudioCtx = null;
     setTimeout(updateLiveAiUI, 100);
 
+    // 8-Minute Inactivity Keep-Alive Pulse (Prevents Render spin-down while user has tab open)
+    setInterval(() => {
+      fetch(`${API_BASE}/api/keep-alive`).catch(() => {});
+    }, 8 * 60 * 1000);
+
     function getAudioContext() {
       if (!synthAudioCtx) {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
