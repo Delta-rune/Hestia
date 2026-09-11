@@ -4062,10 +4062,25 @@
 
       if (academicVaultState.semesters) {
         Object.entries(academicVaultState.semesters).forEach(([sNum, sem]) => {
-          if (sem && (sem.verified || sem.courses)) {
+          if (sem && (sem.verified || sem.courses || sem.sgpa)) {
             verifiedCount++;
             const sgpa = sem.sgpa !== undefined ? parseFloat(sem.sgpa) : 0;
-            const cr = sem.credits !== undefined ? parseInt(sem.credits, 10) : 0;
+
+            // Robust credit extraction matching card display logic
+            let cr = 0;
+            if (sem.credits !== undefined && sem.credits !== null && Number(sem.credits) > 0) {
+              cr = Number(sem.credits);
+            } else if (sem.semesterCredits !== undefined && sem.semesterCredits !== null && Number(sem.semesterCredits) > 0) {
+              cr = Number(sem.semesterCredits);
+            } else if (Array.isArray(sem.courses) && sem.courses.length > 0) {
+              cr = sem.courses.reduce((sum, c) => sum + (parseInt(c.credits) || 0), 0);
+            }
+            if (cr === 0 && (sem.verified || sem.sgpa)) {
+              cr = 21; // Standard KTU semester credits
+            }
+            sem.credits = cr;
+            sem.semesterCredits = cr;
+
             totalWeightedPoints += (sgpa * cr);
             totalCredits += cr;
 
@@ -4095,6 +4110,9 @@
       const calculatedCgpa = totalCredits > 0 ? (totalWeightedPoints / totalCredits) : (academicVaultState.cumulativeCgpa || 0.00);
       const formattedCgpa = calculatedCgpa.toFixed(2);
       academicVaultState.cumulativeCgpa = parseFloat(formattedCgpa);
+      if (totalCredits === 0 && academicVaultState.totalCredits > 0) {
+        totalCredits = academicVaultState.totalCredits;
+      }
       academicVaultState.totalCredits = totalCredits;
 
       // Update CGPA display
@@ -4110,6 +4128,9 @@
       const pct = Math.min(100, Math.round((totalCredits / 160) * 100));
       if (progressText) progressText.innerText = `${totalCredits} / 160 Credits (${pct}%)`;
       if (progressBar) progressBar.style.width = `${pct}%`;
+
+      // Keep target CGPA recovery calculator synchronized
+      if (typeof calculateVaultTargetRecovery === 'function') calculateVaultTargetRecovery();
 
       // Update Semester pills
       const pillsContainer = document.getElementById('vault-semester-pills');

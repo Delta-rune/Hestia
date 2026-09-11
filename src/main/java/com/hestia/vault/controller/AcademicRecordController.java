@@ -182,7 +182,21 @@ public class AcademicRecordController {
         for (Object semObj : semestersMap.values()) {
             if (semObj instanceof Map<?, ?> m) {
                 double sGpa = m.get("sgpa") != null ? Double.parseDouble(m.get("sgpa").toString()) : 0.0;
-                int cr = m.get("credits") != null ? Integer.parseInt(m.get("credits").toString()) : 0;
+                int cr = 0;
+                if (m.get("credits") != null) {
+                    try { cr = Integer.parseInt(m.get("credits").toString()); } catch (Exception ignored) {}
+                }
+                if (cr <= 0 && m.get("semesterCredits") != null) {
+                    try { cr = Integer.parseInt(m.get("semesterCredits").toString()); } catch (Exception ignored) {}
+                }
+                if (cr <= 0 && m.get("courses") instanceof List<?> cList && !cList.isEmpty()) {
+                    for (Object co : cList) {
+                        if (co instanceof Map<?, ?> cMap && cMap.get("credits") != null) {
+                            try { cr += Integer.parseInt(cMap.get("credits").toString()); } catch (Exception ignored) {}
+                        }
+                    }
+                }
+                if (cr <= 0) cr = 21;
                 totalWeightedGradePoints += (sGpa * cr);
                 totalCredits += cr;
             }
@@ -265,7 +279,21 @@ public class AcademicRecordController {
             for (Object semObj : semestersMap.values()) {
                 if (semObj instanceof Map<?, ?> m) {
                     double sGpa = m.get("sgpa") != null ? Double.parseDouble(m.get("sgpa").toString()) : 0.0;
-                    int cr = m.get("credits") != null ? Integer.parseInt(m.get("credits").toString()) : 0;
+                    int cr = 0;
+                    if (m.get("credits") != null) {
+                        try { cr = Integer.parseInt(m.get("credits").toString()); } catch (Exception ignored) {}
+                    }
+                    if (cr <= 0 && m.get("semesterCredits") != null) {
+                        try { cr = Integer.parseInt(m.get("semesterCredits").toString()); } catch (Exception ignored) {}
+                    }
+                    if (cr <= 0 && m.get("courses") instanceof List<?> cList && !cList.isEmpty()) {
+                        for (Object co : cList) {
+                            if (co instanceof Map<?, ?> cMap && cMap.get("credits") != null) {
+                                try { cr += Integer.parseInt(cMap.get("credits").toString()); } catch (Exception ignored) {}
+                            }
+                        }
+                    }
+                    if (cr <= 0) cr = 21;
                     totalWeightedGradePoints += (sGpa * cr);
                     totalCredits += cr;
                 }
