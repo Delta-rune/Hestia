@@ -3659,10 +3659,18 @@
         if (data && (data.verified || data.courses)) {
           // VERIFIED GRADE CARD STATE
           const sgpa = data.sgpa !== undefined ? parseFloat(data.sgpa).toFixed(2) : '0.00';
-          const credits = data.credits || 0;
+          const credits = (data.credits !== undefined && data.credits !== null && Number(data.credits) > 0)
+            ? Number(data.credits)
+            : ((data.semesterCredits !== undefined && data.semesterCredits !== null && Number(data.semesterCredits) > 0)
+                ? Number(data.semesterCredits)
+                : (Array.isArray(data.courses) && data.courses.length > 0 ? data.courses.reduce((sum, c) => sum + (parseInt(c.credits) || 0), 0) : 24));
           const regNo = data.registerNo || 'KTU-VERIFIED';
-          const inst = data.institution || 'APJ Abdul Kalam Technological University (KTU)';
-          const student = data.studentName || currentUser?.username || 'Student';
+          const inst = data.collegeName || data.institution || 'APJ Abdul Kalam Technological University (KTU)';
+          let rawStudent = data.studentName || currentUser?.username || 'Student';
+          if (rawStudent.toLowerCase().includes('candidate') || rawStudent.toLowerCase().includes('regist')) {
+            rawStudent = rawStudent.replace(/^(?:of\s+candidate\s+|candidate\s+)/i, '').replace(/\s+regist.*$/i, '').trim();
+          }
+          const student = rawStudent;
           const fileName = data.fileName || `Semester_${semNum}_GradeCard.pdf`;
 
           let courseRows = '';
@@ -3867,13 +3875,18 @@
 
           // Update local state
           if (!academicVaultState.semesters) academicVaultState.semesters = {};
+          if (!data.credits && data.semesterCredits) data.credits = data.semesterCredits;
           academicVaultState.semesters[String(semNum)] = data;
           academicVaultState.cumulativeCgpa = data.cumulativeCgpa || 8.50;
-          academicVaultState.totalCredits = data.totalCreditsEarned || 20;
+          academicVaultState.totalCredits = data.totalCreditsEarned || 24;
 
           // Update UserProfile CGPA so scanner & AI companion sync
           userProfile.cgpa = data.cumulativeCgpa;
           if (data.institution) userProfile.institution = data.institution;
+          if (data.branch) userProfile.degreeField = data.branch;
+          if (data.studentName && data.studentName !== 'Student') {
+            userProfile.fullName = data.studentName;
+          }
 
           saveAcademicVaultToLocalStorage();
           saveUserProfileToLocalStorage();
