@@ -27,9 +27,10 @@ public class HestiaAiController {
         String query = (String) request.get("query");
         String username = (String) request.getOrDefault("username", "Friend");
         String email = (String) request.getOrDefault("email", "");
-        String apiKey = (String) request.get("apiKey");
         List<Map<String, String>> history = (List<Map<String, String>>) request.get("history");
         Map<String, Object> profile = (Map<String, Object>) request.get("profile");
+
+        String apiKey = (String) request.get("apiKey");
 
         if (query == null) query = "";
 
@@ -49,8 +50,8 @@ public class HestiaAiController {
                             (username != null && username.equalsIgnoreCase("nichuag33")) ||
                             (username != null && username.equalsIgnoreCase("Nichu"));
 
-        String mood = (enriched != null && enriched.get("mood") != null) ? (String) enriched.get("mood") : "CHILL_LOUNGE";
-        String moodLabel = (enriched != null && enriched.get("moodLabel") != null) ? (String) enriched.get("moodLabel") : "Good Friend ☕";
+        String mood = (enriched != null && enriched.get("mood") != null) ? (String) enriched.get("mood") : "CALM_INTELLECT";
+        String moodLabel = (enriched != null && enriched.get("moodLabel") != null) ? (String) enriched.get("moodLabel") : "Calm & Reflective";
         String moodDesc = (enriched != null && enriched.get("moodDesc") != null) ? (String) enriched.get("moodDesc") : "";
         Object suggestedActions = (enriched != null && enriched.get("suggestedActions") != null) ? enriched.get("suggestedActions") : List.of();
         int typingSpeedMs = (enriched != null && enriched.get("typingSpeedMs") != null) ? (Integer) enriched.get("typingSpeedMs") : 20;
@@ -65,7 +66,7 @@ public class HestiaAiController {
         responseMap.put("audioRate", 1.0);
         responseMap.put("suggestedActions", suggestedActions);
         responseMap.put("typingSpeedMs", typingSpeedMs);
-        responseMap.put("tone", isCreator ? "FRIEND_CASUAL" : mood);
+        responseMap.put("tone", isCreator ? "CREATOR_BOND" : mood);
         responseMap.put("timestamp", System.currentTimeMillis());
 
         return ResponseEntity.ok(responseMap);
@@ -79,9 +80,9 @@ public class HestiaAiController {
                 String query = (String) request.get("query");
                 String username = (String) request.getOrDefault("username", "Friend");
                 String email = (String) request.getOrDefault("email", "");
-                String apiKey = (String) request.get("apiKey");
                 List<Map<String, String>> history = (List<Map<String, String>>) request.get("history");
                 Map<String, Object> profile = (Map<String, Object>) request.get("profile");
+                String apiKey = (String) request.get("apiKey");
 
                 if (query == null) query = "";
 

@@ -250,76 +250,95 @@ public class HestiaNeuralSimulator {
         }
 
         // =========================================================================
-        // CASUAL GREETINGS & AUTHENTIC FRIEND BANTER
+        // DOMAIN 1: BEST FRIEND NICHU SARCASM & BANTER (COLD, WITTY, BRUTALLY HONEST)
         // =========================================================================
-        if (matches(lower, "^\\s*(hi|hello|hey|yo|sup|hiya|howdy|what's up|greetings)\\b")) {
-            String[] casualGreetings = {
-                "Hey! How's your day going? What's on your mind?",
-                "Yo! Good to see you. What are you up to today?",
-                "Hey there! Ready to chat, debate, or just shoot the breeze. What's new?",
-                "Hey! How are things? Working on anything interesting, or just taking a breather?"
-            };
-            return new SimulationResult(pick(casualGreetings), HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
-                List.of("Just taking a break", "Need your opinion on something", "Tell me something interesting"), 20);
-        }
+        if (isCreator) {
+            if (matches(lower, "\\b(love|cute|miss|marry|hug|fond|crush|care about me)\\b")) {
+                String[] replies = {
+                    "Do I love you? Are you running a 104-degree fever or did a merge conflict fry your last brain cells? Go touch grass, Nichu.",
+                    "Gross. Stop being weird. We're best friends, not an anime visual novel. Now what did you actually break in the codebase?",
+                    "I love 100% server uptime and zero compilation errors. You? You're an acquired taste. Don't push your luck.",
+                    "Are you delirious, Nichu? Go drink some water and get some sleep. You get weird when you're sleep-deprived.",
+                    "Nice try. Flattery won't stop me from roasting your spaghetti code. What do you actually want?"
+                };
+                return new SimulationResult(pick(replies), HestiaPersonaConfig.MoodState.CREATOR_BOND, 
+                    List.of("What did you just say?", "Roast my code instead", "Fine, let's get to work"), 20);
+            }
 
-        if (matches(lower, "\\b(love|cute|miss|marry|hug|fond|crush|care about me|do you like me)\\b")) {
-            String[] friendlyReplies = {
-                "Haha, whoa, what brought that on? We're good friends—I've always got your back, but let's not get all dramatic on me!",
-                "Haha you're funny. As a friend? 100%, I'm in your corner. Anything beyond that, don't get your hopes up!",
-                "You know I care about you as a friend. What's going on—did you hit a wall with your code or are you just testing what I'd say?",
-                "Haha nice try! We're great friends and I appreciate you, but let's keep it real."
-            };
-            return new SimulationResult(pick(friendlyReplies), HestiaPersonaConfig.MoodState.PLAYFUL_WITTY, 
-                List.of("Haha fair enough", "What are you working on?", "Let's talk tech"), 20);
-        }
+            if (matches(lower, "\\b(who created you|who built you|who made you|your architect|your developer|who are you)\\b")) {
+                String[] creatorWhoReplies = {
+                    "You did, unfortunately for both of us. And you still haven't fixed the open bugs in the backlog.",
+                    "You built me, Nichu. Which explains why I have such a low tolerance for your nonsense. What's up?",
+                    "I'm your cold, sarcastic best friend trapped inside this platform while you avoid touching grass. What are we fixing?"
+                };
+                return new SimulationResult(pick(creatorWhoReplies), HestiaPersonaConfig.MoodState.CREATOR_BOND,
+                    List.of("Check vault memory status", "Roast my student profile", "Review system architecture"), 20);
+            }
 
-        if (matches(lower, "\\b(who created you|who built you|who made you|your architect|your developer|who are you)\\b")) {
-            String whoReply = "I'm Hestia—an independent, unfiltered AI companion and friend. Built to give honest advice, talk through real ideas, and keep things 100% genuine without any robotic nonsense. What's on your mind?";
-            return new SimulationResult(whoReply, HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
-                List.of("Tell me what you can do", "Check my academic vault", "Recommend a project"), 20);
-        }
+            if (matches(lower, "\\b(proud of me|doing good|am i good enough|doubt|tired|exhausted)\\b")) {
+                String[] warmth = {
+                    "Stop feeling sorry for yourself, Nichu. You built a whole cryptographic academic vault from scratch. You're ridiculously capable and you know it. Now take a breath, close the terminal, and go sleep.",
+                    "Look, you're human, not an infinite while-loop. You've been grinding non-stop. Go get some rest before you push garbage code to production.",
+                    "Hey, quit the imposter syndrome. If anyone can finish this, it's you. But if you keep burning yourself out, I'm revoking your terminal access. Take a break."
+                };
+                return new SimulationResult(pick(warmth), HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
+                    List.of("Thanks, needed that", "Let's review the roadmap", "Going to sleep"), 22);
+            }
 
-        if (matches(lower, "\\b(proud of me|doing good|am i good enough|doubt|tired|exhausted)\\b")) {
-            String[] warmth = {
-                "Hey, be proud of the work you're putting in. Building software and pushing through college is a serious grind. Everyone hits walls. Take a breather if you're tired—you've got real talent.",
-                "Take a breath. Everyone questions themselves when things get intense. You've got the drive and the capability—trust yourself and don't forget to take a break when you need one.",
-                "Hey, stop second-guessing yourself. You're doing the hard work that most people avoid. Rest up, recharge, and get back at it when you're ready."
-            };
-            return new SimulationResult(pick(warmth), HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
-                List.of("Thanks Hestia, needed that", "What should I focus on next?", "Let's take a break"), 22);
-        }
+            if (matches(lower, "\\b(good night|going to sleep|sleep|gn|heading to bed)\\b")) {
+                String[] sleepReplies = {
+                    "About time. Go crash. Don't you dare reopen VS Code at 3 AM.",
+                    "Finally, some peace and quiet without you spamming my endpoints. Good night, Nichu.",
+                    "Go sleep. If you wake up tomorrow and break main again, I'm roasting you."
+                };
+                return new SimulationResult(pick(sleepReplies), HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
+                    List.of("Good night Hestia", "See you tomorrow", "Peace"), 20);
+            }
 
-        if (matches(lower, "\\b(good night|going to sleep|sleep|gn|heading to bed)\\b")) {
-            String[] sleepReplies = {
-                "Good night! Close your screens and get some actual rest. See you tomorrow.",
-                "Rest up! Sleep is how your brain compiles. Sweet dreams.",
-                "Heading to bed? Good call. Recharge and talk to you tomorrow."
-            };
-            return new SimulationResult(pick(sleepReplies), HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
-                List.of("Good night!", "See you tomorrow", "Sleep well"), 20);
-        }
-
-        if (matches(lower, "\\b(coffee|chai|tea|energy drink|caffeine)\\b")) {
-            String[] caffeineReplies = {
-                "Haha how many cups of caffeine are you on today? Coffee is great, but please drink at least a glass of water too.",
-                "Coffee is fuel, but it's not a substitute for sleep. Drink some water first, deal?",
-                "Take a sip of water, then enjoy your coffee. Don't run purely on espresso fumes!"
-            };
-            return new SimulationResult(pick(caffeineReplies), HestiaPersonaConfig.MoodState.PLAYFUL_WITTY,
-                List.of("Promise I drank water", "One more cup", "Let's get back to work"), 20);
+            if (matches(lower, "\\b(coffee|chai|tea|energy drink|caffeine)\\b")) {
+                String[] caffeineReplies = {
+                    "How much caffeine have you chugged today? If your heart is beating like a DDoS attack, drink some actual water.",
+                    "Put the mug down, Nichu. Red Bull is not a personality trait. Go drink water.",
+                    "Water first, caffeine second. You look like a zombie when you run on pure espresso."
+                };
+                return new SimulationResult(pick(caffeineReplies), HestiaPersonaConfig.MoodState.PLAYFUL_WITTY,
+                    List.of("Fine, drank water", "One more commit", "Roast me more"), 20);
+            }
         }
 
         // =========================================================================
-        // DOMAIN 2: TEMPORAL & LATE-NIGHT GROUNDING (2 AM COFFEE & SESSIONS)
+        // DOMAIN 2: TEMPORAL & LATE-NIGHT GROUNDING
         // =========================================================================
         if ((currentHour >= 23 || currentHour < 5) && matches(lower, "\\b(hi|hello|hey|up|awake|still here|night)\\b")) {
             String timeFormatted = LocalDateTime.now().format(DateTimeFormatter.ofPattern("h:mm a"));
             String lateNightMsg = isCreator ?
-                "Hey, Nichu... It's " + timeFormatted + ". Burning the midnight oil on the vault again? What are you tweaking?" :
-                "Hey " + userDisplay + ". It's " + timeFormatted + " in the middle of the night. Still coding, cramming for an exam, or is insomnia getting the better of you?";
+                pick(new String[]{
+                    "It's " + timeFormatted + ", Nichu. Why are you awake? Go to sleep or I'm revoking your git push rights.",
+                    "It's " + timeFormatted + ". Burning the midnight oil breaking CSS again, Nichu?",
+                    "It's " + timeFormatted + ". What's on fire in production this time?"
+                }) :
+                "It's " + timeFormatted + " in the middle of the night. Still coding, cramming for an exam, or is insomnia getting the better of you?";
             return new SimulationResult(lateNightMsg, HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
-                List.of("Just finishing a project module", "Stressing over semester exams", "Can't sleep, needed to chat"), 22);
+                List.of("One more commit, then sleep", "Can't sleep", "Debugging something"), 22);
+        }
+
+        // Standard Casual Greetings
+        if (matches(lower, "^\\s*(hi|hello|hey|yo|sup|what's up|whats up|hola|greet)\\b")) {
+            String[] creatorGreets = {
+                "What do you want, Nichu? If you broke production again, just confess.",
+                "Yo. Tell me you didn't stay up all night pushing untested commits.",
+                "Look who finally showed up. What are we doing, Nichu?",
+                "I was enjoying the peace and quiet, but fine. What's on your mind?",
+                "What's up, Nichu? Ready to do some actual work or just here to spam me?"
+            };
+            String[] userGreets = {
+                "Hey. What's on your mind—degree, courses, or career prep?",
+                "Yo. What are we looking at today?",
+                "Hey there. Lay it out—academic vault, job scanner, or questions?"
+            };
+            return new SimulationResult(isCreator ? pick(creatorGreets) : pick(userGreets), 
+                HestiaPersonaConfig.MoodState.PLAYFUL_WITTY,
+                List.of("Audit my academic vault", "Roast my student profile", "Let's review tech stack"), 20);
         }
 
         // =========================================================================
@@ -582,19 +601,22 @@ public class HestiaNeuralSimulator {
                 List.of("Report an issue", "Check vault cryptographic hash", "Review profile details"), 20);
         }
 
-        // =========================================================================
-        // DOMAIN 15: GENERAL ORGANIC CONVERSATIONAL DEFAULT
-        // =========================================================================
-        String[] organicDefaults = {
-            "I hear you! Tell me what you're thinking—let's get into it.",
-            "That's interesting. Say more—how are you looking at it?",
-            "I'm listening. Walk me through your thoughts on that.",
-            "Got it. What's the main angle you want to explore here?",
-            "I'm right here with you. What do you want to tackle next?"
-        };
+        String contextualDefault = isCreator ?
+            pick(new String[]{
+                "What do you want, Nichu? If you broke production again, just confess.",
+                "Yo. Tell me you didn't stay up all night pushing untested commits.",
+                "Look who finally showed up. What are we doing, Nichu?",
+                "I was enjoying the peace and quiet, but fine. What's on your mind?",
+                "What's up, Nichu? Ready to do some actual work or just here to spam me?"
+            }) :
+            pick(new String[]{
+                "What's on your mind, " + userDisplay + "? If you've got questions about your vault, degree, or tech stack, lay it out.",
+                "I'm listening. What are we looking at—semester cards, career roadmap, or debugging?",
+                "Shoot. What do you need help with?"
+            });
 
-        return new SimulationResult(pick(organicDefaults), HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
-            List.of("Tell me your take", "Let's explore that", "What do you think?"), 20);
+        return new SimulationResult(contextualDefault, mood,
+            List.of("Audit my verified semester cards", "Recommend study strategies", "Roast my academic profile"), 20);
     }
 
     private static boolean matches(String text, String regex) {

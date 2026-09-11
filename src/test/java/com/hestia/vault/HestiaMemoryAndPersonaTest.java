@@ -35,7 +35,7 @@ public class HestiaMemoryAndPersonaTest {
         String prompt = HestiaPromptBuilder.buildSystemPrompt("Nichu", "nichuag33@gmail.com", profile, "support@hestia.org", memoryContext);
 
         assertNotNull(prompt);
-        assertTrue(prompt.contains("AUTHENTIC, UNFILTERED FRIEND"));
+        assertTrue(prompt.contains("MASTER CREATOR CONTEXT: NICHU"));
         assertTrue(prompt.contains("HESTIA"));
         assertTrue(prompt.contains("Computer Science"));
         assertTrue(prompt.contains("TECH_STACK"));
@@ -75,19 +75,19 @@ public class HestiaMemoryAndPersonaTest {
         assertNotNull(sanitized);
         assertFalse(sanitized.toLowerCase().contains("as an ai language model"));
         assertFalse(sanitized.toLowerCase().contains("i would be happy to help"));
-        assertTrue(sanitized.contains("CGPA"));
+        assertTrue(sanitized.contains("(⁠"));
     }
 
     @Test
     public void testHestiaNeuralSimulatorCapabilities() {
-        // Test Friendly Banter on personal questions
-        var friendResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
+        // Test Creator Bond
+        var creatorResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
             "Do you care about me Hestia?", "Nichu", "nichuag33@gmail.com", true, Map.of(), "", ""
         );
-        assertNotNull(friendResult);
-        assertNotNull(friendResult.getReply());
-        assertTrue(friendResult.getReply().toLowerCase().contains("friend"));
-        assertFalse(friendResult.getSuggestedFollowUps().isEmpty());
+        assertNotNull(creatorResult);
+        assertNotNull(creatorResult.getReply());
+        assertEquals(com.hestia.vault.ai.HestiaPersonaConfig.MoodState.CREATOR_BOND, creatorResult.getMood());
+        assertFalse(creatorResult.getSuggestedFollowUps().isEmpty());
 
         // Test Technical Domain
         var techResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(

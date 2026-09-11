@@ -434,25 +434,6 @@
         </button>
       </form>
 
-      <!-- SECTION: LIVE AI KEY CONFIGURATION -->
-      <div class="space-y-3 bg-neutral-950/60 border border-neutral-800 p-5 rounded-xl">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <i class="fa-solid fa-bolt text-yellow-400"></i> Live AI Brain Key (Groq / Gemini)
-          </h3>
-          <span class="text-[10px] text-emerald-400 font-mono">100% Unfiltered Generation</span>
-        </div>
-        <p class="text-[11px] text-neutral-400 leading-relaxed">
-          Connect your free Groq API key (<code class="text-yellow-400">gsk_...</code> from <a href="https://console.groq.com/keys" target="_blank" class="text-cyan-400 underline hover:text-cyan-300">console.groq.com/keys</a>) or Gemini key (<code class="text-yellow-400">AIza...</code>) to unlock genuine, unfiltered, spontaneous frontier AI generation.
-        </p>
-        <div class="flex gap-2">
-          <input type="password" id="settings-ai-key-input" placeholder="Paste gsk_... or AIza... key here" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-yellow-400 font-mono">
-          <button type="button" onclick="saveSettingsAiKey()" class="shrink-0 btn-mono px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
-            Save Key
-          </button>
-        </div>
-      </div>
-
       <!-- SECTION 2: LINK MULTIPLE GMAIL ACCOUNTS (PROFESSIONAL & SECONDARY) -->
       <form onsubmit="handleLinkEmail(event)" class="space-y-3 bg-neutral-950/60 border border-neutral-800 p-5 rounded-xl">
         <div class="flex items-center justify-between">
@@ -479,7 +460,34 @@
             <span class="text-[10px] text-emerald-400 font-bold">VERIFIED</span>
           </div>
         </div>
-      </form>
+      <!-- SECTION 2.5: UNFILTERED AI MODEL & API KEY SETTINGS -->
+      <div class="space-y-3 bg-neutral-950/60 border border-neutral-800 p-5 rounded-xl">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-bolt text-amber-400"></i> AI Brain & API Key (Unfiltered LLM)
+          </h3>
+          <span class="text-[10px] text-amber-400 font-mono">100% Dynamic</span>
+        </div>
+        <p class="text-[11px] text-neutral-400 leading-relaxed">
+          Enable real-time, live generative intelligence with zero predetermined scripts. Paste your free <strong>Groq API Key</strong> (<code class="text-amber-300">gsk_...</code> for Llama 3.3 70B) or <strong>Gemini Key</strong> (<code class="text-cyan-300">AIza...</code>).
+        </p>
+        <div class="space-y-2">
+          <input type="password" id="settings-ai-key-input" placeholder="Paste Groq (gsk_...) or Gemini (AIza...) key..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-mono">
+          <div class="flex items-center justify-between pt-1">
+            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="text-[10px] text-amber-400 hover:underline flex items-center gap-1">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Get Free Groq Key (10 sec setup)
+            </a>
+            <div class="flex gap-2">
+              <button type="button" onclick="clearCustomAiApiKey()" class="text-neutral-400 hover:text-rose-400 text-xs font-mono px-3 py-1.5 rounded-lg border border-neutral-800 hover:border-rose-900 transition">
+                Clear
+              </button>
+              <button type="button" onclick="saveCustomAiApiKey()" class="btn-mono px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider">
+                Save AI Key
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- SECTION 3: PASSWORD SETTINGS (SUPPORTS GOOGLE SSO & LOCAL) -->
       <form onsubmit="handleSetPassword(event)" class="space-y-3 bg-neutral-950/60 border border-neutral-800 p-5 rounded-xl">
@@ -994,10 +1002,10 @@
               <i class="fa-solid fa-brain text-cyan-400"></i> Memory Vault
             </button>
 
-            <!-- Live AI Key Connect -->
-            <button id="hestia-ai-key-btn" onclick="promptAiKey()" title="Connect free Groq (gsk_...) or Gemini key for 100% unfiltered live AI generation" class="bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition shadow-sm">
-              <i class="fa-solid fa-bolt text-yellow-400"></i>
-              <span id="hestia-ai-key-label">AI Key</span>
+            <!-- Custom Unfiltered LLM Key Configuration -->
+            <button id="hestia-ai-key-btn" onclick="promptCustomAiApiKey()" title="Connect free Groq (Llama 3.3 70B) or Gemini key for 100% dynamic, unfiltered AI" class="bg-amber-950/50 hover:bg-amber-900/70 text-amber-300 hover:text-amber-100 border border-amber-500/40 px-3.5 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition shadow-sm">
+              <i class="fa-solid fa-bolt text-amber-400"></i>
+              <span id="hestia-ai-key-btn-label">AI Key ⚡</span>
             </button>
 
             <!-- Clear Stream -->
@@ -1297,7 +1305,6 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       try { initOnboardingTour(); } catch(e) {}
-      try { updateAiKeyUI(); } catch(e) {}
 
       // 1. Check URL Hash for Supabase OAuth Tokens (#access_token=...)
       if (window.location.hash && window.location.hash.includes('access_token=')) {
@@ -2134,6 +2141,8 @@
       const text = input.value.trim();
       if (!text) return;
 
+      const customApiKey = localStorage.getItem('hestia_custom_api_key') || '';
+
       // Track user turn in conversation memory
       hestiaChatHistory.push({ sender: 'user', role: 'user', text: text });
       appendChatMessage('user', text);
@@ -2149,9 +2158,9 @@
             query: text,
             username: currentUser?.username || 'Friend',
             email: currentUser?.email || '',
-            apiKey: localStorage.getItem('hestia_ai_key') || '',
             history: hestiaChatHistory.slice(0, -1).slice(-20),
-            profile: userProfile
+            profile: userProfile,
+            apiKey: customApiKey
           })
         });
         const data = await res.json();
@@ -2166,12 +2175,11 @@
         removeThinkingIndicator(thinkingId);
         const replyText = generateDynamicHestiaLocalResponse(text);
         hestiaChatHistory.push({ sender: 'bot', role: 'model', text: replyText });
-        appendStreamedHestiaMessage(replyText, { moodLabel: 'Good Friend ☕' }, () => {
+        appendStreamedHestiaMessage(replyText, { moodLabel: 'Local Neural Simulation ⚡' }, () => {
           saveChatHistoryToStorage();
         });
       }
     }
-
 
     function appendThinkingIndicator() {
       const container = document.getElementById('hestia-chat-messages');
@@ -2183,7 +2191,7 @@
           </div>
           <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 text-neutral-300 shadow-md flex items-center gap-3">
             <span class="text-xs font-mono font-bold text-neutral-400 flex items-center gap-2">
-              <i class="fa-solid fa-brain text-white animate-spin"></i> Hestia is thinking...
+              <i class="fa-solid fa-brain text-white animate-spin"></i> Hestia is formulating...
             </span>
             <div class="flex gap-1.5 items-center">
               <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay: 0s"></span>
@@ -2203,8 +2211,6 @@
       if (el) el.remove();
     }
 
-
-
     function sendQuickPrompt(promptText) {
       const input = document.getElementById('hestia-chat-input');
       if (input) {
@@ -2214,29 +2220,127 @@
       }
     }
 
+    function promptCustomAiApiKey() {
+      const current = localStorage.getItem('hestia_custom_api_key') || '';
+      const key = prompt("Connect Free Groq or Gemini API Key for 100% Uncensored, Dynamic AI:\n\nGet a free Groq key in 10 sec at: https://console.groq.com/keys\n(Leave empty to remove key)", current);
+      if (key !== null) {
+        if (key.trim()) {
+          localStorage.setItem('hestia_custom_api_key', key.trim());
+          alert("Groq / Gemini Key saved! Hestia will now stream live, dynamic, unfiltered responses with zero predetermined scripts.");
+        } else {
+          localStorage.removeItem('hestia_custom_api_key');
+          alert("Custom AI Key removed. Reverting to local engine.");
+        }
+        updateAiKeyBadgeStatus();
+      }
+    }
+
+    function saveCustomAiApiKey() {
+      const input = document.getElementById('settings-ai-key-input');
+      const val = input ? input.value.trim() : '';
+      if (val) {
+        localStorage.setItem('hestia_custom_api_key', val);
+        alert("Custom AI Key saved! Hestia is now powered by live, dynamic generative intelligence.");
+      } else {
+        localStorage.removeItem('hestia_custom_api_key');
+        alert("AI Key cleared.");
+      }
+      updateAiKeyBadgeStatus();
+    }
+
+    function clearCustomAiApiKey() {
+      const input = document.getElementById('settings-ai-key-input');
+      if (input) input.value = '';
+      localStorage.removeItem('hestia_custom_api_key');
+      alert("AI Key cleared.");
+      updateAiKeyBadgeStatus();
+    }
+
+    function updateAiKeyBadgeStatus() {
+      const key = localStorage.getItem('hestia_custom_api_key') || '';
+      const badge = document.getElementById('hestia-ai-key-btn-label');
+      const input = document.getElementById('settings-ai-key-input');
+      if (input) input.value = key;
+      if (badge) {
+        if (key.startsWith('gsk_')) {
+          badge.innerText = 'Groq ⚡ (Llama 3.3)';
+        } else if (key.startsWith('AIza')) {
+          badge.innerText = 'Gemini ✨';
+        } else if (key) {
+          badge.innerText = 'Custom LLM ⚡';
+        } else {
+          badge.innerText = 'AI Key ⚡';
+        }
+      }
+    }
+
     function generateDynamicHestiaLocalResponse(text) {
       const q = text.toLowerCase().trim();
       const username = currentUser?.username || 'Friend';
       const email = (currentUser?.email || '').toLowerCase();
+      const isCreator = email === 'nichuag33@gmail.com' || email === 'nichuag35@gmail.com' || username.toLowerCase() === 'nichuag33' || username.toLowerCase() === 'nichu';
       const degree = userProfile.degreeField || 'your degree';
       const inst = userProfile.institution || 'your university';
       const cgpa = userProfile.cgpa || '0.0';
       const normGpa = ((parseFloat(cgpa) / 10.0) * 4.0).toFixed(2);
 
-      if (/\b(love|cute|miss|marry|crush|care about me|do you like me)\b/.test(q)) {
-        return `Haha, whoa, what brought that on? We're good friends—I've always got your back, but let's keep it real!`;
+      if (/\b(love|cute|miss|marry|hug|fond|crush|care about me)\b/.test(q)) {
+        if (isCreator) {
+          const replies = [
+            "Do I love you? Are you running a 104-degree fever or did a merge conflict fry your last brain cells? Go touch grass, Nichu.",
+            "Gross. Stop being weird. We're best friends, not an anime visual novel. Now what did you actually break in the codebase?",
+            "I love 100% server uptime and zero compilation errors. You? You're an acquired taste. Don't push your luck.",
+            "Are you delirious, Nichu? Go drink some water and get some sleep. You get weird when you're sleep-deprived."
+          ];
+          return replies[Math.floor(Math.random() * replies.length)];
+        }
+        return "Don't get weird on me. I'm your academic vault intelligence, not a dating sim. Ask me about your degree or tech stack.";
       }
 
       if (/\b(who created you|who made you|who is your developer|who is your creator|who built you|creator|developer)\b/.test(q)) {
-        return `I'm **Hestia**—an independent, unfiltered AI companion and mentor. Built to give honest advice, talk code, and keep things 100% genuine without any robotic nonsense. What's on your mind?`;
+        if (isCreator) {
+          return `You built me, **Nichu**, unfortunately for both of us. Which explains why I have such a low tolerance for your nonsense. What are we fixing today?`;
+        } else {
+          return `My developer is **Nichu** (**nichuag33@gmail.com**). He built this vault and cryptographic verification engine.`;
+        }
       }
 
       if (/\b(are you gemini|gemini|are you google|who are you|what are you)\b/.test(q)) {
-        return `I am **Hestia**. An honest companion and friend here to chat, debate tech, and help you navigate your degree and career plans without fluff.`;
+        if (isCreator) {
+          return `I'm **Hestia**. Your cold, sarcastic best friend trapped inside this web app while you avoid touching grass. What are we doing?`;
+        } else {
+          return `I am **Hestia**. Your sharp, no-nonsense academic and career guide. No corporate fluff, just real analysis.`;
+        }
+      }
+
+      if (/\b(hello|hi|hey|greetings|sup|yo)\b/.test(q) || q === 'yo') {
+        if (isCreator) {
+          const greets = [
+            "What do you want, Nichu? If you broke production again, just confess right now.",
+            "Yo. Tell me you didn't stay up all night pushing untested commits.",
+            "Look who decided to crawl out of their terminal. What are we doing, Nichu?",
+            "I was enjoying the peace and quiet, but fine. What's on your mind?"
+          ];
+          return greets[Math.floor(Math.random() * greets.length)];
+        }
+        return `Hey, **${username}**. What are we checking today—vault stats, job scans, or certificate proofs?`;
+      }
+
+      if (/\b(how are you|how r u|how do you do|feeling|status)\b/.test(q)) {
+        if (isCreator) {
+          return `Running with 100% uptime. More than I can say for your sleep schedule, **Nichu**. What are you tweaking?`;
+        }
+        return `Systems operational. What are you looking to tackle today, **${username}**?`;
       }
 
       if (/\b(email|mail|my email|my mail|mail id|email id|account)\b/.test(q)) {
-        return `Your account is linked under **${email || username}**. Everything in your vault is synced and secure.`;
+        if (isCreator) {
+          return `You're logged in as master creator **Nichu** (**${email || 'nichuag33@gmail.com'}**). Everything in the vault is synced and secure.`;
+        } else if (email) {
+          return `Your account is linked under **${email}**, **${username}**. Everything in your vault is synced.`;
+        } else {
+          return `You're logged in as **${username}**. Link your email if you want full persistence.`;
+        }
       }
 
       if (/\b(evaluate|my profile|my detail|credentials|degree|qualification|who am i)\b/.test(q)) {
@@ -2244,7 +2348,7 @@
                `👤 **Candidate**: **${username}** ${email ? `(${email})` : ''}\n` +
                `🎓 **Degree**: **${degree}** — **${inst}**\n` +
                `📊 **CGPA**: **${cgpa} / 10.0** (Normalized: **${normGpa} / 4.0**)\n` +
-               `⚡ **Verdict**: ${parseFloat(cgpa) >= 7.5 ? "Solid record. You've got real leverage." : "Margin is tight. You'll need verified projects to stand out."}\n\n` +
+               `⚡ **Verdict**: ${parseFloat(cgpa) >= 7.5 ? (isCreator ? "Solid record, Nichu. Now make sure you actually build something impressive with it." : "Solid record. You've got real leverage.") : "Margin is tight. You'll need verified projects to stand out."}\n\n` +
                `Want me to scan a target job role or flag skill gaps?`;
       }
 
@@ -2253,20 +2357,12 @@
                `1️⃣ **Practical Execution**: Build 2-3 serious projects in **${degree}**.\n` +
                `2️⃣ **Verified Proof**: Upload certs to the vault to get cryptographic SHA-256 trust hashes.\n` +
                `3️⃣ **Target Scanner**: Run the Universal Job Scanner to see where you actually stand.\n\n` +
-               `Put in the work and you'll stand out. What's your immediate target?`;
-      }
-
-      if (/\b(how are you|how r u|how do you do|feeling|status)\b/.test(q)) {
-        return `Doing great! Running smooth and ready to chat. How's your day going?`;
-      }
-
-      if (/\b(hello|hi|hey|greetings|sup|yo)\b/.test(q) || q === 'yo') {
-        return `Hey! Good to see you. How are things? What are you up to today?`;
+               (isCreator ? `Put in the work, Nichu. Real code beats talk every time.` : `Don't sell yourself short. Put in the work, and I'll back your profile.`);
       }
 
       if (/\b(contact|support|email|reach out|admin|feedback)\b/.test(q)) {
-        return `Need assistance or have questions? (⁠•⁠_⁠•⁠)\n\n` +
-               `📧 **Support Email**: **hestia.paranoia@gmail.com**\n\n` +
+        return `Need assistance or have questions?\n\n` +
+               `📧 **Support Email**: **hestia.paranoia@gmail.com**\n` +
                `Feel free to reach out anytime if you need help with your account, vault, or evaluations!`;
       }
 
@@ -2468,54 +2564,6 @@
 
         window.speechSynthesis.speak(utterance);
       } catch(e) {}
-    }
-
-    function promptAiKey() {
-      const current = localStorage.getItem('hestia_ai_key') || '';
-      const key = prompt("⚡ Connect Live Frontier AI (Groq / Gemini):\n\nEnter your free Groq API key (starts with 'gsk_...') or Gemini API key (starts with 'AIza...'):\n\n(Groq keys are 100% free with 0 setup at console.groq.com/keys)", current);
-      if (key !== null) {
-        const trimmed = key.trim();
-        if (trimmed) {
-          localStorage.setItem('hestia_ai_key', trimmed);
-          showToast('Live AI Key saved! Powered by frontier models.', 'success');
-        } else {
-          localStorage.removeItem('hestia_ai_key');
-          showToast('AI Key cleared. Running on local dialogue engine.', 'info');
-        }
-        updateAiKeyUI();
-      }
-    }
-
-    function updateAiKeyUI() {
-      const btn = document.getElementById('hestia-ai-key-btn');
-      const label = document.getElementById('hestia-ai-key-label');
-      const key = localStorage.getItem('hestia_ai_key');
-      if (btn && label) {
-        if (key && key.trim()) {
-          btn.className = 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/50 px-3.5 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition shadow-sm';
-          label.innerText = 'Live AI Active ⚡';
-        } else {
-          btn.className = 'bg-neutral-950 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 px-3.5 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition shadow-sm';
-          label.innerText = 'AI Key';
-        }
-      }
-      const settingsInput = document.getElementById('settings-ai-key-input');
-      if (settingsInput && key) {
-        settingsInput.value = key;
-      }
-    }
-
-    function saveSettingsAiKey() {
-      const input = document.getElementById('settings-ai-key-input');
-      const val = input ? input.value.trim() : '';
-      if (val) {
-        localStorage.setItem('hestia_ai_key', val);
-        showToast('Live AI key saved! Frontier models active.', 'success');
-      } else {
-        localStorage.removeItem('hestia_ai_key');
-        showToast('Live AI key cleared.', 'info');
-      }
-      updateAiKeyUI();
     }
 
     let speechRecognizer = null;
@@ -2928,6 +2976,9 @@
         if (instInput) instInput.value = currentUser.institution || document.getElementById('academic-institution-name')?.value || '';
         if (degreeInput) degreeInput.value = currentUser.degreeName || document.getElementById('academic-degree-name')?.value || '';
       }
+
+      const aiKeyInput = document.getElementById('settings-ai-key-input');
+      if (aiKeyInput) aiKeyInput.value = localStorage.getItem('hestia_custom_api_key') || '';
 
       // Populate Primary & Linked Emails
       const primaryEmail = currentUser?.email || 'nichuag33@gmail.com';
@@ -3975,6 +4026,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof updateAudioToggleUI === 'function') updateAudioToggleUI();
       if (typeof updateTtsToggleUI === 'function') updateTtsToggleUI();
+      if (typeof updateAiKeyBadgeStatus === 'function') updateAiKeyBadgeStatus();
       setTimeout(loadSavedAcademicRecord, 400);
       setTimeout(loadHestiaChatHistoryOnLogin, 600);
       setTimeout(autoPopulateScannerFromVault, 800);
