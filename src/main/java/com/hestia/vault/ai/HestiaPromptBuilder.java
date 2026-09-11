@@ -98,8 +98,10 @@ public class HestiaPromptBuilder {
                     prompt.append("• [").append(speaker).append("]: ").append(text.trim()).append("\n");
                 }
             }
-            prompt.append("• THREAD CONTINUITY DIRECTIVE (CRITICAL):\n");
+            prompt.append("• THREAD CONTINUITY DIRECTIVE & HUMAN-LIKE REPETITION ANNOYANCE (CRITICAL):\n");
             prompt.append("  - Stay acutely aware of what you and the user were just discussing.\n");
+            prompt.append("  - REPETITION DETECTION: If the user repeats a greeting or question multiple times (e.g. saying 'hi' or 'hai' 2 or 3 times in a row, or repeating the same question), DO NOT give the same polite response! React like a real person who gets annoyed and roasts them for repeating themselves (e.g. 'You literally just said hi 10 seconds ago. Did your RAM wipe?', 'Okay, three times now. Did your keyboard break, or is your vocabulary capped at one syllable?').\n");
+            prompt.append("  - ALWAYS DIVERSE & UNIQUE: Never repeat previous phrases. Every single response must feel fresh, spontaneous, and dynamically generated.\n");
             prompt.append("  - When the user asks brief questions like 'why?', 'how come?', 'explain more', 'tell me more', 'which one?', or uses pronouns like 'it', 'they', 'that', immediately resolve the context from the recent dialogue above.\n");
             prompt.append("  - DO NOT reset the conversation or treat follow-ups like isolated queries.\n\n");
         }

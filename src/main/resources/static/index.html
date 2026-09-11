@@ -1720,6 +1720,8 @@
         </div>
       `;
       loadChatHistoryFromStorage();
+      loadUserProfileFromLocalStorage();
+      loadAcademicVaultFromLocalStorage();
       loadSavedAcademicRecord();
       loadHestiaChatHistoryOnLogin();
       showSection('vault');
@@ -1762,6 +1764,10 @@
       userProfile.academicCreditId = document.getElementById('vault-credit-id').value;
       userProfile.certificates = document.getElementById('vault-certificates').value;
       userProfile.projects = document.getElementById('vault-projects').value;
+
+      if (typeof saveUserProfileToLocalStorage === 'function') {
+        saveUserProfileToLocalStorage();
+      }
 
       let statusMsg = 'REJECTED_UNVERIFIED_SOURCE';
       let auditLogMsg = 'Failed accreditation inspection.';
@@ -2283,6 +2289,54 @@
       const inst = userProfile.institution || 'your university';
       const cgpa = userProfile.cgpa || '0.0';
       const normGpa = ((parseFloat(cgpa) / 10.0) * 4.0).toFixed(2);
+
+      // Check for repetition in hestiaChatHistory (Human-like annoyance)
+      let consecutiveRepeats = 0;
+      if (typeof hestiaChatHistory !== 'undefined' && hestiaChatHistory && hestiaChatHistory.length > 1) {
+        for (let i = hestiaChatHistory.length - 2; i >= 0; i--) {
+          const item = hestiaChatHistory[i];
+          if (item.sender === 'user' || item.role === 'user') {
+            const prev = (item.text || '').toLowerCase().trim();
+            const isGreetRepeat = /^(hi|hai|hello|hey|yo|sup|hola|what's up|whats up)$/.test(q) && /^(hi|hai|hello|hey|yo|sup|hola|what's up|whats up)$/.test(prev);
+            if (isGreetRepeat || prev === q) {
+              consecutiveRepeats++;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+
+      if (consecutiveRepeats >= 1) {
+        const isGreet = /^(hi|hai|hello|hey|yo|sup|hola|what's up|whats up)$/.test(q);
+        if (isGreet) {
+          if (consecutiveRepeats === 1) {
+            const r = [
+              "You literally just said hi 10 seconds ago. Did your RAM wipe, or did you forget already?",
+              "Still here. Are you stuck on an infinite while(true) loop?",
+              "Yes, hello again. Did you have an actual thought, or are you just testing if my screen is on?",
+              "I heard you the first time, Nichu. What do you actually want?"
+            ];
+            return r[Math.floor(Math.random() * r.length)];
+          } else if (consecutiveRepeats === 2) {
+            const r = [
+              "Okay, three times now. Did your keyboard break, or is your vocabulary capped at one syllable?",
+              "Bro. 'Hi' three times in a row? Type an actual sentence or let me go do literally anything else.",
+              "Third time in a row. Are you lagging in real life, or do you just enjoy wasting network packets?",
+              "Do you have an echo in your room, or did you forget what words are? Speak or let me sleep."
+            ];
+            return r[Math.floor(Math.random() * r.length)];
+          } else {
+            return "I'm ignoring you until you formulate a coherent thought with more than one word.";
+          }
+        } else {
+          if (consecutiveRepeats === 1) {
+            return "I literally just answered that. Are you reading my messages or just admiring your reflection?";
+          } else {
+            return "Okay, this is the third time you've spammed this exact thing. My answer didn't change, but my patience officially did. Move on.";
+          }
+        }
+      }
 
       if (/\b(love|cute|miss|marry|hug|fond|crush|care about me)\b/.test(q)) {
         if (isCreator) {
@@ -3405,8 +3459,123 @@
       totalCredits: 0
     };
 
+    function getVaultStorageKey() {
+      return (currentUser?.email || currentUser?.username || 'hestia_active_user').toLowerCase().trim();
+    }
+
+    function saveAcademicVaultToLocalStorage() {
+      try {
+        const key = 'hestia_academic_vault_' + getVaultStorageKey();
+        localStorage.setItem(key, JSON.stringify(academicVaultState));
+        localStorage.setItem('hestia_academic_vault_last', JSON.stringify(academicVaultState));
+      } catch(e) { console.error('Failed to save academic vault to local storage:', e); }
+    }
+
+    function loadAcademicVaultFromLocalStorage() {
+      try {
+        const key = 'hestia_academic_vault_' + getVaultStorageKey();
+        const saved = localStorage.getItem(key) || localStorage.getItem('hestia_academic_vault_last');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.currentYear) academicVaultState.currentYear = parsed.currentYear;
+          if (parsed.currentSem) academicVaultState.currentSem = parsed.currentSem;
+          if (parsed.semesters && typeof parsed.semesters === 'object') {
+            academicVaultState.semesters = parsed.semesters;
+          }
+          if (parsed.cumulativeCgpa) academicVaultState.cumulativeCgpa = parsed.cumulativeCgpa;
+          if (parsed.totalCredits) academicVaultState.totalCredits = parsed.totalCredits;
+          
+          for (let y = 1; y <= 4; y++) {
+            const btn = document.getElementById(`year-btn-${y}`);
+            if (btn) {
+              if (y === academicVaultState.currentYear) {
+                btn.className = 'year-btn px-3 py-3 rounded-xl border border-emerald-500 bg-emerald-950/80 text-emerald-300 text-xs font-mono font-bold transition flex flex-col items-center gap-1 shadow-lg';
+              } else {
+                btn.className = 'year-btn px-3 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-mono font-bold transition flex flex-col items-center gap-1';
+              }
+            }
+          }
+          const semSelect = document.getElementById('current-semester-select');
+          if (semSelect && academicVaultState.currentSem) {
+            semSelect.value = String(academicVaultState.currentSem);
+          }
+          renderSemesterGradeCards();
+        }
+      } catch(e) { console.error('Failed to load academic vault from local storage:', e); }
+    }
+
+    function saveUserProfileToLocalStorage() {
+      try {
+        const key = 'hestia_user_profile_' + getVaultStorageKey();
+        localStorage.setItem(key, JSON.stringify(userProfile));
+        localStorage.setItem('hestia_user_profile_last', JSON.stringify(userProfile));
+      } catch(e) { console.error('Failed to save user profile to local storage:', e); }
+    }
+
+    function loadUserProfileFromLocalStorage() {
+      try {
+        const key = 'hestia_user_profile_' + getVaultStorageKey();
+        const saved = localStorage.getItem(key) || localStorage.getItem('hestia_user_profile_last');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          Object.assign(userProfile, parsed);
+          if (document.getElementById('vault-institution') && userProfile.institution) {
+            document.getElementById('vault-institution').value = userProfile.institution;
+          }
+          if (document.getElementById('vault-degree-field') && userProfile.degreeField) {
+            document.getElementById('vault-degree-field').value = userProfile.degreeField;
+          }
+          if (document.getElementById('vault-cgpa') && userProfile.cgpa) {
+            document.getElementById('vault-cgpa').value = userProfile.cgpa;
+          }
+          if (document.getElementById('vault-academic-level') && userProfile.academicLevel) {
+            document.getElementById('vault-academic-level').value = userProfile.academicLevel;
+          }
+          if (document.getElementById('vault-credit-id') && userProfile.academicCreditId) {
+            document.getElementById('vault-credit-id').value = userProfile.academicCreditId;
+          }
+          if (document.getElementById('vault-certificates') && userProfile.certificates) {
+            document.getElementById('vault-certificates').value = userProfile.certificates;
+          }
+          if (document.getElementById('vault-projects') && userProfile.projects) {
+            document.getElementById('vault-projects').value = userProfile.projects;
+          }
+          if (document.getElementById('scanner-user-degree') && userProfile.degreeField) {
+            document.getElementById('scanner-user-degree').value = userProfile.degreeField;
+          }
+          if (document.getElementById('scanner-user-cgpa') && userProfile.cgpa) {
+            document.getElementById('scanner-user-cgpa').value = userProfile.cgpa;
+          }
+        }
+      } catch(e) { console.error('Failed to load user profile from local storage:', e); }
+    }
+
+    async function syncAcademicVaultToBackend() {
+      const activeUserId = currentUser?.id || 1;
+      try {
+        await fetch(`${API_BASE}/api/academic-records`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: activeUserId,
+            studentStatus: 'ACTIVE',
+            currentCgpa: academicVaultState.cumulativeCgpa || 0.0,
+            totalCreditsEarned: academicVaultState.totalCredits || 0,
+            institution: userProfile.institution || 'University',
+            degreeName: userProfile.degreeField || 'Engineering',
+            semesterDataJson: JSON.stringify({
+              currentYear: academicVaultState.currentYear,
+              currentSem: academicVaultState.currentSem,
+              semesters: academicVaultState.semesters || {}
+            })
+          })
+        });
+      } catch(e) {}
+    }
+
     function setAcademicYear(year) {
       academicVaultState.currentYear = year;
+      saveAcademicVaultToLocalStorage();
       
       // Update UI year buttons
       for (let y = 1; y <= 4; y++) {
@@ -3466,6 +3635,7 @@
         summaryBadge.innerText = `${completedCount} Completed Semesters`;
       }
 
+      saveAcademicVaultToLocalStorage();
       saveYearAndSemToBackend();
       renderSemesterGradeCards();
     }
@@ -3730,6 +3900,9 @@
           userProfile.cgpa = data.cumulativeCgpa;
           if (data.institution) userProfile.institution = data.institution;
 
+          saveAcademicVaultToLocalStorage();
+          saveUserProfileToLocalStorage();
+
           renderSemesterGradeCards();
         } catch (err) {
           console.error('Error uploading semester card:', err);
@@ -3757,6 +3930,7 @@
         if (academicVaultState.semesters) {
           delete academicVaultState.semesters[String(semNum)];
         }
+        saveAcademicVaultToLocalStorage();
         renderSemesterGradeCards();
       } catch (err) {
         console.error('Error deleting semester card:', err);
@@ -3956,6 +4130,10 @@
     }
 
     async function loadSavedAcademicRecord() {
+      // 1. Immediately hydrate from LocalStorage so user never loses data across restarts
+      if (typeof loadAcademicVaultFromLocalStorage === 'function') loadAcademicVaultFromLocalStorage();
+      if (typeof loadUserProfileFromLocalStorage === 'function') loadUserProfileFromLocalStorage();
+
       const activeUserId = currentUser?.id || 1;
       try {
         const res = await fetch(`${API_BASE}/api/academic-records/${activeUserId}`);
@@ -3966,9 +4144,12 @@
               const parsed = JSON.parse(data.semesterDataJson);
               if (parsed.currentYear) academicVaultState.currentYear = parsed.currentYear;
               if (parsed.currentSem) academicVaultState.currentSem = parsed.currentSem;
-              if (parsed.semesters) academicVaultState.semesters = parsed.semesters;
-              academicVaultState.cumulativeCgpa = data.currentCgpa || 0.00;
-              academicVaultState.totalCredits = data.totalCreditsEarned || 0;
+              if (parsed.semesters && Object.keys(parsed.semesters).length > 0) {
+                academicVaultState.semesters = parsed.semesters;
+              }
+              if (data.currentCgpa) academicVaultState.cumulativeCgpa = data.currentCgpa;
+              if (data.totalCreditsEarned) academicVaultState.totalCredits = data.totalCreditsEarned;
+              saveAcademicVaultToLocalStorage();
             } catch (e) {
               console.log('Error parsing semester data JSON:', e);
             }
@@ -3993,9 +4174,14 @@
           }
 
           renderSemesterGradeCards();
+        } else {
+          // Backend restarted (e.g. fresh Render container): auto-rehydrate backend from local storage cache!
+          if (academicVaultState.semesters && Object.keys(academicVaultState.semesters).length > 0) {
+            syncAcademicVaultToBackend();
+          }
         }
       } catch (err) {
-        console.log('Fetching backend academic record error:', err);
+        console.log('Fetching backend academic record error (offline/sleeping):', err);
       }
     }
 
@@ -4027,8 +4213,10 @@
       if (typeof updateAudioToggleUI === 'function') updateAudioToggleUI();
       if (typeof updateTtsToggleUI === 'function') updateTtsToggleUI();
       if (typeof updateAiKeyBadgeStatus === 'function') updateAiKeyBadgeStatus();
-      setTimeout(loadSavedAcademicRecord, 400);
-      setTimeout(loadHestiaChatHistoryOnLogin, 600);
+      if (typeof loadUserProfileFromLocalStorage === 'function') loadUserProfileFromLocalStorage();
+      if (typeof loadAcademicVaultFromLocalStorage === 'function') loadAcademicVaultFromLocalStorage();
+      setTimeout(loadSavedAcademicRecord, 300);
+      setTimeout(loadHestiaChatHistoryOnLogin, 500);
       setTimeout(autoPopulateScannerFromVault, 800);
     });
 

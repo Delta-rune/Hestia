@@ -134,5 +134,30 @@ public class HestiaMemoryAndPersonaTest {
                    followUpResult.getReply().toLowerCase().contains("recommend") ||
                    followUpResult.getReply().toLowerCase().contains("choice"));
     }
+
+    @Test
+    public void testRepetitionAnnoyance() {
+        // Simulating user saying "hai" 3 times in a row
+        List<Map<String, String>> history = List.of(
+            Map.of("role", "user", "text", "hai"),
+            Map.of("role", "assistant", "text", "What do you want, Nichu?"),
+            Map.of("role", "user", "text", "hai"),
+            Map.of("role", "assistant", "text", "You literally just said that 10 seconds ago.")
+        );
+
+        // Third "hai" in a row
+        var annoyedResult = com.hestia.vault.ai.HestiaNeuralSimulator.simulateResponse(
+            "hai", history, "Nichu", "nichuag33@gmail.com", true, Map.of(), "", ""
+        );
+
+        assertNotNull(annoyedResult);
+        String reply = annoyedResult.getReply().toLowerCase();
+        // Verifying visible human annoyance / sarcasm at 3rd greeting in a row
+        assertTrue(reply.contains("three times") || reply.contains("three") || 
+                   reply.contains("keyboard") || reply.contains("echo") || 
+                   reply.contains("syllable") || reply.contains("packets") || 
+                   reply.contains("row") || reply.contains("lagging"),
+                   "Hestia should get visibly annoyed when user says 'hai' 3 times. Got: " + annoyedResult.getReply());
+    }
 }
 

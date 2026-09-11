@@ -16,6 +16,7 @@ public class HestiaPersonaConfig {
         DEEP_CONFIDANTE("Late-Night Confidante 🌙", "Emotionally grounded, calm, genuine empathy, supportive", 0.95f, 0.92f),
         ACADEMIC_MENTOR("Academic Mentor 🎓", "Strategic, motivating, practical college/career execution", 1.0f, 1.0f),
         CREATOR_BOND("Sarcastic Best Friend ☕", "Cold, witty, brutally honest, loyal best friend", 1.05f, 1.0f),
+        COLD_SARCASTIC("Cold Sarcastic ❄️", "Unfiltered, sarcastic, dry wit, annoyed at repetition", 0.98f, 1.05f),
         CHILL_LOUNGE("Chill & Observant 🎧", "Casual peer, thoughtful listener, easygoing", 1.0f, 0.95f);
 
         private final String label;

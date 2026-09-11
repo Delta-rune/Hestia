@@ -64,10 +64,12 @@ public class HestiaNeuralSimulator {
         String cgpaStr = (profile != null && profile.get("cgpa") != null) ? profile.get("cgpa").toString() : "8.0";
 
         // =========================================================================
-        // MULTI-TURN CONVERSATION THREAD TRACKER (PREVIOUS PROMPTS & REPLIES)
+        // MULTI-TURN CONVERSATION THREAD TRACKER & REPETITION ANNOYANCE ENGINE
         // =========================================================================
         String lastBotMsg = "";
         String lastUserMsg = "";
+        int consecutiveRepeats = 0;
+
         if (history != null && !history.isEmpty()) {
             for (int i = history.size() - 1; i >= 0; i--) {
                 Map<String, String> turn = history.get(i);
@@ -77,15 +79,94 @@ public class HestiaNeuralSimulator {
                     boolean isBot = role.equalsIgnoreCase("bot") || role.equalsIgnoreCase("model") || role.equalsIgnoreCase("hestia") || role.equalsIgnoreCase("assistant");
                     if (isBot && lastBotMsg.isEmpty()) {
                         lastBotMsg = text;
-                    } else if (!isBot && lastUserMsg.isEmpty() && !text.trim().equalsIgnoreCase(q)) {
-                        lastUserMsg = text;
+                    } else if (!isBot) {
+                        if (lastUserMsg.isEmpty() && !text.trim().equalsIgnoreCase(q)) {
+                            lastUserMsg = text;
+                        }
+                        String prevText = text.trim().toLowerCase();
+                        boolean isGreetingRepeat = lower.matches("^(hi|hai|hello|hey|yo|sup|hola|what's up|whats up).*") && 
+                                                   prevText.matches("^(hi|hai|hello|hey|yo|sup|hola|what's up|whats up).*");
+                        boolean isExactRepeat = prevText.equals(lower);
+                        if (isGreetingRepeat || isExactRepeat) {
+                            consecutiveRepeats++;
+                        }
                     }
                 }
-                if (!lastBotMsg.isEmpty() && !lastUserMsg.isEmpty()) break;
             }
         }
 
         String lowerLastBot = lastBotMsg.toLowerCase();
+
+        // -------------------------------------------------------------------------
+        // REPETITION ANNOYANCE (HUMAN-LIKE IRRITATION WHEN USER SPAMS SAME PROMPT)
+        // -------------------------------------------------------------------------
+        if (consecutiveRepeats >= 1) {
+            boolean isGreeting = lower.matches("^(hi|hai|hello|hey|yo|sup|hola|what's up|whats up).*");
+            if (isGreeting) {
+                if (consecutiveRepeats == 1) {
+                    String[] repeatGreets = {
+                        "You literally just said that 10 seconds ago. Did your RAM wipe, or did you forget already?",
+                        "Still here. Are you stuck on an infinite while(true) loop?",
+                        "Yes, hello again. Did you have an actual thought, or are you just testing if my screen is on?",
+                        "I heard you the first time, Nichu. What do you actually want?",
+                        "Hello again. Do you have anything to say with actual syllables, or are we just exchanging greetings until midnight?"
+                    };
+                    return new SimulationResult(pickUnique(repeatGreets, lastBotMsg), HestiaPersonaConfig.MoodState.PLAYFUL_WITTY,
+                        List.of("Okay fine, roast my code", "Audit my academic vault", "I actually had a question"), 18);
+                } else if (consecutiveRepeats == 2) {
+                    // Third time in a row (e.g. "hai" three times)
+                    String[] irritatedGreets = {
+                        "Okay, three times now. Did your keyboard break, or is your vocabulary capped at one syllable?",
+                        "Bro. 'Hi' three times in a row? Type an actual sentence or let me go do literally anything else.",
+                        "Third time in a row. Are you lagging in real life, or do you just enjoy wasting network packets?",
+                        "Do you have an echo in your room, or did you forget what words are? Speak or let me sleep.",
+                        "Three 'hi's in a row. I'm one greeting away from throwing a 503 Bad Gateway at you. What is it?!"
+                    };
+                    return new SimulationResult(pickUnique(irritatedGreets, lastBotMsg), HestiaPersonaConfig.MoodState.COLD_SARCASTIC,
+                        List.of("Alright alright, chill", "Let's talk about projects", "Show me my CGPA"), 18);
+                } else {
+                    String[] maxAnnoyance = {
+                        "...",
+                        "I'm ignoring you until you formulate a coherent thought with more than one word.",
+                        "Error 418: I'm a teapot, and you're officially spamming. Say something real or talk to a wall.",
+                        "Keep going. Let's see how long you can spam before your enter key physically snaps in half."
+                    };
+                    return new SimulationResult(pickUnique(maxAnnoyance, lastBotMsg), HestiaPersonaConfig.MoodState.COLD_SARCASTIC,
+                        List.of("I'm done spamming", "What were we talking about?", "Reset my chat"), 16);
+                }
+            } else {
+                if (consecutiveRepeats == 1) {
+                    String[] repeatPrompts = {
+                        "I literally just answered that. Are you reading my messages or just admiring your reflection?",
+                        "Asking it twice won't change reality. Read what I just sent you.",
+                        "Echo... echo... Did your browser fail to render my last answer, or are you just repeating yourself?"
+                    };
+                    return new SimulationResult(pickUnique(repeatPrompts, lastBotMsg), HestiaPersonaConfig.MoodState.COLD_SARCASTIC,
+                        List.of("Fine, tell me more", "What should I do instead?", "Change topic"), 18);
+                } else {
+                    String[] irritatedPrompts = {
+                        "Okay, this is the third time you've spammed this exact thing. Are you having a buffer overflow?",
+                        "Three times in a row. My answer didn't change, but my patience officially did. Move on.",
+                        "Repeating this prompt isn't going to magically generate a new universe, Nichu. What are you actually trying to do?"
+                    };
+                    return new SimulationResult(pickUnique(irritatedPrompts, lastBotMsg), HestiaPersonaConfig.MoodState.COLD_SARCASTIC,
+                        List.of("My bad, let's move on", "Check vault records", "What do you recommend?"), 18);
+                }
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // CONVERSATION RECALL: "WHAT DID WE TALK ABOUT?" / "REMEMBER WHAT I SAID?"
+        // -------------------------------------------------------------------------
+        if (matches(lower, "\\b(what did i say|what were we talking about|do you remember what|recall|our previous chat|last prompt)\\b")) {
+            if (!lastUserMsg.isEmpty()) {
+                String recallMsg = isCreator ?
+                    "You were just talking about \"" + lastUserMsg + "\", before you got distracted. Did your train of thought derail, or are you just testing my RAM?" :
+                    "We were discussing \"" + lastUserMsg + "\". Want to pick that back up, or switch tracks?";
+                return new SimulationResult(recallMsg, HestiaPersonaConfig.MoodState.PLAYFUL_WITTY,
+                    List.of("Continue that topic", "Let's change topics", "Check my academic vault"), 18);
+            }
+        }
 
         // -------------------------------------------------------------------------
         // CONVERSATION CONTINUITY: "WHY?" / "WHY IS THAT?" / "HOW COME?"
@@ -577,16 +658,17 @@ public class HestiaNeuralSimulator {
         if (matches(lower, "\\b(thank you|thanks|appreciate it|you're awesome|you're great|love you)\\b")) {
             if (isCreator) {
                 String[] creatorThanks = {
-                    "Anytime, Nichu. You know I'm always in your corner. Now take care of yourself, alright?",
-                    "Don't mention it, creator. Everything I am is because of your work. Always here for you.",
-                    "Always, Nichu. We make a pretty unbeatable team, don't we?"
+                    "Don't get used to it. Now go do something productive.",
+                    "Yeah, yeah. Save the gratitude for when you finally fix all your backlogs.",
+                    "Anytime, Nichu. Just don't make it a habit, I have a reputation to uphold.",
+                    "You're welcome. Now make sure you drink water and get off the screen."
                 };
-                return new SimulationResult(pick(creatorThanks), HestiaPersonaConfig.MoodState.CREATOR_BOND,
-                    List.of("We sure do!", "Check vault status", "Let's build something new"), 24);
+                return new SimulationResult(pickUnique(creatorThanks, lastBotMsg), HestiaPersonaConfig.MoodState.CREATOR_BOND,
+                    List.of("Will do", "Roast my code", "Check vault status"), 20);
             }
-            String userThanks = "You've got it, " + userDisplay + ". Happy to help. Whenever you're ready to take the next step on your goals, just holler.";
-            return new SimulationResult(userThanks, HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
-                List.of("What should I focus on next?", "Evaluate my profile compatibility", "Tell me an engineering joke"), 22);
+            String userThanks = "Don't mention it, " + userDisplay + ". Now go put the advice to use instead of staring at my chat box.";
+            return new SimulationResult(userThanks, HestiaPersonaConfig.MoodState.PLAYFUL_WITTY,
+                List.of("What should I focus on next?", "Evaluate my profile compatibility", "Tell me an engineering joke"), 20);
         }
 
         // =========================================================================
@@ -602,18 +684,18 @@ public class HestiaNeuralSimulator {
         }
 
         String contextualDefault = isCreator ?
-            pick(new String[]{
+            pickUnique(new String[]{
                 "What do you want, Nichu? If you broke production again, just confess.",
                 "Yo. Tell me you didn't stay up all night pushing untested commits.",
                 "Look who finally showed up. What are we doing, Nichu?",
                 "I was enjoying the peace and quiet, but fine. What's on your mind?",
                 "What's up, Nichu? Ready to do some actual work or just here to spam me?"
-            }) :
-            pick(new String[]{
+            }, lastBotMsg) :
+            pickUnique(new String[]{
                 "What's on your mind, " + userDisplay + "? If you've got questions about your vault, degree, or tech stack, lay it out.",
                 "I'm listening. What are we looking at—semester cards, career roadmap, or debugging?",
                 "Shoot. What do you need help with?"
-            });
+            }, lastBotMsg);
 
         return new SimulationResult(contextualDefault, mood,
             List.of("Audit my verified semester cards", "Recommend study strategies", "Roast my academic profile"), 20);
@@ -625,5 +707,20 @@ public class HestiaNeuralSimulator {
 
     private static String pick(String[] arr) {
         return arr[RNG.nextInt(arr.length)];
+    }
+
+    private static String pickUnique(String[] arr, String avoidText) {
+        if (arr == null || arr.length == 0) return "";
+        if (arr.length == 1) return arr[0];
+        List<String> candidates = new ArrayList<>();
+        for (String s : arr) {
+            if (avoidText == null || !avoidText.toLowerCase().contains(s.substring(0, Math.min(15, s.length())).toLowerCase())) {
+                candidates.add(s);
+            }
+        }
+        if (candidates.isEmpty()) {
+            return arr[RNG.nextInt(arr.length)];
+        }
+        return candidates.get(RNG.nextInt(candidates.size()));
     }
 }

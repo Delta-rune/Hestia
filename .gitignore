@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Hestia Data ###
+data/
+*.mv.db
+*.trace.db
