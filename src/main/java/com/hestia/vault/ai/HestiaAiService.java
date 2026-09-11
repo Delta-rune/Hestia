@@ -92,7 +92,7 @@ public class HestiaAiService {
                     memoryService.logConversationTurn(effectiveUserIdentifier, null, query, confirmMsg, "CREATOR_BOND");
                 }
                 return createResponseMap(confirmMsg, HestiaPersonaConfig.MoodState.LOCKED_IN, 
-                    List.of("Test live generation", "Roast my code", "Check system status"), 20);
+                    List.of("Test live generation", "Review architecture", "Check system status"), 20);
             }
 
             Matcher geminiMatcher = Pattern.compile("(?i)(?:set|update|remember)\\s+(?:gemini\\s+key|gemini\\s+api\\s+key|gemini)\\s+(?:to|is|=)?\\s*(AIza[A-Za-z0-9_-]+)").matcher(query);
@@ -106,7 +106,7 @@ public class HestiaAiService {
                     memoryService.logConversationTurn(effectiveUserIdentifier, null, query, confirmMsg, "CREATOR_BOND");
                 }
                 return createResponseMap(confirmMsg, HestiaPersonaConfig.MoodState.LOCKED_IN, 
-                    List.of("Test live generation", "Roast my code", "Check system status"), 20);
+                    List.of("Test live generation", "Review architecture", "Check system status"), 20);
             }
         }
 
@@ -246,7 +246,7 @@ public class HestiaAiService {
         if (mood == HestiaPersonaConfig.MoodState.LOCKED_IN) {
             return List.of("Explain this architectural pattern", "How to optimize query latency?", "What about Docker deployment?");
         }
-        return List.of("Audit my academic vault", "Roast my student profile", "Tell me an engineering joke");
+        return List.of("Audit my academic vault", "Explore career roadmap", "Tell me an engineering joke");
     }
 
     private String callGroqApi(String apiKey, String systemPrompt, List<Map<String, String>> history, String query, String username) {

@@ -4130,7 +4130,7 @@
     }
 
     async function loadSavedAcademicRecord() {
-      // 1. Immediately hydrate from LocalStorage so user never loses data across restarts
+      // 1. Immediately hydrate from LocalStorage so user NEVER loses data across restarts
       if (typeof loadAcademicVaultFromLocalStorage === 'function') loadAcademicVaultFromLocalStorage();
       if (typeof loadUserProfileFromLocalStorage === 'function') loadUserProfileFromLocalStorage();
 
@@ -4139,20 +4139,32 @@
         const res = await fetch(`${API_BASE}/api/academic-records/${activeUserId}`);
         if (res.ok) {
           const data = await res.json();
+          let backendSemCount = 0;
+          let parsed = null;
           if (data && data.semesterDataJson) {
             try {
-              const parsed = JSON.parse(data.semesterDataJson);
-              if (parsed.currentYear) academicVaultState.currentYear = parsed.currentYear;
-              if (parsed.currentSem) academicVaultState.currentSem = parsed.currentSem;
-              if (parsed.semesters && Object.keys(parsed.semesters).length > 0) {
-                academicVaultState.semesters = parsed.semesters;
+              parsed = JSON.parse(data.semesterDataJson);
+              if (parsed && parsed.semesters) {
+                backendSemCount = Object.keys(parsed.semesters).length;
               }
-              if (data.currentCgpa) academicVaultState.cumulativeCgpa = data.currentCgpa;
-              if (data.totalCreditsEarned) academicVaultState.totalCredits = data.totalCreditsEarned;
-              saveAcademicVaultToLocalStorage();
             } catch (e) {
               console.log('Error parsing semester data JSON:', e);
             }
+          }
+
+          const localSemCount = (academicVaultState.semesters) ? Object.keys(academicVaultState.semesters).length : 0;
+
+          if (backendSemCount >= localSemCount && backendSemCount > 0) {
+            // Backend has equal or more data: sync to local
+            if (parsed.currentYear) academicVaultState.currentYear = parsed.currentYear;
+            if (parsed.currentSem) academicVaultState.currentSem = parsed.currentSem;
+            academicVaultState.semesters = parsed.semesters;
+            if (data.currentCgpa) academicVaultState.cumulativeCgpa = data.currentCgpa;
+            if (data.totalCreditsEarned) academicVaultState.totalCredits = data.totalCreditsEarned;
+            saveAcademicVaultToLocalStorage();
+          } else if (localSemCount > 0) {
+            // Local storage has more data (e.g. backend restarted on Render): re-seed backend!
+            syncAcademicVaultToBackend();
           }
 
           // Sync selector
@@ -4175,7 +4187,7 @@
 
           renderSemesterGradeCards();
         } else {
-          // Backend restarted (e.g. fresh Render container): auto-rehydrate backend from local storage cache!
+          // Backend restarted or returned 404: auto-rehydrate backend from local storage cache!
           if (academicVaultState.semesters && Object.keys(academicVaultState.semesters).length > 0) {
             syncAcademicVaultToBackend();
           }

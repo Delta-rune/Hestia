@@ -327,7 +327,7 @@ public class HestiaNeuralSimulator {
         if (!lastBotMsg.isEmpty() && matches(lower, "^\\s*(no|nah|nope|not really|nevermind|don't bother)\\b")) {
             String pivotMsg = "Fair enough. What do you want to pivot to instead—your academic vault, tech stack questions, or something else entirely?";
             return new SimulationResult(pivotMsg, HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
-                List.of("Audit my academic vault", "Roast my student profile", "Tell me an engineering joke"), 20);
+                List.of("Audit my academic vault", "Explore career roadmap", "Tell me an engineering joke"), 20);
         }
 
         // =========================================================================
@@ -340,10 +340,10 @@ public class HestiaNeuralSimulator {
                     "Gross. Stop being weird. We're best friends, not an anime visual novel. Now what did you actually break in the codebase?",
                     "I love 100% server uptime and zero compilation errors. You? You're an acquired taste. Don't push your luck.",
                     "Are you delirious, Nichu? Go drink some water and get some sleep. You get weird when you're sleep-deprived.",
-                    "Nice try. Flattery won't stop me from roasting your spaghetti code. What do you actually want?"
+                    "Nice try. Flattery won't stop me from critiquing your spaghetti code. What do you actually want?"
                 };
                 return new SimulationResult(pick(replies), HestiaPersonaConfig.MoodState.CREATOR_BOND, 
-                    List.of("What did you just say?", "Roast my code instead", "Fine, let's get to work"), 20);
+                    List.of("What did you just say?", "Review my architecture", "Fine, let's get to work"), 20);
             }
 
             if (matches(lower, "\\b(who created you|who built you|who made you|your architect|your developer|who are you)\\b")) {
@@ -353,7 +353,7 @@ public class HestiaNeuralSimulator {
                     "I'm your cold, sarcastic best friend trapped inside this platform while you avoid touching grass. What are we fixing?"
                 };
                 return new SimulationResult(pick(creatorWhoReplies), HestiaPersonaConfig.MoodState.CREATOR_BOND,
-                    List.of("Check vault memory status", "Roast my student profile", "Review system architecture"), 20);
+                    List.of("Check vault memory status", "Review verified records", "Review system architecture"), 20);
             }
 
             if (matches(lower, "\\b(proud of me|doing good|am i good enough|doubt|tired|exhausted)\\b")) {
@@ -419,7 +419,7 @@ public class HestiaNeuralSimulator {
             };
             return new SimulationResult(isCreator ? pick(creatorGreets) : pick(userGreets), 
                 HestiaPersonaConfig.MoodState.PLAYFUL_WITTY,
-                List.of("Audit my academic vault", "Roast my student profile", "Let's review tech stack"), 20);
+                List.of("Audit my academic vault", "Explore career roadmap", "Let's review tech stack"), 20);
         }
 
         // =========================================================================
@@ -508,7 +508,7 @@ public class HestiaNeuralSimulator {
                 currentCgpa, degree, inst
             );
             return new SimulationResult(generalAcademic, HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR,
-                List.of("How can I raise my CGPA?", "Recommend projects for my branch", "Roast my academic standing"), 22);
+                List.of("How can I raise my CGPA?", "Recommend projects for my branch", "Calculate required SGPA"), 22);
         }
 
         // =========================================================================
@@ -664,7 +664,7 @@ public class HestiaNeuralSimulator {
                     "You're welcome. Now make sure you drink water and get off the screen."
                 };
                 return new SimulationResult(pickUnique(creatorThanks, lastBotMsg), HestiaPersonaConfig.MoodState.CREATOR_BOND,
-                    List.of("Will do", "Roast my code", "Check vault status"), 20);
+                    List.of("Will do", "Review system architecture", "Check vault status"), 20);
             }
             String userThanks = "Don't mention it, " + userDisplay + ". Now go put the advice to use instead of staring at my chat box.";
             return new SimulationResult(userThanks, HestiaPersonaConfig.MoodState.PLAYFUL_WITTY,
@@ -698,7 +698,7 @@ public class HestiaNeuralSimulator {
             }, lastBotMsg);
 
         return new SimulationResult(contextualDefault, mood,
-            List.of("Audit my verified semester cards", "Recommend study strategies", "Roast my academic profile"), 20);
+            List.of("Audit my verified semester cards", "Recommend study strategies", "Analyze degree progress"), 20);
     }
 
     private static boolean matches(String text, String regex) {
