@@ -33,11 +33,16 @@ public class HestiaMemoryService {
         new FactExtractionPattern("favorite_language", "(?i)(?:my favorite language is|i love coding in|i prefer|favorite programming language is)\\s+([A-Za-z0-9#\\+]+)", "PREFERENCE"),
         new FactExtractionPattern("career_goal", "(?i)(?:i want to become|my dream job is|aiming for|target role is|i work as a|my career goal is)\\s+([A-Za-z0-9\\s_-]{3,50})", "CAREER"),
         new FactExtractionPattern("current_project", "(?i)(?:i am working on|my project is|building a|currently developing)\\s+([A-Za-z0-9\\s_-]{3,60})", "PROJECT"),
+        new FactExtractionPattern("college_name", "(?i)(?:i study at|i attend|my college is|my university is|studying in)\\s+([A-Za-z0-9\\s,&.-]{3,80})", "ACADEMIC"),
+        new FactExtractionPattern("degree_branch", "(?i)(?:my branch is|i'm studying|my major is|enrolled in|my degree is)\\s+([A-Za-z0-9\\s()&.-]{3,80})", "ACADEMIC"),
+        new FactExtractionPattern("weak_subject", "(?i)(?:i find|i struggle with|weak in|failed in|bad at|tough subject is|hard for me is)\\s+([A-Za-z0-9\\s()&.-]{3,60})", "ACADEMIC"),
+        new FactExtractionPattern("strong_subject", "(?i)(?:i'm good at|i scored well in|expert in|love studying|strong in)\\s+([A-Za-z0-9\\s()&.-]{3,60})", "ACADEMIC"),
         new FactExtractionPattern("nickname", "(?i)(?:call me|my name is|my nickname is|you can refer to me as)\\s+([A-Za-z0-9_-]{2,30})", "IDENTITY"),
         new FactExtractionPattern("hobby", "(?i)(?:in my free time|my hobby is|i enjoy|i like playing|i love reading)\\s+([A-Za-z0-9\\s_-]{3,50})", "PERSONAL"),
         new FactExtractionPattern("stress_trigger", "(?i)(?:i am stressed about|worried about|anxious about|freaking out about|so nervous for)\\s+([A-Za-z0-9\\s_-]{3,60})", "EMOTION"),
         new FactExtractionPattern("upcoming_milestone", "(?i)(?:my exam is on|submission is on|deadline is|viva is on|interview scheduled for)\\s+([A-Za-z0-9\\s_-]{3,60})", "MILESTONE"),
         new FactExtractionPattern("proud_achievement", "(?i)(?:i finally fixed|i got selected|i cleared|i published|i finished building)\\s+([A-Za-z0-9\\s_-]{3,60})", "ACHIEVEMENT"),
+        new FactExtractionPattern("custom_knowledge", "(?i)(?:remember that|note that|learn that|keep in mind that)\\s+([A-Za-z0-9\\s(),&.':+#-]{5,100})", "CUSTOM"),
         new FactExtractionPattern("user_promise", "(?i)(?:i promise(?: to)?|i will|i'll finish|i will complete|i'll deploy)\\s+([A-Za-z0-9\\s_-]{3,60})", "PROMISE"),
         new FactExtractionPattern("sleep_deprivation", "(?i)(?:pulled an all[- ]nighter|haven't slept|working all night|running on coffee|so exhausted)\\b", "HEALTH")
     );

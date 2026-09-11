@@ -616,18 +616,32 @@ public class HestiaNeuralSimulator {
         }
 
         // =========================================================================
-        // DOMAIN 11: WHAT DO YOU REMEMBER (EPISODIC MEMORY RECALL)
+        // DOMAIN 11: WHAT HAVE YOU LEARNED / EPISODIC MEMORY RECALL
         // =========================================================================
-        if (matches(lower, "\\b(what do you remember|my memory|recall|what do you know about me|remember me)\\b")) {
-            if (memoryContext != null && !memoryContext.contains("No prior long-term memories")) {
-                String memoryReply = "Here is what I have logged in my episodic memory core for you:\n\n" + memoryContext +
-                    "\n\nI keep track of these so our conversations stay continuous and personal across sessions, even if you log out or switch devices.";
-                return new SimulationResult(memoryReply, HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR,
-                    List.of("Update my current tech stack", "Log my dream career goal", "Clear my memory core"), 22);
+        if (matches(lower, "\\b(what do you remember|my memory|recall|what do you know about me|what have you learned|have you learned|learned insights|learning ai|can you learn|remember me)\\b")) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Here is everything I've registered and learned about you across our sessions and verified records:\n\n");
+
+            boolean hasContent = false;
+            if (academicVaultContext != null && !academicVaultContext.isBlank()) {
+                sb.append("**Academic Profile & Verified Standing:**\n").append(academicVaultContext).append("\n");
+                hasContent = true;
             }
-            String noMemoriesYet = "My memory core is active and listening! Tell me about your tech stack, your current semester projects, or your dream career goal, and I'll commit them to my memory vault.";
+
+            if (memoryContext != null && !memoryContext.contains("No prior long-term memories") && !memoryContext.isBlank()) {
+                sb.append("**Learned Conversational Insights & Memory Vault:**\n").append(memoryContext).append("\n");
+                hasContent = true;
+            }
+
+            if (hasContent) {
+                sb.append("\nI continuously update this knowledge whenever you upload new semester grade cards or mention your tech stack, goals, and struggles. Everything stays strictly in your personal vault.");
+                return new SimulationResult(sb.toString(), HestiaPersonaConfig.MoodState.ACADEMIC_MENTOR,
+                    List.of("Update my target career goal", "Audit my weak subjects", "Recommend high-yield projects"), 22);
+            }
+
+            String noMemoriesYet = "I'm a learning AI designed to adapt to your personal academic trajectory and conversational context. Once you upload your semester grade cards or tell me your tech stack, goals, and projects, I'll log them in your personal memory vault so we never start from scratch.";
             return new SimulationResult(noMemoriesYet, HestiaPersonaConfig.MoodState.CHILL_LOUNGE,
-                List.of("My tech stack is Java, Spring Boot, and PostgreSQL", "I'm working on a microservices platform", "My goal is Cloud DevOps Engineer"), 22);
+                List.of("My tech stack is Java, Spring Boot, and PostgreSQL", "I'm working on an AI platform", "Audit my academic vault"), 22);
         }
 
         // =========================================================================

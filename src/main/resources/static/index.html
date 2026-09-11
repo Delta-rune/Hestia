@@ -309,7 +309,7 @@
 
         <div>
           <label class="block text-xs font-medium text-neutral-400 mb-1">University / Institution (Optional)</label>
-          <input type="text" id="onboard-institution" placeholder="e.g. Stanford University" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white font-mono">
+          <input type="text" id="onboard-institution" placeholder="e.g. APJ Abdul Kalam Technological University (KTU)" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white font-mono">
         </div>
 
         <button type="submit" class="btn-mono w-full py-3.5 rounded-xl text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-2">
@@ -1038,8 +1038,8 @@
             <button onclick="sendQuickPrompt('Audit my verified semester cards and give study advice')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-cyan-400 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5 shadow-sm">
               <i class="fa-solid fa-graduation-cap text-cyan-400"></i> <span>Grade Card Audit</span>
             </button>
-            <button onclick="sendQuickPrompt('Roast my CGPA and academic profile')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-amber-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5 shadow-sm">
-              <i class="fa-solid fa-fire text-amber-400"></i> <span>Roast Profile</span>
+            <button onclick="sendQuickPrompt('What have you learned about me so far?')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-amber-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-sparkles text-amber-400"></i> <span>Learned Insights</span>
             </button>
             <button onclick="sendQuickPrompt('What do you remember about me?')" class="bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3 py-1 rounded-full transition flex items-center gap-1.5 shadow-sm">
               <i class="fa-solid fa-brain text-purple-400"></i> <span>Memory Recall</span>
@@ -1373,24 +1373,61 @@
       }
     }
 
-    function saveGoogleOnboardingProfile(e) {
+    async function saveGoogleOnboardingProfile(e) {
       if (e) e.preventDefault();
       const username = document.getElementById('onboard-username').value.trim() || 'User';
-      const email = document.getElementById('onboard-email').value.trim() || 'nichuag35@gmail.com';
+      const email = document.getElementById('onboard-email').value.trim() || 'user@gmail.com';
       const degree = document.getElementById('onboard-degree').value.trim();
       const inst = document.getElementById('onboard-institution').value.trim();
 
-      if (degree) userProfile.degreeField = degree;
-      if (inst) userProfile.institution = inst;
+      // Clean in-memory states immediately so previous user's cards/grades/chats NEVER leak!
+      academicVaultState = {
+        currentYear: 2,
+        currentSem: 3,
+        semesters: {},
+        cumulativeCgpa: 0.00,
+        totalCredits: 0
+      };
+      userProfile = {
+        academicLevel: 'Pre-Graduation',
+        degreeField: degree,
+        institution: inst,
+        cgpa: 0.0,
+        academicCreditId: '',
+        certificates: '',
+        projects: '',
+        certificateImageData: ''
+      };
+      hestiaChatHistory = [];
+
+      // Sync with backend PostgreSQL/H2 database to acquire permanent, isolated User ID
+      let backendUser = null;
+      try {
+        const authRes = await fetch(`${API_BASE}/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, name: username })
+        });
+        if (authRes.ok) {
+          const authData = await authRes.json();
+          if (authData && authData.user) {
+            backendUser = authData.user;
+          }
+        }
+      } catch (err) {
+        console.warn('Backend user registration sync:', err);
+      }
+
+      const assignedId = (backendUser && backendUser.id) ? backendUser.id : (backendUser && backendUser.userId) ? backendUser.userId : email;
 
       const userAccount = {
-        username: username,
+        username: (backendUser && backendUser.username) ? backendUser.username : username,
         email: email,
         degree: degree,
         institution: inst,
         provider: 'google',
         onboarded: true,
-        id: 'google-' + Date.now()
+        id: assignedId
       };
 
       // PERSIST ACCOUNT SO IT NEVER SHOWS ONBOARDING AGAIN FOR THIS EMAIL
@@ -1678,6 +1715,30 @@
       }
       currentUser = null;
       localStorage.removeItem('hestia_user');
+
+      // CRITICAL: Reset in-memory state so previous user's grades/cards/chats NEVER leak!
+      academicVaultState = {
+        currentYear: 2,
+        currentSem: 3,
+        semesters: {},
+        cumulativeCgpa: 0.00,
+        totalCredits: 0
+      };
+      userProfile = {
+        academicLevel: 'Pre-Graduation',
+        degreeField: '',
+        institution: '',
+        cgpa: 0.0,
+        academicCreditId: '',
+        certificates: '',
+        projects: '',
+        certificateImageData: ''
+      };
+      hestiaChatHistory = [];
+      const messagesContainer = document.getElementById('hestia-chat-messages');
+      if (messagesContainer) {
+        messagesContainer.innerHTML = '';
+      }
 
       document.getElementById('nav-links').classList.add('hidden');
       document.getElementById('nav-links').classList.remove('flex');
@@ -3442,40 +3503,50 @@
       try {
         const key = 'hestia_academic_vault_' + getVaultStorageKey();
         localStorage.setItem(key, JSON.stringify(academicVaultState));
-        localStorage.setItem('hestia_academic_vault_last', JSON.stringify(academicVaultState));
       } catch(e) { console.error('Failed to save academic vault to local storage:', e); }
     }
 
     function loadAcademicVaultFromLocalStorage() {
       try {
         const key = 'hestia_academic_vault_' + getVaultStorageKey();
-        const saved = localStorage.getItem(key) || localStorage.getItem('hestia_academic_vault_last');
+        const saved = localStorage.getItem(key);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed.currentYear) academicVaultState.currentYear = parsed.currentYear;
           if (parsed.currentSem) academicVaultState.currentSem = parsed.currentSem;
           if (parsed.semesters && typeof parsed.semesters === 'object') {
             academicVaultState.semesters = parsed.semesters;
+          } else {
+            academicVaultState.semesters = {};
           }
-          if (parsed.cumulativeCgpa) academicVaultState.cumulativeCgpa = parsed.cumulativeCgpa;
-          if (parsed.totalCredits) academicVaultState.totalCredits = parsed.totalCredits;
-          
-          for (let y = 1; y <= 4; y++) {
-            const btn = document.getElementById(`year-btn-${y}`);
-            if (btn) {
-              if (y === academicVaultState.currentYear) {
-                btn.className = 'year-btn px-3 py-3 rounded-xl border border-emerald-500 bg-emerald-950/80 text-emerald-300 text-xs font-mono font-bold transition flex flex-col items-center gap-1 shadow-lg';
-              } else {
-                btn.className = 'year-btn px-3 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-mono font-bold transition flex flex-col items-center gap-1';
-              }
+          academicVaultState.cumulativeCgpa = parsed.cumulativeCgpa || 0.00;
+          academicVaultState.totalCredits = parsed.totalCredits || 0;
+        } else {
+          // Clean fresh slate for new user account
+          academicVaultState = {
+            currentYear: 2,
+            currentSem: 3,
+            semesters: {},
+            cumulativeCgpa: 0.00,
+            totalCredits: 0
+          };
+        }
+        
+        for (let y = 1; y <= 4; y++) {
+          const btn = document.getElementById(`year-btn-${y}`);
+          if (btn) {
+            if (y === academicVaultState.currentYear) {
+              btn.className = 'year-btn px-3 py-3 rounded-xl border border-emerald-500 bg-emerald-950/80 text-emerald-300 text-xs font-mono font-bold transition flex flex-col items-center gap-1 shadow-lg';
+            } else {
+              btn.className = 'year-btn px-3 py-3 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white text-xs font-mono font-bold transition flex flex-col items-center gap-1';
             }
           }
-          const semSelect = document.getElementById('current-semester-select');
-          if (semSelect && academicVaultState.currentSem) {
-            semSelect.value = String(academicVaultState.currentSem);
-          }
-          renderSemesterGradeCards();
         }
+        const semSelect = document.getElementById('current-semester-select');
+        if (semSelect && academicVaultState.currentSem) {
+          semSelect.value = String(academicVaultState.currentSem);
+        }
+        renderSemesterGradeCards();
       } catch(e) { console.error('Failed to load academic vault from local storage:', e); }
     }
 
@@ -3483,56 +3554,56 @@
       try {
         const key = 'hestia_user_profile_' + getVaultStorageKey();
         localStorage.setItem(key, JSON.stringify(userProfile));
-        localStorage.setItem('hestia_user_profile_last', JSON.stringify(userProfile));
       } catch(e) { console.error('Failed to save user profile to local storage:', e); }
     }
 
     function loadUserProfileFromLocalStorage() {
       try {
         const key = 'hestia_user_profile_' + getVaultStorageKey();
-        const saved = localStorage.getItem(key) || localStorage.getItem('hestia_user_profile_last');
+        const saved = localStorage.getItem(key);
         if (saved) {
           const parsed = JSON.parse(saved);
           Object.assign(userProfile, parsed);
-          if (document.getElementById('vault-institution') && userProfile.institution) {
-            document.getElementById('vault-institution').value = userProfile.institution;
-          }
-          if (document.getElementById('vault-degree-field') && userProfile.degreeField) {
-            document.getElementById('vault-degree-field').value = userProfile.degreeField;
-          }
-          if (document.getElementById('vault-cgpa') && userProfile.cgpa) {
-            document.getElementById('vault-cgpa').value = userProfile.cgpa;
-          }
-          if (document.getElementById('vault-academic-level') && userProfile.academicLevel) {
-            document.getElementById('vault-academic-level').value = userProfile.academicLevel;
-          }
-          if (document.getElementById('vault-credit-id') && userProfile.academicCreditId) {
-            document.getElementById('vault-credit-id').value = userProfile.academicCreditId;
-          }
-          if (document.getElementById('vault-certificates') && userProfile.certificates) {
-            document.getElementById('vault-certificates').value = userProfile.certificates;
-          }
-          if (document.getElementById('vault-projects') && userProfile.projects) {
-            document.getElementById('vault-projects').value = userProfile.projects;
-          }
-          if (document.getElementById('scanner-user-degree') && userProfile.degreeField) {
-            document.getElementById('scanner-user-degree').value = userProfile.degreeField;
-          }
-          if (document.getElementById('scanner-user-cgpa') && userProfile.cgpa) {
-            document.getElementById('scanner-user-cgpa').value = userProfile.cgpa;
-          }
+        } else {
+          userProfile = {
+            academicLevel: 'Pre-Graduation',
+            degreeField: currentUser?.degree || '',
+            institution: currentUser?.institution || '',
+            cgpa: 0.0,
+            academicCreditId: '',
+            certificates: '',
+            projects: '',
+            certificateImageData: ''
+          };
+        }
+        if (document.getElementById('vault-institution')) {
+          document.getElementById('vault-institution').value = userProfile.institution || '';
+        }
+        if (document.getElementById('vault-degree-field')) {
+          document.getElementById('vault-degree-field').value = userProfile.degreeField || '';
+        }
+        if (document.getElementById('vault-cgpa')) {
+          document.getElementById('vault-cgpa').value = userProfile.cgpa || '';
+        }
+        if (document.getElementById('scanner-user-degree') && userProfile.degreeField) {
+          document.getElementById('scanner-user-degree').value = userProfile.degreeField;
+        }
+        if (document.getElementById('scanner-user-cgpa') && userProfile.cgpa) {
+          document.getElementById('scanner-user-cgpa').value = userProfile.cgpa;
         }
       } catch(e) { console.error('Failed to load user profile from local storage:', e); }
     }
 
     async function syncAcademicVaultToBackend() {
+      if (!currentUser) return;
       const activeUserId = currentUser?.id || 1;
       try {
         await fetch(`${API_BASE}/api/academic-records`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: activeUserId,
+            userId: (typeof activeUserId === 'number') ? activeUserId : 1,
+            email: currentUser?.email || '',
             studentStatus: 'ACTIVE',
             currentCgpa: academicVaultState.cumulativeCgpa || 0.0,
             totalCreditsEarned: academicVaultState.totalCredits || 0,
@@ -3860,6 +3931,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               userId: activeUserId,
+              email: currentUser?.email || '',
               semesterNum: semNum,
               pdfBase64: base64,
               fileName: file.name
@@ -3911,6 +3983,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: activeUserId,
+            email: currentUser?.email || '',
             semesterNum: semNum
           })
         });
@@ -4118,13 +4191,14 @@
     }
 
     async function loadSavedAcademicRecord() {
+      if (!currentUser) return;
       // 1. Immediately hydrate from LocalStorage so user NEVER loses data across restarts
       if (typeof loadAcademicVaultFromLocalStorage === 'function') loadAcademicVaultFromLocalStorage();
       if (typeof loadUserProfileFromLocalStorage === 'function') loadUserProfileFromLocalStorage();
 
-      const activeUserId = currentUser?.id || 1;
+      const activeUserId = currentUser?.id || currentUser?.email || 1;
       try {
-        const res = await fetch(`${API_BASE}/api/academic-records/${activeUserId}`);
+        const res = await fetch(`${API_BASE}/api/academic-records/${encodeURIComponent(activeUserId)}`);
         if (res.ok) {
           const data = await res.json();
           let backendSemCount = 0;
@@ -4142,8 +4216,8 @@
 
           const localSemCount = (academicVaultState.semesters) ? Object.keys(academicVaultState.semesters).length : 0;
 
-          if (backendSemCount >= localSemCount && backendSemCount > 0) {
-            // Backend has equal or more data: sync to local
+          if (backendSemCount > 0) {
+            // Backend has verified data for this user
             if (parsed.currentYear) academicVaultState.currentYear = parsed.currentYear;
             if (parsed.currentSem) academicVaultState.currentSem = parsed.currentSem;
             academicVaultState.semesters = parsed.semesters;
@@ -4151,7 +4225,7 @@
             if (data.totalCreditsEarned) academicVaultState.totalCredits = data.totalCreditsEarned;
             saveAcademicVaultToLocalStorage();
           } else if (localSemCount > 0) {
-            // Local storage has more data (e.g. backend restarted on Render): re-seed backend!
+            // Only re-seed backend if this specific user has local data
             syncAcademicVaultToBackend();
           }
 
@@ -4175,13 +4249,16 @@
 
           renderSemesterGradeCards();
         } else {
-          // Backend restarted or returned 404: auto-rehydrate backend from local storage cache!
-          if (academicVaultState.semesters && Object.keys(academicVaultState.semesters).length > 0) {
+          // Backend returned 404: User has no saved records on backend yet
+          const localSemCount = (academicVaultState.semesters) ? Object.keys(academicVaultState.semesters).length : 0;
+          if (localSemCount > 0) {
             syncAcademicVaultToBackend();
           }
+          renderSemesterGradeCards();
         }
       } catch (err) {
         console.log('Fetching backend academic record error (offline/sleeping):', err);
+        renderSemesterGradeCards();
       }
     }
 

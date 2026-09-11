@@ -3,6 +3,7 @@ package com.hestia.vault.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hestia.vault.model.AcademicRecord;
+import com.hestia.vault.model.User;
 import com.hestia.vault.model.UserProfile;
 import com.hestia.vault.repository.UserProfileRepository;
 import com.hestia.vault.service.AcademicRecordService;
@@ -28,6 +29,9 @@ public class AcademicRecordController {
 
     @Autowired
     private UserProfileRepository userProfileRepository;
+
+    @Autowired(required = false)
+    private com.hestia.vault.repository.UserRepository userRepository;
 
     @Autowired
     public AcademicRecordController(AcademicRecordService academicRecordService) {
@@ -73,8 +77,11 @@ public class AcademicRecordController {
      */
     @PostMapping("/update-year-sem")
     public ResponseEntity<?> updateYearAndSem(@RequestBody Map<String, Object> request) {
-        String userIdStr = request.get("userId") != null ? request.get("userId").toString() : "1";
-        Long userId = parseUserId(userIdStr);
+        String userIdStr = request.get("userId") != null ? request.get("userId").toString() : null;
+        if (userIdStr == null && request.get("email") != null) {
+            userIdStr = request.get("email").toString();
+        }
+        Long userId = parseUserId(userIdStr != null ? userIdStr : "1");
         int currentYear = request.get("currentYear") != null ? Integer.parseInt(request.get("currentYear").toString()) : 2;
         int currentSem = request.get("currentSem") != null ? Integer.parseInt(request.get("currentSem").toString()) : 3;
 
@@ -105,8 +112,11 @@ public class AcademicRecordController {
      */
     @PostMapping("/upload-semester")
     public ResponseEntity<?> uploadSemesterGradeCard(@RequestBody Map<String, Object> request) {
-        String userIdStr = request.get("userId") != null ? request.get("userId").toString() : "1";
-        Long userId = parseUserId(userIdStr);
+        String userIdStr = request.get("userId") != null ? request.get("userId").toString() : null;
+        if (userIdStr == null && request.get("email") != null) {
+            userIdStr = request.get("email").toString();
+        }
+        Long userId = parseUserId(userIdStr != null ? userIdStr : "1");
         int semesterNum = request.get("semesterNum") != null ? Integer.parseInt(request.get("semesterNum").toString()) : 1;
         String pdfBase64 = (String) request.get("pdfBase64");
         String fileName = request.get("fileName") != null ? request.get("fileName").toString() : "GradeCard_S" + semesterNum + ".pdf";
@@ -230,8 +240,11 @@ public class AcademicRecordController {
      */
     @PostMapping("/delete-semester")
     public ResponseEntity<?> deleteSemester(@RequestBody Map<String, Object> request) {
-        String userIdStr = request.get("userId") != null ? request.get("userId").toString() : "1";
-        Long userId = parseUserId(userIdStr);
+        String userIdStr = request.get("userId") != null ? request.get("userId").toString() : null;
+        if (userIdStr == null && request.get("email") != null) {
+            userIdStr = request.get("email").toString();
+        }
+        Long userId = parseUserId(userIdStr != null ? userIdStr : "1");
         int semesterNum = request.get("semesterNum") != null ? Integer.parseInt(request.get("semesterNum").toString()) : 1;
 
         Optional<AcademicRecord> recordOpt = academicRecordService.getAcademicRecordByUserId(userId);
@@ -494,18 +507,25 @@ public class AcademicRecordController {
 
     private Long parseUserId(String userIdStr) {
         if (userIdStr == null || userIdStr.isBlank()) return 1L;
+        String clean = userIdStr.trim();
+        if (clean.contains("@") && userRepository != null) {
+            Optional<User> u = userRepository.findByEmail(clean.toLowerCase());
+            if (u.isPresent()) return u.get().getId();
+        }
         try {
-            return Long.parseLong(userIdStr);
+            return Long.parseLong(clean);
         } catch (NumberFormatException e) {
-            String digits = userIdStr.replaceAll("[^0-9]", "");
+            if (userRepository != null) {
+                Optional<User> u = userRepository.findByUsername(clean);
+                if (u.isPresent()) return u.get().getId();
+            }
+            String digits = clean.replaceAll("[^0-9]", "");
             if (!digits.isEmpty()) {
                 try {
                     return Long.parseLong(digits.substring(0, Math.min(15, digits.length())));
-                } catch (NumberFormatException nfe) {
-                    return 1L;
-                }
+                } catch (NumberFormatException ignored) {}
             }
-            return (long) Math.abs(userIdStr.hashCode());
+            return (long) Math.abs(clean.hashCode());
         }
     }
 
