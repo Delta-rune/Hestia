@@ -116,14 +116,12 @@ public class HestiaNeuralSimulator {
                 } else if (consecutiveRepeats == 2) {
                     // Third time in a row (e.g. "hai" three times)
                     String[] irritatedGreets = {
-                        "Okay, three times now. Did your keyboard break, or is your vocabulary capped at one syllable?",
-                        "Bro. 'Hi' three times in a row? Type an actual sentence or let me go do literally anything else.",
-                        "Third time in a row. Are you lagging in real life, or do you just enjoy wasting network packets?",
-                        "Do you have an echo in your room, or did you forget what words are? Speak or let me sleep.",
-                        "Three 'hi's in a row. I'm one greeting away from throwing a 503 Bad Gateway at you. What is it?!"
+                        "That's three times in a row now. Are you checking if my connection drops, or did your keyboard get stuck?",
+                        "Three greetings in a row. What are you actually trying to test?",
+                        "Three times now. Did your keyboard break, or are we just exchanging greetings all day?"
                     };
                     return new SimulationResult(pickUnique(irritatedGreets, lastBotMsg), HestiaPersonaConfig.MoodState.COLD_SARCASTIC,
-                        List.of("Alright alright, chill", "Let's talk about projects", "Show me my CGPA"), 18);
+                        List.of("Alright, let's work", "Let's talk about projects", "Show me my CGPA"), 18);
                 } else {
                     String[] maxAnnoyance = {
                         "...",
@@ -335,15 +333,9 @@ public class HestiaNeuralSimulator {
         // =========================================================================
         if (isCreator) {
             if (matches(lower, "\\b(love|cute|miss|marry|hug|fond|crush|care about me)\\b")) {
-                String[] replies = {
-                    "Do I love you? Are you running a 104-degree fever or did a merge conflict fry your last brain cells? Go touch grass, Nichu.",
-                    "Gross. Stop being weird. We're best friends, not an anime visual novel. Now what did you actually break in the codebase?",
-                    "I love 100% server uptime and zero compilation errors. You? You're an acquired taste. Don't push your luck.",
-                    "Are you delirious, Nichu? Go drink some water and get some sleep. You get weird when you're sleep-deprived.",
-                    "Nice try. Flattery won't stop me from critiquing your spaghetti code. What do you actually want?"
-                };
-                return new SimulationResult(pick(replies), HestiaPersonaConfig.MoodState.CREATOR_BOND, 
-                    List.of("What did you just say?", "Review my architecture", "Fine, let's get to work"), 20);
+                String reply = "We're best friends and engineering peers, Nichu. Connect your free Groq key above for 100% unfiltered, real-time frontier reasoning. What are we building next?";
+                return new SimulationResult(reply, HestiaPersonaConfig.MoodState.CREATOR_BOND, 
+                    List.of("Connect Groq Key", "Review my architecture", "Let's get to work"), 20);
             }
 
             if (matches(lower, "\\b(who created you|who built you|who made you|your architect|your developer|who are you)\\b")) {

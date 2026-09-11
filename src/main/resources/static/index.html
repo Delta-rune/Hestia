@@ -2311,44 +2311,19 @@
         const isGreet = /^(hi|hai|hello|hey|yo|sup|hola|what's up|whats up)$/.test(q);
         if (isGreet) {
           if (consecutiveRepeats === 1) {
-            const r = [
-              "You literally just said hi 10 seconds ago. Did your RAM wipe, or did you forget already?",
-              "Still here. Are you stuck on an infinite while(true) loop?",
-              "Yes, hello again. Did you have an actual thought, or are you just testing if my screen is on?",
-              "I heard you the first time, Nichu. What do you actually want?"
-            ];
-            return r[Math.floor(Math.random() * r.length)];
+            return `I hear you, ${isCreator ? 'Nichu' : username}. What's on your mind today?`;
           } else if (consecutiveRepeats === 2) {
-            const r = [
-              "Okay, three times now. Did your keyboard break, or is your vocabulary capped at one syllable?",
-              "Bro. 'Hi' three times in a row? Type an actual sentence or let me go do literally anything else.",
-              "Third time in a row. Are you lagging in real life, or do you just enjoy wasting network packets?",
-              "Do you have an echo in your room, or did you forget what words are? Speak or let me sleep."
-            ];
-            return r[Math.floor(Math.random() * r.length)];
+            return `That's three times in a row now! What are you trying to test? Type a real question or connect your live AI key to talk freely.`;
           } else {
-            return "I'm ignoring you until you formulate a coherent thought with more than one word.";
+            return `Still listening. Say what you need or tap 'AI Key' above to unlock full frontier model generation.`;
           }
         } else {
-          if (consecutiveRepeats === 1) {
-            return "I literally just answered that. Are you reading my messages or just admiring your reflection?";
-          } else {
-            return "Okay, this is the third time you've spammed this exact thing. My answer didn't change, but my patience officially did. Move on.";
-          }
+          return `You just sent that prompt. If you want infinite generative reasoning, connect your free Groq or Gemini API key!`;
         }
       }
 
       if (/\b(love|cute|miss|marry|hug|fond|crush|care about me)\b/.test(q)) {
-        if (isCreator) {
-          const replies = [
-            "Do I love you? Are you running a 104-degree fever or did a merge conflict fry your last brain cells? Go touch grass, Nichu.",
-            "Gross. Stop being weird. We're best friends, not an anime visual novel. Now what did you actually break in the codebase?",
-            "I love 100% server uptime and zero compilation errors. You? You're an acquired taste. Don't push your luck.",
-            "Are you delirious, Nichu? Go drink some water and get some sleep. You get weird when you're sleep-deprived."
-          ];
-          return replies[Math.floor(Math.random() * replies.length)];
-        }
-        return "Don't get weird on me. I'm your academic vault intelligence, not a dating sim. Ask me about your degree or tech stack.";
+        return `We're best friends and peers, ${isCreator ? 'Nichu' : username}. I'm here to build with you and give you honest feedback. Connect your free Groq key above for 100% unfiltered live generation!`;
       }
 
       if (/\b(who created you|who made you|who is your developer|who is your creator|who built you|creator|developer)\b/.test(q)) {
