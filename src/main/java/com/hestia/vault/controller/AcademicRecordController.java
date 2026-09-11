@@ -3,6 +3,7 @@ package com.hestia.vault.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hestia.vault.model.AcademicRecord;
+import com.hestia.vault.model.DocumentVault;
 import com.hestia.vault.model.User;
 import com.hestia.vault.model.UserProfile;
 import com.hestia.vault.repository.UserProfileRepository;
@@ -32,6 +33,9 @@ public class AcademicRecordController {
 
     @Autowired(required = false)
     private com.hestia.vault.repository.UserRepository userRepository;
+
+    @Autowired(required = false)
+    private com.hestia.vault.repository.DocumentVaultRepository documentVaultRepository;
 
     @Autowired
     public AcademicRecordController(AcademicRecordService academicRecordService) {
@@ -112,142 +116,187 @@ public class AcademicRecordController {
      */
     @PostMapping("/upload-semester")
     public ResponseEntity<?> uploadSemesterGradeCard(@RequestBody Map<String, Object> request) {
-        String userIdStr = request.get("userId") != null ? request.get("userId").toString() : null;
-        if (userIdStr == null && request.get("email") != null) {
-            userIdStr = request.get("email").toString();
-        }
-        Long userId = parseUserId(userIdStr != null ? userIdStr : "1");
-        int semesterNum = request.get("semesterNum") != null ? Integer.parseInt(request.get("semesterNum").toString()) : 1;
-        String pdfBase64 = (String) request.get("pdfBase64");
-        String fileName = request.get("fileName") != null ? request.get("fileName").toString() : "GradeCard_S" + semesterNum + ".pdf";
-
-        if (pdfBase64 == null || pdfBase64.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Grade card PDF file is required."));
-        }
-
-        // 1. Parse PDF using PDFBox
-        String extractedText = "";
         try {
-            byte[] bytes = decodeBase64(pdfBase64);
-            try (PDDocument document = Loader.loadPDF(bytes)) {
-                PDFTextStripper stripper = new PDFTextStripper();
-                extractedText = stripper.getText(document);
+            String userIdStr = request.get("userId") != null ? request.get("userId").toString() : null;
+            if (userIdStr == null && request.get("email") != null) {
+                userIdStr = request.get("email").toString();
             }
-        } catch (Throwable e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to parse grade card PDF: " + e.getMessage()));
-        }
+            Long userId = parseUserId(userIdStr != null ? userIdStr : "1");
+            int semesterNum = request.get("semesterNum") != null ? Integer.parseInt(request.get("semesterNum").toString()) : 1;
+            String pdfBase64 = (String) request.get("pdfBase64");
+            String fileName = request.get("fileName") != null ? request.get("fileName").toString() : "GradeCard_S" + semesterNum + ".pdf";
 
-        // 2. Extract Courses, Grades, Credits & SGPA
-        Map<String, Object> parseResult = parseGradeCardText(extractedText, semesterNum);
-        double sgpa = (Double) parseResult.get("sgpa");
-        int semesterCredits = (Integer) parseResult.get("credits");
-        List<Map<String, Object>> courses = (List<Map<String, Object>>) parseResult.get("courses");
-        List<String> focusAreas = (List<String>) parseResult.get("focusAreas");
-        String institution = (String) parseResult.get("institution");
-        String studentName = (String) parseResult.get("studentName");
-        String registerNo = (String) parseResult.get("registerNo");
-        String collegeName = (String) parseResult.get("collegeName");
-        String branch = (String) parseResult.get("branch");
-        Double explicitCgpa = (Double) parseResult.get("cgpa");
+            if (pdfBase64 == null || pdfBase64.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Grade card PDF file is required."));
+            }
 
-        // 3. Update Semester Data in AcademicRecord
-        AcademicRecord record = academicRecordService.getAcademicRecordByUserId(userId).orElse(new AcademicRecord());
-        record.setUserId(userId);
-        if (institution != null && !institution.isBlank()) record.setInstitutionName(institution);
-
-        Map<String, Object> semData = getSemesterMap(record.getSemesterDataJson());
-        Map<String, Object> semestersMap = (Map<String, Object>) semData.computeIfAbsent("semesters", k -> new HashMap<>());
-
-        Map<String, Object> thisSem = new HashMap<>();
-        thisSem.put("semesterNum", semesterNum);
-        thisSem.put("sgpa", sgpa);
-        thisSem.put("credits", semesterCredits);
-        thisSem.put("semesterCredits", semesterCredits);
-        thisSem.put("courses", courses);
-        thisSem.put("focusAreas", focusAreas);
-        thisSem.put("fileName", fileName);
-        thisSem.put("registerNo", registerNo);
-        thisSem.put("studentName", studentName);
-        if (collegeName != null) thisSem.put("collegeName", collegeName);
-        if (branch != null) thisSem.put("branch", branch);
-        thisSem.put("uploadedAt", System.currentTimeMillis());
-        thisSem.put("verified", true);
-
-        semestersMap.put(String.valueOf(semesterNum), thisSem);
-
-        // 4. Calculate Aggregate Cumulative CGPA and Total Credits
-        double totalWeightedGradePoints = 0.0;
-        int totalCredits = 0;
-        for (Object semObj : semestersMap.values()) {
-            if (semObj instanceof Map<?, ?> m) {
-                double sGpa = m.get("sgpa") != null ? Double.parseDouble(m.get("sgpa").toString()) : 0.0;
-                int cr = 0;
-                if (m.get("credits") != null) {
-                    try { cr = Integer.parseInt(m.get("credits").toString()); } catch (Exception ignored) {}
+            // 1. Parse PDF using PDFBox
+            String extractedText = "";
+            try {
+                byte[] bytes = decodeBase64(pdfBase64);
+                try (PDDocument document = Loader.loadPDF(bytes)) {
+                    PDFTextStripper stripper = new PDFTextStripper();
+                    extractedText = stripper.getText(document);
                 }
-                if (cr <= 0 && m.get("semesterCredits") != null) {
-                    try { cr = Integer.parseInt(m.get("semesterCredits").toString()); } catch (Exception ignored) {}
+            } catch (Throwable e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Failed to parse grade card PDF: " + e.getMessage()));
+            }
+
+            // 2. Extract Courses, Grades, Credits & SGPA
+            Map<String, Object> parseResult = parseGradeCardText(extractedText, semesterNum);
+            double sgpa = (Double) parseResult.get("sgpa");
+            int semesterCredits = (Integer) parseResult.get("credits");
+            List<Map<String, Object>> courses = (List<Map<String, Object>>) parseResult.get("courses");
+            List<String> focusAreas = (List<String>) parseResult.get("focusAreas");
+            String institution = (String) parseResult.get("institution");
+            String studentName = (String) parseResult.get("studentName");
+            String registerNo = (String) parseResult.get("registerNo");
+            String collegeName = (String) parseResult.get("collegeName");
+            String branch = (String) parseResult.get("branch");
+            Double explicitCgpa = (Double) parseResult.get("cgpa");
+
+            // 3. Update Semester Data in AcademicRecord
+            AcademicRecord record = academicRecordService.getAcademicRecordByUserId(userId).orElse(new AcademicRecord());
+            record.setUserId(userId);
+            if (institution != null && !institution.isBlank()) record.setInstitutionName(institution);
+
+            Map<String, Object> semData = getSemesterMap(record.getSemesterDataJson());
+            Object existingSems = semData.get("semesters");
+            Map<String, Object> semestersMap = new HashMap<>();
+            if (existingSems instanceof Map<?, ?> m) {
+                for (Map.Entry<?, ?> entry : m.entrySet()) {
+                    semestersMap.put(entry.getKey().toString(), entry.getValue());
                 }
-                if (cr <= 0 && m.get("courses") instanceof List<?> cList && !cList.isEmpty()) {
-                    for (Object co : cList) {
-                        if (co instanceof Map<?, ?> cMap && cMap.get("credits") != null) {
-                            try { cr += Integer.parseInt(cMap.get("credits").toString()); } catch (Exception ignored) {}
+            } else if (existingSems instanceof List<?> l) {
+                for (int i = 0; i < l.size(); i++) {
+                    semestersMap.put(String.valueOf(i + 1), l.get(i));
+                }
+            }
+            semData.put("semesters", semestersMap);
+
+            Map<String, Object> thisSem = new HashMap<>();
+            thisSem.put("semesterNum", semesterNum);
+            thisSem.put("sgpa", sgpa);
+            thisSem.put("credits", semesterCredits);
+            thisSem.put("semesterCredits", semesterCredits);
+            thisSem.put("courses", courses);
+            thisSem.put("focusAreas", focusAreas);
+            thisSem.put("fileName", fileName);
+            thisSem.put("registerNo", registerNo);
+            thisSem.put("studentName", studentName);
+            if (collegeName != null) thisSem.put("collegeName", collegeName);
+            if (branch != null) thisSem.put("branch", branch);
+            thisSem.put("uploadedAt", System.currentTimeMillis());
+            thisSem.put("verified", true);
+
+            semestersMap.put(String.valueOf(semesterNum), thisSem);
+
+            // 4. Calculate Aggregate Cumulative CGPA and Total Credits
+            double totalWeightedGradePoints = 0.0;
+            int totalCredits = 0;
+            for (Object semObj : semestersMap.values()) {
+                if (semObj instanceof Map<?, ?> m) {
+                    double sGpa = m.get("sgpa") != null ? Double.parseDouble(m.get("sgpa").toString()) : 0.0;
+                    int cr = 0;
+                    if (m.get("credits") != null) {
+                        try { cr = Integer.parseInt(m.get("credits").toString()); } catch (Exception ignored) {}
+                    }
+                    if (cr <= 0 && m.get("semesterCredits") != null) {
+                        try { cr = Integer.parseInt(m.get("semesterCredits").toString()); } catch (Exception ignored) {}
+                    }
+                    if (cr <= 0 && m.get("courses") instanceof List<?> cList && !cList.isEmpty()) {
+                        for (Object co : cList) {
+                            if (co instanceof Map<?, ?> cMap && cMap.get("credits") != null) {
+                                try { cr += Integer.parseInt(cMap.get("credits").toString()); } catch (Exception ignored) {}
+                            }
                         }
                     }
+                    if (cr <= 0) cr = 21;
+                    totalWeightedGradePoints += (sGpa * cr);
+                    totalCredits += cr;
                 }
-                if (cr <= 0) cr = 21;
-                totalWeightedGradePoints += (sGpa * cr);
-                totalCredits += cr;
             }
+
+            double cumulativeCgpa = (explicitCgpa != null) ? explicitCgpa : (totalCredits > 0 ? (totalWeightedGradePoints / totalCredits) : sgpa);
+            cumulativeCgpa = Math.round(cumulativeCgpa * 100.0) / 100.0;
+
+            record.setCurrentCgpa(cumulativeCgpa);
+            record.setTotalCreditsEarned(totalCredits);
+
+            try {
+                record.setSemesterDataJson(objectMapper.writeValueAsString(semData));
+            } catch (Exception ignored) {}
+
+            AcademicRecord savedRecord = academicRecordService.saveAcademicRecord(record);
+
+            // 5. Sync into UserProfile safely
+            try {
+                Optional<UserProfile> profileOpt = userProfileRepository != null ? userProfileRepository.findFirstByUserIdOrderByIdDesc(userId) : Optional.empty();
+                if (profileOpt.isPresent()) {
+                    UserProfile p = profileOpt.get();
+                    p.setCgpa(cumulativeCgpa);
+                    if (institution != null && !institution.isBlank()) p.setInstitution(institution);
+                    if (collegeName != null && !collegeName.isBlank()) p.setCollegeName(collegeName);
+                    if (studentName != null && !studentName.isBlank() && !studentName.equalsIgnoreCase("Student")) p.setFullName(studentName);
+                    if (branch != null && !branch.isBlank()) p.setDegreeField(branch);
+                    p.setVerificationStatus("VERIFIED");
+                    p.setVerificationTier("TIER_3_OCR_METADATA");
+                    userProfileRepository.save(p);
+                }
+            } catch (Exception profileEx) {
+                System.err.println("UserProfile sync non-blocking warning: " + profileEx.getMessage());
+            }
+
+            // 6. Auto-archive into Cloud DocumentVault
+            if (documentVaultRepository != null && pdfBase64 != null && !pdfBase64.isBlank()) {
+                try {
+                    String cleanData = pdfBase64.contains(",") ? pdfBase64.substring(pdfBase64.indexOf(",") + 1) : pdfBase64;
+                    cleanData = cleanData.replaceAll("\\s+", "");
+                    byte[] decoded = Base64.getMimeDecoder().decode(cleanData);
+                    java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                    byte[] hash = md.digest(decoded);
+                    StringBuilder sb = new StringBuilder("sha256:");
+                    for (byte b : hash) sb.append(String.format("%02x", b));
+                    String fHash = sb.toString();
+                    String userEmail = request.get("email") != null ? request.get("email").toString() : "";
+
+                    DocumentVault doc = new DocumentVault(userId, userEmail, "GRADE_CARD",
+                            "Semester " + semesterNum + " Official Grade Card",
+                            institution != null ? institution : "APJ Abdul Kalam Technological University (KTU)",
+                            fileName, "application/pdf", (long) decoded.length, cleanData, fHash, registerNo);
+                    documentVaultRepository.save(doc);
+                } catch (Exception docEx) {
+                    System.err.println("DocumentVault auto-archive non-blocking warning: " + docEx.getMessage());
+                }
+            }
+
+            Map<String, Object> responseData = new LinkedHashMap<>();
+            responseData.put("status", "SUCCESS");
+            responseData.put("message", "Semester " + semesterNum + " Grade Card verified & synced successfully!");
+            responseData.put("semesterNum", semesterNum);
+            responseData.put("sgpa", sgpa);
+            responseData.put("credits", semesterCredits);
+            responseData.put("semesterCredits", semesterCredits);
+            responseData.put("cumulativeCgpa", cumulativeCgpa);
+            responseData.put("totalCreditsEarned", totalCredits);
+            responseData.put("courses", courses);
+            responseData.put("focusAreas", focusAreas);
+            responseData.put("studentName", studentName);
+            responseData.put("registerNo", registerNo);
+            responseData.put("institution", institution);
+            if (collegeName != null) responseData.put("collegeName", collegeName);
+            if (branch != null) responseData.put("branch", branch);
+            responseData.put("verified", true);
+            responseData.put("allSemesters", semestersMap);
+
+            return ResponseEntity.ok(responseData);
+        } catch (Throwable t) {
+            System.err.println("Error in uploadSemesterGradeCard: " + t.getMessage());
+            t.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Grade card processing issue: " + (t.getMessage() != null ? t.getMessage() : "Unknown error") + ". Please try re-uploading the official KTU PDF."));
         }
-
-        double cumulativeCgpa = (explicitCgpa != null) ? explicitCgpa : (totalCredits > 0 ? (totalWeightedGradePoints / totalCredits) : sgpa);
-        cumulativeCgpa = Math.round(cumulativeCgpa * 100.0) / 100.0;
-
-        record.setCurrentCgpa(cumulativeCgpa);
-        record.setTotalCreditsEarned(totalCredits);
-
-        try {
-            record.setSemesterDataJson(objectMapper.writeValueAsString(semData));
-        } catch (Exception ignored) {}
-
-        AcademicRecord savedRecord = academicRecordService.saveAcademicRecord(record);
-
-        // 5. Sync into UserProfile
-        Optional<UserProfile> profileOpt = userProfileRepository.findByUserId(userId);
-        if (profileOpt.isPresent()) {
-            UserProfile p = profileOpt.get();
-            p.setCgpa(cumulativeCgpa);
-            if (institution != null && !institution.isBlank()) p.setInstitution(institution);
-            if (collegeName != null && !collegeName.isBlank()) p.setCollegeName(collegeName);
-            if (studentName != null && !studentName.isBlank() && !studentName.equalsIgnoreCase("Student")) p.setFullName(studentName);
-            if (branch != null && !branch.isBlank()) p.setDegreeField(branch);
-            p.setVerificationStatus("VERIFIED");
-            p.setVerificationTier("TIER_3_OCR_METADATA");
-            userProfileRepository.save(p);
-        }
-
-        Map<String, Object> responseData = new LinkedHashMap<>();
-        responseData.put("status", "SUCCESS");
-        responseData.put("message", "Semester " + semesterNum + " Grade Card verified & synced successfully!");
-        responseData.put("semesterNum", semesterNum);
-        responseData.put("sgpa", sgpa);
-        responseData.put("credits", semesterCredits);
-        responseData.put("semesterCredits", semesterCredits);
-        responseData.put("cumulativeCgpa", cumulativeCgpa);
-        responseData.put("totalCreditsEarned", totalCredits);
-        responseData.put("courses", courses);
-        responseData.put("focusAreas", focusAreas);
-        responseData.put("studentName", studentName);
-        responseData.put("registerNo", registerNo);
-        responseData.put("institution", institution);
-        if (collegeName != null) responseData.put("collegeName", collegeName);
-        if (branch != null) responseData.put("branch", branch);
-        responseData.put("verified", true);
-        responseData.put("allSemesters", semestersMap);
-
-        return ResponseEntity.ok(responseData);
     }
 
     /**
@@ -531,7 +580,12 @@ public class AcademicRecordController {
         if (input.contains(",")) {
             clean = input.substring(input.indexOf(",") + 1);
         }
-        return Base64.getDecoder().decode(clean.trim());
+        clean = clean.replaceAll("\\s+", "");
+        try {
+            return Base64.getMimeDecoder().decode(clean);
+        } catch (Exception e) {
+            return Base64.getDecoder().decode(clean);
+        }
     }
 
     private Long parseUserId(String userIdStr) {

@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>Hestia — Fueling Human Prosperity</title>
 
   <!-- Supabase JS Client SDK -->
@@ -188,6 +188,9 @@
   </style>
 </head>
 <body class="min-h-screen flex flex-col relative select-none">
+
+  <!-- CYBERPUNK FLOATING TOAST NOTIFICATION CONTAINER -->
+  <div id="hestia-toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 md:left-auto md:right-5 md:translate-x-0 z-[100] flex flex-col gap-2.5 max-w-sm w-full px-4 pointer-events-none"></div>
 
   <!-- INTRO SPLASH SCREEN (CLICKABLE TO DISMISS IMMEDIATELY) -->
   <div id="splash-screen" onclick="dismissSplashScreen()" class="cursor-pointer" title="Click anywhere to enter Hestia">
@@ -574,7 +577,7 @@
 
 
     <!-- CONTENT BODY -->
-    <main class="flex-grow max-w-7xl w-full mx-auto p-6 md:p-10">
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-10 pb-28 md:pb-12">
 
       <!-- ========================================== -->
       <!-- SECTION 1: LANDING & VISION PAGE -->
@@ -967,6 +970,32 @@
               <div class="flex justify-between items-center"><span class="text-neutral-500">Credential ID:</span> <span id="cert-id-val" class="text-neutral-200">HST-CERT-100293</span></div>
               <div class="flex justify-between items-center"><span class="text-neutral-500">Issuer Authority:</span> <span id="cert-issuer-val" class="text-neutral-200 font-semibold">Universal Issuer Registry</span></div>
               <div id="cert-proof-note" class="text-emerald-400 mt-2 p-3 bg-neutral-900/80 rounded-lg border border-neutral-800 font-sans text-xs">Image Proof Inspected & Validated</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CLOUD CERTIFICATE & DOCUMENT VAULT GALLERY SHELF -->
+        <div class="max-w-3xl mx-auto bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 md:p-8 space-y-5 shadow-xl mt-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-neutral-800 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-neutral-950 border border-neutral-700 flex items-center justify-center text-emerald-400 shrink-0">
+                <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-white uppercase tracking-wider">Cloud Document & Certificate Vault</h3>
+                <p class="text-xs text-neutral-400 font-mono">Permanent cloud storage for verified certificates, degrees & official grade card PDFs</p>
+              </div>
+            </div>
+            <button onclick="fetchAndRenderCloudDocuments()" class="btn-outline-mono px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 shrink-0">
+              <i class="fa-solid fa-arrows-rotate text-emerald-400"></i> Refresh
+            </button>
+          </div>
+
+          <div id="cloud-documents-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <!-- Dynamically populated via fetchAndRenderCloudDocuments() -->
+            <div class="col-span-full py-8 text-center text-neutral-500 font-mono text-xs">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2 text-neutral-600 block"></i>
+              No cloud documents saved yet. Upload and verify a certificate above or a grade card in Academic Vault to store documents permanently.
             </div>
           </div>
         </div>
@@ -1501,14 +1530,30 @@
             el.classList.remove('hidden');
             if (s === 'vault') {
               loadSavedAcademicRecord();
+              if (typeof fetchAndRenderCloudDocuments === 'function') fetchAndRenderCloudDocuments();
             } else if (s === 'scanner') {
               autoPopulateScannerFromVault();
+            } else if (s === 'verifier') {
+              if (typeof fetchAndRenderCloudDocuments === 'function') fetchAndRenderCloudDocuments();
             }
           } else {
             el.classList.add('hidden');
           }
         }
       });
+
+      // Update Mobile Nav Active Indicators
+      ['vault', 'scanner', 'verifier', 'companion'].forEach(tab => {
+        const btn = document.getElementById(`mob-nav-${tab}`);
+        if (btn) {
+          if (tab === sectionId) {
+            btn.className = 'mob-nav-btn flex flex-col items-center gap-1 py-1 px-3 text-emerald-400 font-mono transition';
+          } else {
+            btn.className = 'mob-nav-btn flex flex-col items-center gap-1 py-1 px-3 text-neutral-400 hover:text-white font-mono transition';
+          }
+        }
+      });
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -2061,7 +2106,7 @@
       let imageData = standaloneCertImageData || userProfile.certificateImageData;
 
       if (!certId && !name && !imageData) {
-        alert('Please select or drop a Certificate PDF/image file, or enter a Credential ID.');
+        showHestiaToast('Please select or drop a Certificate PDF/image file, or enter a Credential ID.', 'warning');
         return;
       }
 
@@ -2069,10 +2114,12 @@
       if (btn) btn.innerText = 'Scanning PDF & Verifying Authenticity...';
 
       try {
+        const activeUserId = currentUser?.id || '1';
+        const userEmail = currentUser?.email || '';
         const res = await fetch(`${API_BASE}/api/certificates/upload-verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ certId, certName: name, issuer, imageData })
+          body: JSON.stringify({ certId, certName: name, issuer, imageData, userId: String(activeUserId), userEmail })
         });
         const data = await res.json();
         
@@ -2088,6 +2135,13 @@
         }
 
         renderCertResult(data);
+
+        if (data.status && (data.status.startsWith('VERIFIED') || data.status === 'SUCCESS')) {
+          showHestiaToast(`✅ Certificate Verified! Archived to your Cloud Vault.`, 'success');
+          if (typeof fetchAndRenderCloudDocuments === 'function') {
+            setTimeout(fetchAndRenderCloudDocuments, 500);
+          }
+        }
       } catch (err) {
         renderCertResult({
           status: 'REJECTED_UNVERIFIED_SOURCE',
@@ -3944,7 +3998,7 @@
     async function uploadSemesterCardFile(semNum, file) {
       if (!file) return;
       if (!file.name.toLowerCase().endsWith('.pdf')) {
-        alert('Please drop an official Grade Card PDF document.');
+        showHestiaToast('Please drop an official Grade Card PDF document.', 'warning');
         return;
       }
 
@@ -3985,7 +4039,7 @@
 
           const data = await res.json();
           if (!res.ok) {
-            alert(data.error || 'Failed to parse grade card PDF.');
+            showHestiaToast(data.error || 'Failed to parse grade card PDF. Please ensure this is an official university grade card.', 'error');
             renderSemesterGradeCards();
             return;
           }
@@ -4009,9 +4063,13 @@
           saveUserProfileToLocalStorage();
 
           renderSemesterGradeCards();
+          showHestiaToast(`Semester ${semNum} Grade Card verified! ${data.credits || 21} credits & SGPA ${data.sgpa} synced.`, 'success');
+          if (typeof fetchAndRenderCloudDocuments === 'function') {
+            setTimeout(fetchAndRenderCloudDocuments, 500);
+          }
         } catch (err) {
           console.error('Error uploading semester card:', err);
-          alert('Network error while processing grade card. Please try again.');
+          showHestiaToast('Network error while processing grade card. Please try again.', 'error');
           renderSemesterGradeCards();
         }
       };
@@ -4493,6 +4551,165 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     }
+    // ==========================================
+    // CYBERPUNK TOAST NOTIFICATION ENGINE
+    // ==========================================
+    function showHestiaToast(msg, type = 'info') {
+      const container = document.getElementById('hestia-toast-container');
+      if (!container) {
+        alert(msg);
+        return;
+      }
+
+      const toast = document.createElement('div');
+      toast.className = 'pointer-events-auto flex items-start gap-3 p-3.5 rounded-xl border shadow-2xl backdrop-blur-md text-xs font-mono transition-all duration-300 transform -translate-y-2 opacity-0';
+
+      let icon = '<i class="fa-solid fa-circle-info text-sky-400 text-sm mt-0.5 shrink-0"></i>';
+      let borderBg = 'bg-neutral-900/95 border-neutral-700 text-neutral-200';
+
+      if (type === 'success') {
+        icon = '<i class="fa-solid fa-circle-check text-emerald-400 text-sm mt-0.5 shrink-0"></i>';
+        borderBg = 'bg-emerald-950/95 border-emerald-700/80 text-emerald-200';
+      } else if (type === 'error') {
+        icon = '<i class="fa-solid fa-triangle-exclamation text-rose-400 text-sm mt-0.5 shrink-0"></i>';
+        borderBg = 'bg-rose-950/95 border-rose-700/80 text-rose-200';
+      } else if (type === 'warning') {
+        icon = '<i class="fa-solid fa-circle-exclamation text-amber-400 text-sm mt-0.5 shrink-0"></i>';
+        borderBg = 'bg-amber-950/95 border-amber-700/80 text-amber-200';
+      }
+
+      toast.className += ` ${borderBg}`;
+      toast.innerHTML = `
+        ${icon}
+        <div class="flex-1 leading-relaxed">${escapeHtml(msg)}</div>
+        <button onclick="this.parentElement.remove()" class="text-neutral-400 hover:text-white shrink-0 ml-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('-translate-y-2', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+      });
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 4200);
+    }
+
+    // ==========================================
+    // CLOUD DOCUMENT & CERTIFICATE VAULT ENGINE
+    // ==========================================
+    async function fetchAndRenderCloudDocuments() {
+      const container = document.getElementById('cloud-documents-container');
+      if (!container) return;
+
+      const activeUserId = currentUser?.id || 1;
+      const email = currentUser?.email || '';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/documents?userId=${activeUserId}&email=${encodeURIComponent(email)}`);
+        if (!res.ok) throw new Error('Failed to fetch cloud documents');
+        const docs = await res.json();
+
+        if (!Array.isArray(docs) || docs.length === 0) {
+          container.innerHTML = `
+            <div class="col-span-full py-8 text-center text-neutral-500 font-mono text-xs">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2 text-neutral-600 block"></i>
+              No cloud documents saved yet. Upload and verify a certificate above or a grade card in Academic Vault to store documents permanently.
+            </div>
+          `;
+          return;
+        }
+
+        let html = '';
+        docs.forEach(doc => {
+          const isPdf = (doc.contentType && doc.contentType.includes('pdf')) || (doc.fileName && doc.fileName.toLowerCase().endsWith('.pdf'));
+          const icon = isPdf ? '<i class="fa-solid fa-file-pdf text-rose-400"></i>' : '<i class="fa-solid fa-file-image text-emerald-400"></i>';
+          const typeBadge = doc.documentType === 'GRADE_CARD' ? 'bg-sky-950 border-sky-800 text-sky-300' : 'bg-emerald-950 border-emerald-800 text-emerald-300';
+          const typeLabel = doc.documentType === 'GRADE_CARD' ? 'GRADE CARD' : 'CERTIFICATE';
+
+          html += `
+            <div class="bg-neutral-950 border border-neutral-800 hover:border-neutral-600 rounded-xl p-4 flex flex-col justify-between space-y-3 transition shadow-lg">
+              <div class="space-y-2">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex items-center gap-2 overflow-hidden">
+                    <span class="text-base">${icon}</span>
+                    <span class="font-bold text-white text-xs truncate" title="${escapeHtml(doc.title)}">${escapeHtml(doc.title)}</span>
+                  </div>
+                  <span class="text-[9px] font-mono px-2 py-0.5 rounded-full border ${typeBadge} font-bold uppercase shrink-0">${typeLabel}</span>
+                </div>
+
+                <div class="text-[11px] text-neutral-400 font-mono flex items-center justify-between">
+                  <span class="truncate"><i class="fa-solid fa-building-columns mr-1 text-neutral-500"></i>${escapeHtml(doc.issuer || 'Universal Registry')}</span>
+                  ${doc.credentialId ? `<span class="text-neutral-500">#${escapeHtml(doc.credentialId)}</span>` : ''}
+                </div>
+
+                <div class="text-[10px] text-neutral-500 font-mono truncate" title="${escapeHtml(doc.fileHash)}">
+                  <i class="fa-solid fa-fingerprint text-emerald-400/80 mr-1"></i>${escapeHtml(doc.fileHash ? doc.fileHash.substring(0, 24) + '...' : 'SHA-256 Verified')}
+                </div>
+              </div>
+
+              <div class="pt-2 border-t border-neutral-900 flex items-center justify-between gap-2">
+                <a href="${API_BASE}/api/documents/file/${doc.id}" target="_blank" rel="noopener noreferrer" class="btn-outline-mono px-3 py-1.5 rounded-lg text-[11px] font-mono flex items-center gap-1.5 text-white hover:text-emerald-400">
+                  <i class="fa-solid fa-eye text-emerald-400"></i> View / Download
+                </a>
+                <button type="button" onclick="deleteCloudDocument(${doc.id})" class="p-1.5 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-neutral-900 transition" title="Delete Document">
+                  <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      } catch (err) {
+        console.error('Error loading cloud documents:', err);
+      }
+    }
+
+    async function deleteCloudDocument(id) {
+      if (!confirm('Are you sure you want to remove this document from your Cloud Vault?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/documents/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          showHestiaToast('Document removed from Cloud Vault.', 'info');
+          fetchAndRenderCloudDocuments();
+        } else {
+          showHestiaToast('Failed to delete document.', 'error');
+        }
+      } catch (e) {
+        showHestiaToast('Network error while deleting document.', 'error');
+      }
+    }
   </script>
+
+  <!-- SLEEK MOBILE BOTTOM NAVIGATION BAR (ANDROID / MOBILE PHONES) -->
+  <nav id="mobile-bottom-nav" class="fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-800 md:hidden flex justify-around items-center py-2 px-1 shadow-2xl safe-bottom">
+    <button onclick="showSection('vault')" id="mob-nav-vault" class="mob-nav-btn flex flex-col items-center gap-1 py-1 px-3 text-emerald-400 font-mono transition">
+      <i class="fa-solid fa-graduation-cap text-base"></i>
+      <span class="text-[10px] tracking-wider uppercase font-bold">Vault</span>
+    </button>
+    <button onclick="showSection('scanner')" id="mob-nav-scanner" class="mob-nav-btn flex flex-col items-center gap-1 py-1 px-3 text-neutral-400 hover:text-white font-mono transition">
+      <i class="fa-solid fa-briefcase text-base"></i>
+      <span class="text-[10px] tracking-wider uppercase font-bold">Jobs</span>
+    </button>
+    <button onclick="showSection('verifier')" id="mob-nav-verifier" class="mob-nav-btn flex flex-col items-center gap-1 py-1 px-3 text-neutral-400 hover:text-white font-mono transition">
+      <i class="fa-solid fa-shield-halved text-base"></i>
+      <span class="text-[10px] tracking-wider uppercase font-bold">Verify</span>
+    </button>
+    <button onclick="showSection('companion')" id="mob-nav-companion" class="mob-nav-btn flex flex-col items-center gap-1 py-1 px-3 text-neutral-400 hover:text-white font-mono transition">
+      <i class="fa-solid fa-sparkles text-base"></i>
+      <span class="text-[10px] tracking-wider uppercase font-bold">Hestia AI</span>
+    </button>
+    <button onclick="openSettingsModal()" class="mob-nav-btn flex flex-col items-center gap-1 py-1 px-3 text-neutral-400 hover:text-white font-mono transition">
+      <i class="fa-solid fa-gear text-base"></i>
+      <span class="text-[10px] tracking-wider uppercase font-bold">Settings</span>
+    </button>
+  </nav>
 </body>
 </html>

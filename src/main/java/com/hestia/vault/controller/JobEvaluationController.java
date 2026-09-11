@@ -32,6 +32,12 @@ public class JobEvaluationController {
     @Autowired
     private DocumentAuditService documentAuditService;
 
+    @Autowired(required = false)
+    private com.hestia.vault.repository.DocumentVaultRepository documentVaultRepository;
+
+    @Autowired(required = false)
+    private com.hestia.vault.repository.UserRepository userRepository;
+
     @Value("${gemini.apiKey:}")
     private String geminiApiKey;
 
@@ -321,7 +327,7 @@ public class JobEvaluationController {
             String finalCertId = !cleanedId.isBlank() ? cleanedId : "HST-CERT-" + Math.abs(shaHash.hashCode() % 899999 + 100000);
             String finalName = !cleanedName.isBlank() ? cleanedName : "Cryptographically Verified Certificate";
 
-            saveVerifiedCertificateToProfile(request.get("userId"), finalName, finalIssuer, finalCertId);
+            saveVerifiedCertificateToProfile(request.get("userId"), finalName, finalIssuer, finalCertId, imageData);
 
             return ResponseEntity.ok(Map.of(
                 "status", "VERIFIED_AUTHENTIC",
@@ -368,7 +374,7 @@ public class JobEvaluationController {
                 String finalName = !cleanedName.isBlank() ? cleanedName : "Verified Academic & Skill Certificate";
                 String finalCertId = !cleanedId.isBlank() ? cleanedId : "HST-CERT-" + Math.abs(shaHash.hashCode() % 899999 + 100000);
 
-                saveVerifiedCertificateToProfile(request.get("userId"), finalName, finalIssuer, finalCertId);
+                saveVerifiedCertificateToProfile(request.get("userId"), finalName, finalIssuer, finalCertId, imageData);
 
                 return ResponseEntity.ok(Map.of(
                     "status", "VERIFIED_AUTHENTIC",
@@ -391,7 +397,7 @@ public class JobEvaluationController {
             String shaHash = "SHA256:" + Integer.toHexString(hashInput.hashCode()).toUpperCase();
             String certTitle = cleanedName.isBlank() ? "Verified Academic Certificate" : cleanedName;
 
-            saveVerifiedCertificateToProfile(request.get("userId"), certTitle, cleanedIssuer, cleanedId);
+            saveVerifiedCertificateToProfile(request.get("userId"), certTitle, cleanedIssuer, cleanedId, null);
 
             return ResponseEntity.ok(Map.of(
                 "status", "VERIFIED_REGISTRY_RECORD",
@@ -425,11 +431,11 @@ public class JobEvaluationController {
         ));
     }
 
-    private void saveVerifiedCertificateToProfile(String userIdStr, String title, String issuer, String certId) {
+    private void saveVerifiedCertificateToProfile(String userIdStr, String title, String issuer, String certId, String documentBase64) {
         if (userIdStr == null || userIdStr.isBlank()) return;
         try {
-            Long userId = Long.parseLong(userIdStr);
-            Optional<UserProfile> pOpt = userProfileRepository.findByUserId(userId);
+            Long userId = parseUserId(userIdStr);
+            Optional<UserProfile> pOpt = userProfileRepository != null ? userProfileRepository.findFirstByUserIdOrderByIdDesc(userId) : Optional.empty();
             if (pOpt.isPresent()) {
                 UserProfile p = pOpt.get();
                 String existing = p.getCertificates() != null ? p.getCertificates() : "";
@@ -439,7 +445,54 @@ public class JobEvaluationController {
                     userProfileRepository.save(p);
                 }
             }
+
+            if (documentVaultRepository != null && documentBase64 != null && !documentBase64.isBlank()) {
+                try {
+                    String clean = documentBase64.contains(",") ? documentBase64.substring(documentBase64.indexOf(",") + 1) : documentBase64;
+                    clean = clean.replaceAll("\\s+", "");
+                    byte[] bytes = java.util.Base64.getMimeDecoder().decode(clean);
+                    java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                    byte[] hash = md.digest(bytes);
+                    StringBuilder sb = new StringBuilder("sha256:");
+                    for (byte b : hash) sb.append(String.format("%02x", b));
+                    String fHash = sb.toString();
+
+                    boolean isPdf = documentBase64.contains("application/pdf") || clean.startsWith("JVBERi");
+                    String cType = isPdf ? "application/pdf" : "image/png";
+                    String fName = (title.replaceAll("[^a-zA-Z0-9_-]", "_") + (isPdf ? ".pdf" : ".png"));
+
+                    com.hestia.vault.model.DocumentVault doc = new com.hestia.vault.model.DocumentVault(
+                            userId, "", "CERTIFICATE", title, issuer, fName, cType, (long) bytes.length, clean, fHash, certId);
+                    documentVaultRepository.save(doc);
+                } catch (Exception docEx) {
+                    System.err.println("DocumentVault certificate archive warning: " + docEx.getMessage());
+                }
+            }
         } catch (Exception ignored) {}
+    }
+
+    private Long parseUserId(String userIdStr) {
+        if (userIdStr == null || userIdStr.isBlank()) return 1L;
+        String clean = userIdStr.trim();
+        if (clean.contains("@") && userRepository != null) {
+            Optional<com.hestia.vault.model.User> u = userRepository.findByEmail(clean.toLowerCase());
+            if (u.isPresent()) return u.get().getId();
+        }
+        try {
+            return Long.parseLong(clean);
+        } catch (NumberFormatException e) {
+            if (userRepository != null) {
+                Optional<com.hestia.vault.model.User> u = userRepository.findByUsername(clean);
+                if (u.isPresent()) return u.get().getId();
+            }
+            String digits = clean.replaceAll("[^0-9]", "");
+            if (!digits.isEmpty()) {
+                try {
+                    return Long.parseLong(digits.substring(0, Math.min(15, digits.length())));
+                } catch (NumberFormatException ignored) {}
+            }
+            return (long) Math.abs(clean.hashCode());
+        }
     }
 
     private boolean isGibberish(String input) {

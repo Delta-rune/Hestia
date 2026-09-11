@@ -26,7 +26,10 @@ public class AcademicRecordService {
             throw new IllegalArgumentException("User ID is required to save academic record.");
         }
 
-        Optional<AcademicRecord> existingOpt = academicRecordRepository.findByUserId(record.getUserId());
+        Optional<AcademicRecord> existingOpt = academicRecordRepository.findFirstByUserIdOrderByIdDesc(record.getUserId());
+        if (existingOpt.isEmpty()) {
+            existingOpt = academicRecordRepository.findByUserId(record.getUserId());
+        }
         if (existingOpt.isPresent()) {
             AcademicRecord existing = existingOpt.get();
             existing.setApaarId(record.getApaarId());
@@ -46,6 +49,8 @@ public class AcademicRecordService {
      * Retrieves the self-reported academic record for a specific userId.
      */
     public Optional<AcademicRecord> getAcademicRecordByUserId(Long userId) {
+        Optional<AcademicRecord> opt = academicRecordRepository.findFirstByUserIdOrderByIdDesc(userId);
+        if (opt.isPresent()) return opt;
         return academicRecordRepository.findByUserId(userId);
     }
 }

@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface AcademicRecordRepository extends JpaRepository<AcademicRecord, Long> {
     
     Optional<AcademicRecord> findByUserId(Long userId);
+    Optional<AcademicRecord> findFirstByUserIdOrderByIdDesc(Long userId);
 }
