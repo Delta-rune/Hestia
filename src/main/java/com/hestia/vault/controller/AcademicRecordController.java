@@ -206,6 +206,7 @@ public class AcademicRecordController {
             UserProfile p = profileOpt.get();
             p.setCgpa(cumulativeCgpa);
             if (institution != null && !institution.isBlank()) p.setInstitution(institution);
+            if (collegeName != null && !collegeName.isBlank()) p.setCollegeName(collegeName);
             if (studentName != null && !studentName.isBlank() && !studentName.equalsIgnoreCase("Student")) p.setFullName(studentName);
             if (branch != null && !branch.isBlank()) p.setDegreeField(branch);
             p.setVerificationStatus("VERIFIED");

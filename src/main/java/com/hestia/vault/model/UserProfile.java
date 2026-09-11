@@ -20,6 +20,9 @@ public class UserProfile {
     @Column(name = "degree_field")
     private String degreeField; // e.g. Computer Science, Medicine, Civil Engineering
 
+    @Column(name = "full_name")
+    private String fullName;
+
     @Column(name = "institution")
     private String institution; // e.g. Harvard, IIT, KTU, Stanford
 
@@ -80,6 +83,9 @@ public class UserProfile {
 
     public String getDegreeField() { return degreeField; }
     public void setDegreeField(String degreeField) { this.degreeField = degreeField; }
+
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
 
     public String getInstitution() { return institution; }
     public void setInstitution(String institution) { this.institution = institution; }
