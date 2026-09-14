@@ -55,6 +55,9 @@ public class HestiaDiagnosticTest {
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
 
     @InjectMocks
+    private com.hestia.vault.service.HybridAuthService hybridAuthService;
+
+    @InjectMocks
     private AuthController authController;
 
     private EduEmailVerificationService eduEmailService;
@@ -62,6 +65,10 @@ public class HestiaDiagnosticTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        org.springframework.test.util.ReflectionTestUtils.setField(authController, "hybridAuthService", hybridAuthService);
+        org.springframework.test.util.ReflectionTestUtils.setField(hybridAuthService, "userRepository", userRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(hybridAuthService, "userProfileRepository", userProfileRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(hybridAuthService, "passwordEncoder", passwordEncoder);
         eduEmailService = new EduEmailVerificationService();
     }
 

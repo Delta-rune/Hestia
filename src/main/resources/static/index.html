@@ -1328,6 +1328,23 @@
         closeAuthModal();
         closeGoogleOnboardingModal();
         onAuthSuccess(existingUser);
+
+        // Always sync with backend to ensure DB presence & obtain permanent DB user ID
+        fetch(`${API_BASE}/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: cleanedEmail,
+            name: existingUser.username || defaultUsername,
+            username: existingUser.username || defaultUsername
+          })
+        }).then(res => res.json()).then(data => {
+          if (data && data.user && data.user.id) {
+            existingUser.id = data.user.id;
+            if (currentUser) currentUser.id = data.user.id;
+            saveStoredAccount(existingUser);
+          }
+        }).catch(() => {});
         
         if (existingUser.degree) {
           userProfile.degreeField = existingUser.degree;
