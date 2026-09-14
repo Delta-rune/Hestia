@@ -51,6 +51,9 @@ public class HestiaDiagnosticTest {
     @InjectMocks
     private VerificationController verificationController;
 
+    @org.mockito.Spy
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+
     @InjectMocks
     private AuthController authController;
 
@@ -228,5 +231,52 @@ public class HestiaDiagnosticTest {
         assertEquals("SUCCESS", linkBody.get("status"));
 
         System.out.println("✅ DIAGNOSTIC 7 PASSED — Master Developer Account Deletion Protection & Multi-Email Linking operational.");
+    }
+
+    @Test
+    @DisplayName("DIAGNOSTIC 8: Dual-Access Hybrid Auth & Robust Password Setting")
+    void diagnosticDualAccessAuthAndPasswordSetting() {
+        User googleUser = new User();
+        googleUser.setId(42L);
+        googleUser.setUsername("alice_google");
+        googleUser.setEmail("alice@gmail.com");
+        googleUser.setAuthProvider("google");
+        googleUser.setHashedPassword(null); // No initial password
+
+        when(userRepository.findById(42L)).thenReturn(java.util.Optional.of(googleUser));
+        when(userRepository.findByEmail("alice@gmail.com")).thenReturn(java.util.Optional.of(googleUser));
+        when(userRepository.findByUsername("alice_google")).thenReturn(java.util.Optional.of(googleUser));
+
+        // 1. Attempt login before setting password -> Must be rejected with 401 informing user to use Google or set password
+        var noPassRes = authController.loginUser(Map.of("usernameOrEmail", "alice@gmail.com", "password", "anyPass"));
+        assertEquals(401, noPassRes.getStatusCode().value());
+        Map noPassBody = (Map) noPassRes.getBody();
+        assertTrue(((String) noPassBody.get("detail")).contains("Google"));
+
+        // 2. Set password by Email & non-numeric / string userId without crashing
+        Map<String, Object> setPassReq = Map.of(
+            "userId", "alice@gmail.com", // string/email passed as userId from client
+            "email", "alice@gmail.com",
+            "newPassword", "SecureP@ss123"
+        );
+        var setPassRes = authController.setPassword(setPassReq);
+        assertEquals(200, setPassRes.getStatusCode().value());
+        assertNotNull(googleUser.getHashedPassword(), "Hashed password must be saved to user entity");
+
+        // 3. Reject password shorter than 6 characters
+        var shortPassRes = authController.setPassword(Map.of("email", "alice@gmail.com", "newPassword", "123"));
+        assertEquals(400, shortPassRes.getStatusCode().value());
+
+        // 4. Local login with correct password -> Must succeed
+        var loginOkRes = authController.loginUser(Map.of("usernameOrEmail", "alice_google", "password", "SecureP@ss123"));
+        assertEquals(200, loginOkRes.getStatusCode().value());
+
+        // 5. Local login with incorrect password -> Must return 401 Incorrect password
+        var loginFailRes = authController.loginUser(Map.of("usernameOrEmail", "alice_google", "password", "WrongPassword!"));
+        assertEquals(401, loginFailRes.getStatusCode().value());
+        Map failBody = (Map) loginFailRes.getBody();
+        assertEquals("Incorrect password. Please try again.", failBody.get("detail"));
+
+        System.out.println("✅ DIAGNOSTIC 8 PASSED — Dual-Access Hybrid Auth & Password Setting operational.");
     }
 }

@@ -512,11 +512,14 @@
           </h3>
           <span class="text-[10px] text-neutral-500 font-mono">* For Google SSO or Local</span>
         </div>
+        <p class="text-[11px] text-neutral-400">
+          Set a password here to unlock username-password login. You can then log in using either Google SSO or your username/email and this password.
+        </p>
         <div>
           <label class="block text-[11px] text-neutral-400 mb-1">New Password (Min. 6 characters)</label>
           <input type="password" id="settings-pass-input" minlength="6" required placeholder="Enter new password..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-white font-mono">
         </div>
-        <button type="submit" class="btn-mono px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
+        <button type="submit" id="settings-update-pass-btn" class="btn-mono px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
           Update Password
         </button>
       </form>
@@ -1448,7 +1451,7 @@
         const authRes = await fetch(`${API_BASE}/auth/google`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email, name: username })
+          body: JSON.stringify({ email: email, name: username, username: username })
         });
         if (authRes.ok) {
           const authData = await authRes.json();
@@ -1458,6 +1461,23 @@
         }
       } catch (err) {
         console.warn('Backend user registration sync:', err);
+      }
+
+      // Explicitly ensure custom username is assigned in backend
+      if (backendUser && backendUser.id) {
+        try {
+          const updateRes = await fetch(`${API_BASE}/auth/update-username`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: backendUser.id, email: email, newUsername: username })
+          });
+          if (updateRes.ok) {
+            const updateData = await updateRes.json();
+            if (updateData.user) backendUser = updateData.user;
+          }
+        } catch (err) {
+          console.warn('Backend username update sync:', err);
+        }
       }
 
       const assignedId = (backendUser && backendUser.id) ? backendUser.id : (backendUser && backendUser.userId) ? backendUser.userId : email;
@@ -1633,24 +1653,42 @@
       }
 
       // 1. Try Spring Boot Backend
+      let backendFailed = false;
       try {
         const res = await fetch(`${API_BASE}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usernameOrEmail: input, password: pass || 'password' })
+          body: JSON.stringify({ usernameOrEmail: input, password: pass || '' })
         });
         if (res.ok) {
           const data = await res.json();
-          onAuthSuccess({
+          const userObj = {
             username: data.user.username || input.split('@')[0],
             email: data.user.email || (input.includes('@') ? input : `${input}@hestia.internal`),
             provider: 'backend',
-            id: data.user.id
-          });
+            id: data.user.id,
+            onboarded: true,
+            hasPassword: true
+          };
+          saveStoredAccount(userObj);
+          onAuthSuccess(userObj);
           closeAuthModal();
           return;
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          if (errData.detail) {
+            if (errData.detail.includes("Incorrect password") || errData.detail.includes("Google") || errData.detail.includes("sign up first")) {
+              // If user might be in Supabase, let Supabase check first unless it's an explicit password error
+              if (errData.detail.includes("Incorrect password") || errData.detail.includes("Google")) {
+                alert(errData.detail);
+                return;
+              }
+            }
+          }
         }
-      } catch (err) {}
+      } catch (err) {
+        backendFailed = true;
+      }
 
       // 2. Try Supabase Auth
       if (supabaseClient && input.includes('@') && pass) {
@@ -1660,19 +1698,39 @@
             password: pass
           });
           if (data && data.user) {
-            onAuthSuccess({
+            const userObj = {
               username: data.user.email.split('@')[0],
               email: data.user.email,
               provider: 'supabase',
-              id: data.user.id
-            });
+              id: data.user.id,
+              onboarded: true,
+              hasPassword: true
+            };
+            saveStoredAccount(userObj);
+            onAuthSuccess(userObj);
             closeAuthModal();
             return;
           }
         } catch (err) {}
       }
 
-      // 3. Fallback Local Login (Always Works)
+      // 3. Check Stored / Offline Accounts
+      const accounts = getStoredAccounts();
+      const matchedStored = Object.values(accounts).find(a => 
+        (a.email && a.email.toLowerCase() === input.toLowerCase()) || 
+        (a.username && a.username.toLowerCase() === input.toLowerCase())
+      );
+      if (matchedStored) {
+        if (matchedStored.password && pass && matchedStored.password !== pass) {
+          alert('Incorrect password. Please try again.');
+          return;
+        }
+        onAuthSuccess(matchedStored);
+        closeAuthModal();
+        return;
+      }
+
+      // 4. Fallback Local Login (Demo / Guest mode)
       onAuthSuccess({
         username: input.split('@')[0],
         email: input.includes('@') ? input : `${input}@hestia.internal`,
@@ -1720,14 +1778,25 @@
         });
         if (res.ok) {
           const data = await res.json();
-          onAuthSuccess({
+          const userObj = {
             username: data.user.username || username,
             email: data.user.email || email,
             provider: 'backend',
-            id: data.user.id
-          });
+            id: data.user.id,
+            onboarded: true,
+            hasPassword: true,
+            password: pass
+          };
+          saveStoredAccount(userObj);
+          onAuthSuccess(userObj);
           closeAuthModal();
           return;
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          if (res.status === 409 || res.status === 400) {
+            alert(errData.detail || 'Registration failed. Please choose another username or email.');
+            return;
+          }
         }
       } catch (err) {}
 
@@ -1740,12 +1809,17 @@
             options: { data: { username } }
           });
           if (data && data.user) {
-            onAuthSuccess({
+            const userObj = {
               username,
               email,
               provider: 'supabase',
-              id: data.user.id
-            });
+              id: data.user.id,
+              onboarded: true,
+              hasPassword: true,
+              password: pass
+            };
+            saveStoredAccount(userObj);
+            onAuthSuccess(userObj);
             closeAuthModal();
             return;
           }
@@ -3248,7 +3322,7 @@
         const res = await fetch(`${API_BASE}/auth/link-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUser.id || 1, newEmail })
+          body: JSON.stringify({ userId: currentUser.id, email: currentUser.email, newEmail })
         });
         const data = await res.json();
         if (res.ok && data.status === 'SUCCESS') {
@@ -3306,11 +3380,21 @@
       }
 
       try {
-        await fetch(`${API_BASE}/auth/update-username`, {
+        const res = await fetch(`${API_BASE}/auth/update-username`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUser.id || 1, newUsername })
+          body: JSON.stringify({ userId: currentUser.id, email: currentUser.email, newUsername })
         });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user && data.user.id) currentUser.id = data.user.id;
+        } else {
+          const data = await res.json().catch(() => ({}));
+          if (res.status === 409) {
+            alert(data.detail || 'Username already taken. Please choose another.');
+            return;
+          }
+        }
       } catch (err) {
         console.log('Backend username update sync:', err);
       }
@@ -3324,27 +3408,99 @@
     }
 
     async function handleSetPassword(e) {
-      e.preventDefault();
-      const newPassword = document.getElementById('settings-pass-input').value;
-      if (!newPassword || newPassword.length < 6 || !currentUser) return;
+      if (e) e.preventDefault();
+
+      if (!currentUser) {
+        try {
+          const saved = localStorage.getItem('hestia_user');
+          if (saved) currentUser = JSON.parse(saved);
+        } catch(err) {}
+      }
+
+      if (!currentUser) {
+        alert('Please log in first to update your password.');
+        return;
+      }
+
+      const passInput = document.getElementById('settings-pass-input');
+      const newPassword = passInput ? passInput.value.trim() : '';
+
+      if (!newPassword || newPassword.length < 6) {
+        alert('Password must be at least 6 characters long.');
+        return;
+      }
+
+      const btn = document.getElementById('settings-update-pass-btn');
+      const originalText = btn ? btn.innerText : 'Update Password';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+      }
 
       try {
-        const res = await fetch(`${API_BASE}/auth/set-password`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUser.id || 1, newPassword })
-        });
-        if (res.ok) {
-          alert('Password created/updated successfully! You can now log in using this password.');
-          document.getElementById('settings-pass-input').value = '';
-          closeSettingsModal();
-        } else {
-          const data = await res.json();
-          alert(data.detail || 'Failed to set password.');
+        let backendSuccess = false;
+        try {
+          const res = await fetch(`${API_BASE}/auth/set-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: currentUser.id,
+              email: currentUser.email,
+              username: currentUser.username,
+              newPassword
+            })
+          });
+          if (res.ok) {
+            backendSuccess = true;
+            const data = await res.json();
+            if (data.user && data.user.id) {
+              currentUser.id = data.user.id;
+            }
+          } else {
+            const data = await res.json().catch(() => ({}));
+            alert(data.detail || 'Failed to update password.');
+            return;
+          }
+        } catch (err) {
+          console.warn('Backend password set network sync:', err);
         }
-      } catch (err) {
-        alert('Password updated locally!');
+
+        // Sync with Supabase Auth if initialized
+        if (supabaseClient) {
+          try {
+            await supabaseClient.auth.updateUser({ password: newPassword });
+          } catch (supaErr) {
+            console.warn('Supabase password sync:', supaErr);
+          }
+        }
+
+        // Update local storage account persistence
+        try {
+          currentUser.hasPassword = true;
+          currentUser.password = newPassword;
+          localStorage.setItem('hestia_user', JSON.stringify(currentUser));
+
+          const accounts = getStoredAccounts();
+          if (currentUser.email) {
+            const emailKey = currentUser.email.toLowerCase();
+            accounts[emailKey] = {
+              ...(accounts[emailKey] || {}),
+              ...currentUser,
+              password: newPassword,
+              hasPassword: true
+            };
+            localStorage.setItem('hestia_registered_accounts', JSON.stringify(accounts));
+          }
+        } catch (e) {}
+
+        alert('✅ Password created/updated successfully! You can now log in using your username or email and this password.');
+        if (passInput) passInput.value = '';
         closeSettingsModal();
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = originalText;
+        }
       }
     }
 
@@ -3357,7 +3513,7 @@
         await fetch(`${API_BASE}/auth/delete-account`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUser?.id || 1 })
+          body: JSON.stringify({ userId: currentUser?.id, email: currentUser?.email, username: currentUser?.username })
         });
       } catch (err) {}
 

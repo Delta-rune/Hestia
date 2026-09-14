@@ -41,23 +41,55 @@ public class AuthController {
     private String googleClientId;
 
     /**
+     * Helper to reliably locate a User entity from a request map using:
+     * 1. Numeric userId (Long)
+     * 2. Email address (String)
+     * 3. Username (String)
+     */
+    private Optional<User> findUserFromRequest(Map<String, Object> request) {
+        if (request == null) return Optional.empty();
+
+        Object userIdObj = request.get("userId");
+        if (userIdObj != null) {
+            try {
+                Long userId = Long.valueOf(userIdObj.toString().trim());
+                Optional<User> byId = userRepository.findById(userId);
+                if (byId.isPresent()) return byId;
+            } catch (NumberFormatException ignored) {}
+        }
+
+        Object emailObj = request.get("email");
+        if (emailObj != null && !emailObj.toString().trim().isBlank()) {
+            Optional<User> byEmail = userRepository.findByEmail(emailObj.toString().trim().toLowerCase());
+            if (byEmail.isPresent()) return byEmail;
+        }
+
+        Object usernameObj = request.get("username");
+        if (usernameObj != null && !usernameObj.toString().trim().isBlank()) {
+            Optional<User> byUsername = userRepository.findByUsername(usernameObj.toString().trim());
+            if (byUsername.isPresent()) return byUsername;
+        }
+
+        return Optional.empty();
+    }
+
+    /**
      * Update Display Username Endpoint.
      */
     @PostMapping("/update-username")
     public ResponseEntity<?> updateUsername(@RequestBody Map<String, Object> request) {
-        Long userId = request.get("userId") != null ? Long.valueOf(request.get("userId").toString()) : null;
         String newUsername = (String) request.get("newUsername");
 
-        if (userId == null || newUsername == null || newUsername.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("detail", "Valid User ID and new username are required."));
+        if (newUsername == null || newUsername.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("detail", "Valid new username is required."));
         }
 
-        String cleaned = newUsername.trim();
-        Optional<User> userOpt = userRepository.findById(userId);
+        Optional<User> userOpt = findUserFromRequest(request);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("detail", "User account not found."));
         }
 
+        String cleaned = newUsername.trim();
         User user = userOpt.get();
         if (!user.getUsername().equalsIgnoreCase(cleaned) && userRepository.existsByUsername(cleaned)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("detail", "Username already taken. Please choose another."));
@@ -71,26 +103,30 @@ public class AuthController {
 
     /**
      * Set / Change Password Endpoint (Supports local and Google SSO accounts).
+     * Accepts userId, email, or username to reliably find the user.
      */
     @PostMapping("/set-password")
     public ResponseEntity<?> setPassword(@RequestBody Map<String, Object> request) {
-        Long userId = request.get("userId") != null ? Long.valueOf(request.get("userId").toString()) : null;
         String newPassword = (String) request.get("newPassword");
 
-        if (userId == null || newPassword == null || newPassword.length() < 6) {
+        if (newPassword == null || newPassword.length() < 6) {
             return ResponseEntity.badRequest().body(Map.of("detail", "Password must be at least 6 characters long."));
         }
 
-        Optional<User> userOpt = userRepository.findById(userId);
+        Optional<User> userOpt = findUserFromRequest(request);
         if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("detail", "User account not found."));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("detail", "User account not found. Please log in first."));
         }
 
         User user = userOpt.get();
         user.setHashedPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        return ResponseEntity.ok(Map.of("status", "SUCCESS", "message", "Password created/updated successfully. You can now log in using password."));
+        return ResponseEntity.ok(Map.of(
+            "status", "SUCCESS",
+            "message", "Password created/updated successfully! You can now log in using your email or username and this password.",
+            "user", user
+        ));
     }
 
     /**
@@ -99,23 +135,18 @@ public class AuthController {
      */
     @PostMapping("/delete-account")
     public ResponseEntity<?> deleteAccount(@RequestBody Map<String, Object> request) {
-        Long userId = request.get("userId") != null ? Long.valueOf(request.get("userId").toString()) : null;
-
-        if (userId == null) {
-            return ResponseEntity.badRequest().body(Map.of("detail", "User ID is required for account deletion."));
-        }
-
-        Optional<User> userOpt = userRepository.findById(userId);
+        Optional<User> userOpt = findUserFromRequest(request);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("detail", "User account not found."));
         }
 
         User user = userOpt.get();
+        Long userId = user.getId();
+
         // MASTER DEVELOPER PROTECTION CHECK
         if (user.getEmail() != null && (user.getEmail().equalsIgnoreCase("nichuag33@gmail.com") || 
-                                        user.getEmail().equalsIgnoreCase("nichuag35@gmail.com") || 
-                                        user.getUsername().equalsIgnoreCase("nichuag33") ||
-                                        user.getUsername().equalsIgnoreCase("Nichu"))) {
+            user.getEmail().equalsIgnoreCase("nichuag35@gmail.com") || 
+            (user.getUsername() != null && user.getUsername().equalsIgnoreCase("nichu")))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                 "status", "PROTECTED",
                 "detail", "Deletion Blocked: Master Developer Account (nichuag33@gmail.com) is permanently protected from deletion."
@@ -123,11 +154,13 @@ public class AuthController {
         }
 
         // Delete UserProfile
-        Optional<com.hestia.vault.model.UserProfile> profileOpt = userProfileRepository.findByUserId(userId);
-        profileOpt.ifPresent(profile -> userProfileRepository.delete(profile));
+        if (userId != null) {
+            Optional<com.hestia.vault.model.UserProfile> profileOpt = userProfileRepository.findByUserId(userId);
+            profileOpt.ifPresent(profile -> userProfileRepository.delete(profile));
 
-        // Delete User
-        userRepository.deleteById(userId);
+            // Delete User
+            userRepository.deleteById(userId);
+        }
 
         return ResponseEntity.ok(Map.of("status", "SUCCESS", "message", "Account and all associated academic vault records permanently deleted."));
     }
@@ -137,19 +170,18 @@ public class AuthController {
      */
     @PostMapping("/link-email")
     public ResponseEntity<?> linkEmail(@RequestBody Map<String, Object> request) {
-        Long userId = request.get("userId") != null ? Long.valueOf(request.get("userId").toString()) : null;
         String newEmail = (String) request.get("newEmail");
 
-        if (userId == null || newEmail == null || !newEmail.contains("@")) {
-            return ResponseEntity.badRequest().body(Map.of("detail", "Valid User ID and email address are required."));
+        if (newEmail == null || !newEmail.contains("@")) {
+            return ResponseEntity.badRequest().body(Map.of("detail", "Valid email address is required."));
         }
 
-        String cleaned = newEmail.trim().toLowerCase();
-        Optional<User> userOpt = userRepository.findById(userId);
+        Optional<User> userOpt = findUserFromRequest(request);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("detail", "User account not found."));
         }
 
+        String cleaned = newEmail.trim().toLowerCase();
         User user = userOpt.get();
         String currentLinked = user.getLinkedEmails() != null ? user.getLinkedEmails() : "";
         List<String> list = new ArrayList<>(Arrays.asList(currentLinked.split(",")));
@@ -180,14 +212,13 @@ public class AuthController {
      */
     @PostMapping("/set-display-email")
     public ResponseEntity<?> setDisplayEmail(@RequestBody Map<String, Object> request) {
-        Long userId = request.get("userId") != null ? Long.valueOf(request.get("userId").toString()) : null;
         String selectedEmail = (String) request.get("selectedEmail");
 
-        if (userId == null || selectedEmail == null || selectedEmail.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("detail", "Valid User ID and selected email are required."));
+        if (selectedEmail == null || selectedEmail.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("detail", "Selected email is required."));
         }
 
-        Optional<User> userOpt = userRepository.findById(userId);
+        Optional<User> userOpt = findUserFromRequest(request);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("detail", "User account not found."));
         }
@@ -263,7 +294,13 @@ public class AuthController {
         }
 
         User user = userOpt.get();
-        if (user.getHashedPassword() != null && !passwordEncoder.matches(password, user.getHashedPassword())) {
+        if (user.getHashedPassword() == null || user.getHashedPassword().isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                "detail", "This account was registered using Google Sign-In and has no password set yet. Please log in with Google, or set a password in Settings."
+            ));
+        }
+
+        if (!passwordEncoder.matches(password, user.getHashedPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("detail", "Incorrect password. Please try again."));
         }
 
@@ -280,6 +317,7 @@ public class AuthController {
         String idTokenString = request.get("idToken");
         String fallbackEmail = request.get("email");
         String fallbackName = request.get("name");
+        String requestedUsername = request.get("username");
 
         String email = null;
         String name = null;
@@ -327,16 +365,32 @@ public class AuthController {
         }
 
         String cleanedEmail = email.trim().toLowerCase();
+        String chosenUsername = (requestedUsername != null && !requestedUsername.isBlank()) ? requestedUsername.trim() : (fallbackName != null && !fallbackName.isBlank()) ? fallbackName.trim() : null;
 
         // Database Logic: Search UserRepository by email
         Optional<User> userOpt = userRepository.findByEmail(cleanedEmail);
         User user;
         if (userOpt.isPresent()) {
             user = userOpt.get();
+            // If explicit username provided and different, update if not already taken
+            if (chosenUsername != null && !chosenUsername.equalsIgnoreCase(user.getUsername())) {
+                Optional<User> existingOther = userRepository.findByUsername(chosenUsername);
+                if (existingOther.isEmpty() || existingOther.get().getId().equals(user.getId())) {
+                    user.setUsername(chosenUsername);
+                    userRepository.save(user);
+                }
+            }
         } else {
             // Auto-register new Google user with authProvider = "google", hashedPassword = null
             user = new User();
-            user.setUsername(name.replaceAll("\\s+", "_").toLowerCase());
+            String desiredUsername = chosenUsername != null ? chosenUsername : name.replaceAll("\\s+", "_");
+            String baseUsername = desiredUsername.isBlank() ? cleanedEmail.split("@")[0] : desiredUsername;
+            String finalUsername = baseUsername;
+            int counter = 1;
+            while (userRepository.existsByUsername(finalUsername)) {
+                finalUsername = baseUsername + "_" + counter++;
+            }
+            user.setUsername(finalUsername);
             user.setEmail(cleanedEmail);
             user.setAuthProvider("google");
             user.setHashedPassword(null);
