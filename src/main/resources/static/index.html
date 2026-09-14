@@ -1651,6 +1651,10 @@
         alert('Please enter your email or username.');
         return;
       }
+      if (!pass) {
+        alert('Please enter your password.');
+        return;
+      }
 
       // 1. Try Spring Boot Backend
       let backendFailed = false;
@@ -1658,7 +1662,7 @@
         const res = await fetch(`${API_BASE}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usernameOrEmail: input, password: pass || '' })
+          body: JSON.stringify({ usernameOrEmail: input, password: pass })
         });
         if (res.ok) {
           const data = await res.json();
@@ -1668,30 +1672,25 @@
             provider: 'backend',
             id: data.user.id,
             onboarded: true,
-            hasPassword: true
+            hasPassword: true,
+            password: pass
           };
           saveStoredAccount(userObj);
           onAuthSuccess(userObj);
           closeAuthModal();
           return;
         } else {
+          // Explicit backend rejection (e.g. 401 Incorrect password, Google-only account, or account not found)
           const errData = await res.json().catch(() => ({}));
-          if (errData.detail) {
-            if (errData.detail.includes("Incorrect password") || errData.detail.includes("Google") || errData.detail.includes("sign up first")) {
-              // If user might be in Supabase, let Supabase check first unless it's an explicit password error
-              if (errData.detail.includes("Incorrect password") || errData.detail.includes("Google")) {
-                alert(errData.detail);
-                return;
-              }
-            }
-          }
+          alert(errData.detail || 'Invalid email/username or password.');
+          return;
         }
       } catch (err) {
         backendFailed = true;
       }
 
-      // 2. Try Supabase Auth
-      if (supabaseClient && input.includes('@') && pass) {
+      // 2. Try Supabase Auth ONLY if backend network failed
+      if (backendFailed && supabaseClient && input.includes('@') && pass) {
         try {
           const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: input,
@@ -1704,39 +1703,44 @@
               provider: 'supabase',
               id: data.user.id,
               onboarded: true,
-              hasPassword: true
+              hasPassword: true,
+              password: pass
             };
             saveStoredAccount(userObj);
             onAuthSuccess(userObj);
             closeAuthModal();
             return;
+          } else if (error) {
+            alert('Authentication Error: ' + error.message);
+            return;
           }
         } catch (err) {}
       }
 
-      // 3. Check Stored / Offline Accounts
-      const accounts = getStoredAccounts();
-      const matchedStored = Object.values(accounts).find(a => 
-        (a.email && a.email.toLowerCase() === input.toLowerCase()) || 
-        (a.username && a.username.toLowerCase() === input.toLowerCase())
-      );
-      if (matchedStored) {
-        if (matchedStored.password && pass && matchedStored.password !== pass) {
-          alert('Incorrect password. Please try again.');
-          return;
+      // 3. Offline / Stored account check ONLY if backend network failed
+      if (backendFailed) {
+        const accounts = getStoredAccounts();
+        const matchedStored = Object.values(accounts).find(a => 
+          (a.email && a.email.toLowerCase() === input.toLowerCase()) || 
+          (a.username && a.username.toLowerCase() === input.toLowerCase())
+        );
+        if (matchedStored) {
+          if (matchedStored.password && matchedStored.password === pass) {
+            onAuthSuccess(matchedStored);
+            closeAuthModal();
+            return;
+          } else if (matchedStored.password && matchedStored.password !== pass) {
+            alert('Incorrect password. Please try again.');
+            return;
+          } else {
+            alert('This account was created with Google Sign-In and has no offline password set. Please log in using Google.');
+            return;
+          }
         }
-        onAuthSuccess(matchedStored);
-        closeAuthModal();
-        return;
       }
 
-      // 4. Fallback Local Login (Demo / Guest mode)
-      onAuthSuccess({
-        username: input.split('@')[0],
-        email: input.includes('@') ? input : `${input}@hestia.internal`,
-        provider: 'local'
-      });
-      closeAuthModal();
+      // If backend was offline and credentials could not be verified
+      alert('Unable to sign in. Please verify your credentials or check your connection.');
     }
 
     async function handleLocalSignup(e) {
@@ -1770,6 +1774,7 @@
       if (!email) email = `${username}@hestia.internal`;
 
       // 1. Try Backend Spring Boot Register
+      let backendFailed = false;
       try {
         const res = await fetch(`${API_BASE}/auth/register`, {
           method: 'POST',
@@ -1793,15 +1798,15 @@
           return;
         } else {
           const errData = await res.json().catch(() => ({}));
-          if (res.status === 409 || res.status === 400) {
-            alert(errData.detail || 'Registration failed. Please choose another username or email.');
-            return;
-          }
+          alert(errData.detail || 'Registration failed. Please choose another username or email.');
+          return;
         }
-      } catch (err) {}
+      } catch (err) {
+        backendFailed = true;
+      }
 
-      // 2. Try Supabase Auth
-      if (supabaseClient && email.includes('@') && pass) {
+      // 2. Try Supabase Auth ONLY if backend network failed
+      if (backendFailed && supabaseClient && email.includes('@') && pass) {
         try {
           const { data, error } = await supabaseClient.auth.signUp({
             email,
@@ -1822,13 +1827,16 @@
             onAuthSuccess(userObj);
             closeAuthModal();
             return;
+          } else if (error) {
+            alert('Registration error: ' + error.message);
+            return;
           }
         } catch (err) {}
       }
 
-      // 3. Fallback Local Signup
-      onAuthSuccess({ username, email, provider: 'local' });
-      closeAuthModal();
+      if (backendFailed) {
+        alert('Server unreachable. Please check your connection and try again.');
+      }
     }
 
     function handleQuickDemoLogin() {
