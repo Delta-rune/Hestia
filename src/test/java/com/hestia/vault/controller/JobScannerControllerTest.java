@@ -82,4 +82,36 @@ class JobScannerControllerTest {
         assertTrue(derivedKeywords.contains("Computer Science"));
         assertTrue(derivedKeywords.contains("Software Developer"));
     }
+
+    @Test
+    void testScanJobsWithIndianDistrictsAndStates() {
+        // Test Kerala District (Ernakulam / Kochi)
+        ResponseEntity<List<JobDTO>> kochiResponse = jobScannerController.scanJobs(
+                "Ernakulam",
+                "Full-Time",
+                "Computer Science",
+                null
+        );
+
+        assertEquals(HttpStatus.OK, kochiResponse.getStatusCode());
+        assertNotNull(kochiResponse.getBody());
+        assertFalse(kochiResponse.getBody().isEmpty());
+
+        JobDTO kochiJob = kochiResponse.getBody().get(0);
+        assertTrue(kochiJob.getLocation().contains("Ernakulam") || kochiJob.getLocation().contains("Kochi") || kochiJob.getLocation().contains("Kerala"));
+        assertNotNull(kochiJob.getSalaryPackage());
+        assertTrue(kochiJob.getSalaryPackage().contains("₹") || kochiJob.getSalaryPackage().contains("LPA"));
+
+        // Test Bengaluru Hub
+        ResponseEntity<List<JobDTO>> blrResponse = jobScannerController.scanJobs(
+                "Bengaluru",
+                "Internship",
+                "Electronics",
+                null
+        );
+        assertEquals(HttpStatus.OK, blrResponse.getStatusCode());
+        assertNotNull(blrResponse.getBody());
+        assertFalse(blrResponse.getBody().isEmpty());
+        assertTrue(blrResponse.getBody().get(0).getLocation().contains("Bengaluru") || blrResponse.getBody().get(0).getLocation().contains("Karnataka"));
+    }
 }

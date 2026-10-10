@@ -82,14 +82,26 @@ public class AuthController {
     /**
      * MULTI-GMAIL LINKING ENDPOINT
      */
-    @PostMapping("/link-email")
-    public ResponseEntity<?> linkEmail(@RequestBody Map<String, Object> request) {
-        return hybridAuthService.linkEmail(
-            request.get("userId"),
-            (String) request.get("email"),
-            (String) request.get("newEmail")
-        );
-    }
+     @PostMapping("/link-email")
+     public ResponseEntity<?> linkEmail(@RequestBody Map<String, Object> request) {
+         return hybridAuthService.linkEmail(
+             request.get("userId"),
+             (String) request.get("email"),
+             (String) request.get("newEmail")
+         );
+     }
+
+     /**
+      * MULTI-GMAIL UNLINKING ENDPOINT
+      */
+     @PostMapping("/unlink-email")
+     public ResponseEntity<?> unlinkEmail(@RequestBody Map<String, Object> request) {
+         return hybridAuthService.unlinkEmail(
+             request.get("userId"),
+             (String) request.get("email"),
+             (String) request.get("removeEmail")
+         );
+     }
 
     /**
      * SELECT DISPLAY EMAIL ENDPOINT

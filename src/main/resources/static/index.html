@@ -449,7 +449,7 @@
         <div>
           <label class="block text-[11px] text-neutral-400 mb-1">Add Professional / Secondary Gmail</label>
           <div class="flex gap-2">
-            <input type="email" id="settings-link-email-input" required placeholder="e.g. nichu.pro@gmail.com" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-white font-mono">
+            <input type="email" id="settings-link-email-input" required placeholder="e.g. nichu.pro@gmail.com" autocomplete="off" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-white font-mono">
             <button type="submit" class="shrink-0 btn-mono px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
               Link Email
             </button>
@@ -463,6 +463,8 @@
             <span class="text-[10px] text-emerald-400 font-bold">VERIFIED</span>
           </div>
         </div>
+      </form>
+
       <!-- SECTION 2.5: UNFILTERED AI MODEL & API KEY SETTINGS -->
       <div class="space-y-3 bg-neutral-950/60 border border-neutral-800 p-5 rounded-xl">
         <div class="flex items-center justify-between">
@@ -515,9 +517,11 @@
         <p class="text-[11px] text-neutral-400">
           Set a password here to unlock username-password login. You can then log in using either Google SSO or your username/email and this password.
         </p>
+        <!-- Hidden username field for password manager credential binding -->
+        <input type="text" name="username" id="settings-pass-user-hidden" autocomplete="username" class="hidden" style="display:none;" tabindex="-1">
         <div>
           <label class="block text-[11px] text-neutral-400 mb-1">New Password (Min. 6 characters)</label>
-          <input type="password" id="settings-pass-input" minlength="6" required placeholder="Enter new password..." class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-white font-mono">
+          <input type="password" id="settings-pass-input" minlength="6" required placeholder="Enter new password..." autocomplete="new-password" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-white font-mono">
         </div>
         <button type="submit" id="settings-update-pass-btn" class="btn-mono px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
           Update Password
@@ -810,54 +814,126 @@
 
         <!-- SEARCH SETTINGS CONTROL BAR -->
         <div class="bg-neutral-900/80 border border-neutral-700/80 rounded-2xl p-6 space-y-4 shadow-xl">
-          <div class="flex items-center gap-3 border-b border-neutral-800 pb-3">
-            <div class="w-9 h-9 rounded-xl bg-neutral-950 border border-neutral-700 flex items-center justify-center text-emerald-400">
-              <i class="fa-solid fa-magnifying-glass text-sm"></i>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-neutral-950 border border-neutral-700 flex items-center justify-center text-emerald-400">
+                <i class="fa-solid fa-magnifying-glass text-sm"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>Search & Compatibility Filter</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold">
+                    🇮🇳 INDIA REGIONAL & NATIONAL
+                  </span>
+                </h3>
+                <p class="text-[11px] text-neutral-400 font-mono">Scan career openings across Indian districts, states, and IT hubs matched to your academic credentials</p>
+              </div>
             </div>
-            <div>
-              <h3 class="text-sm font-bold text-white uppercase tracking-wider">Search & Compatibility Filter</h3>
-              <p class="text-[11px] text-neutral-400 font-mono">Scan local & remote listings matched to your self-reported academic credentials</p>
+            <div class="text-[11px] font-mono text-neutral-400 flex items-center gap-1.5 self-start sm:self-auto">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Pan-India & District Radar
             </div>
           </div>
 
-          <form onsubmit="handleScanJobs(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
-            <!-- 1. Location Input -->
-            <div class="space-y-1">
-              <label for="scanner-location-input" class="block text-xs font-semibold text-neutral-300">
-                Location <i class="fa-solid fa-location-dot text-rose-400 ml-1"></i>
-              </label>
-              <input type="text" id="scanner-location-input" placeholder="e.g. San Francisco, Remote, New York, Bangalore" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+          <form onsubmit="handleScanJobs(event)" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <!-- 1. Location Input (India Focused with Datalist) -->
+              <div class="space-y-1">
+                <label for="scanner-location-input" class="block text-xs font-semibold text-neutral-300 flex items-center justify-between">
+                  <span>Location in India <i class="fa-solid fa-location-dot text-rose-400 ml-1"></i></span>
+                  <span class="text-[10px] text-neutral-500 font-mono">Districts, States, Tech Parks</span>
+                </label>
+                <input type="text" id="scanner-location-input" list="india-locations-datalist" placeholder="e.g. Ernakulam, Bengaluru, Pune, Hyderabad, Kerala, Remote..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+                <datalist id="india-locations-datalist">
+                  <!-- Pan-India / Remote -->
+                  <option value="Remote (Pan-India)"></option>
+                  <!-- Kerala Districts -->
+                  <option value="Ernakulam / Kochi, Kerala"></option>
+                  <option value="Thiruvananthapuram, Kerala"></option>
+                  <option value="Kozhikode, Kerala"></option>
+                  <option value="Thrissur, Kerala"></option>
+                  <option value="Kottayam, Kerala"></option>
+                  <option value="Kollam, Kerala"></option>
+                  <option value="Kannur, Kerala"></option>
+                  <option value="Palakkad, Kerala"></option>
+                  <option value="Alappuzha, Kerala"></option>
+                  <option value="Malappuram, Kerala"></option>
+                  <option value="Kerala (All Districts)"></option>
+                  <!-- Major Indian Metros & Hubs -->
+                  <option value="Bengaluru, Karnataka"></option>
+                  <option value="Mysuru, Karnataka"></option>
+                  <option value="Mangaluru, Karnataka"></option>
+                  <option value="Hyderabad, Telangana"></option>
+                  <option value="Warangal, Telangana"></option>
+                  <option value="Pune, Maharashtra"></option>
+                  <option value="Mumbai, Maharashtra"></option>
+                  <option value="Navi Mumbai, Maharashtra"></option>
+                  <option value="Nagpur, Maharashtra"></option>
+                  <option value="Chennai, Tamil Nadu"></option>
+                  <option value="Coimbatore, Tamil Nadu"></option>
+                  <option value="Madurai, Tamil Nadu"></option>
+                  <option value="Tiruchirappalli, Tamil Nadu"></option>
+                  <option value="Noida, Uttar Pradesh (Delhi NCR)"></option>
+                  <option value="Gurugram, Haryana (Delhi NCR)"></option>
+                  <option value="New Delhi (Delhi NCR)"></option>
+                  <option value="Kolkata, West Bengal"></option>
+                  <option value="Ahmedabad, Gujarat"></option>
+                  <option value="GIFT City, Gandhinagar, Gujarat"></option>
+                  <option value="Jaipur, Rajasthan"></option>
+                  <option value="Indore, Madhya Pradesh"></option>
+                  <option value="Chandigarh / Mohali"></option>
+                  <option value="Bhubaneswar, Odisha"></option>
+                  <option value="Visakhapatnam, Andhra Pradesh"></option>
+                  <option value="Guwahati, Assam"></option>
+                  <option value="Dehradun, Uttarakhand"></option>
+                  <option value="Panaji, Goa"></option>
+                </datalist>
+              </div>
+
+              <!-- 2. Job Type Select Dropdown -->
+              <div class="space-y-1">
+                <label for="scanner-jobtype-select" class="block text-xs font-semibold text-neutral-300">
+                  Employment Type <i class="fa-solid fa-briefcase text-emerald-400 ml-1"></i>
+                </label>
+                <select id="scanner-jobtype-select" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+                  <option value="All Types">All Employment Types</option>
+                  <option value="Full-Time" selected>Full-Time (GET / SDE)</option>
+                  <option value="Internship">Internship / Pre-Grad</option>
+                  <option value="Part-Time">Part-Time / Contract</option>
+                </select>
+              </div>
+
+              <!-- 3. Qualifications / Keywords -->
+              <div class="space-y-1">
+                <label for="scanner-qualifications-input" class="block text-xs font-semibold text-neutral-300">
+                  Academic Qualifications / Keywords <i class="fa-solid fa-graduation-cap text-sky-400 ml-1"></i>
+                </label>
+                <input type="text" id="scanner-qualifications-input" placeholder="Auto-matched from Academic Record..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+              </div>
             </div>
 
-            <!-- 2. Job Type Select Dropdown -->
-            <div class="space-y-1">
-              <label for="scanner-jobtype-select" class="block text-xs font-semibold text-neutral-300">
-                Job Type <i class="fa-solid fa-briefcase text-emerald-400 ml-1"></i>
-              </label>
-              <select id="scanner-jobtype-select" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
-                <option value="All Types">All Employment Types</option>
-                <option value="Full-Time" selected>Full-Time</option>
-                <option value="Part-Time">Part-Time</option>
-                <option value="Internship">Internship</option>
-              </select>
-            </div>
-
-            <!-- 3. Qualifications / Keywords -->
-            <div class="space-y-1">
-              <label for="scanner-qualifications-input" class="block text-xs font-semibold text-neutral-300">
-                Academic Qualifications / Keywords <i class="fa-solid fa-graduation-cap text-sky-400 ml-1"></i>
-              </label>
-              <input type="text" id="scanner-qualifications-input" placeholder="Auto-matched from Academic Record..." class="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono transition">
+            <!-- Quick India District & Hub Filter Chips -->
+            <div class="pt-1 border-t border-neutral-800/80 flex items-center flex-wrap gap-2 text-xs font-mono">
+              <span class="text-neutral-500 font-semibold text-[11px] mr-1">Quick Hubs:</span>
+              <button type="button" onclick="setQuickScannerLocation('Remote (Pan-India)')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition text-[11px]">🇮🇳 Pan-India</button>
+              <button type="button" onclick="setQuickScannerLocation('Ernakulam / Kochi, Kerala')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-emerald-300 hover:text-white border border-neutral-800 transition text-[11px]">🌴 Kochi / Ernakulam</button>
+              <button type="button" onclick="setQuickScannerLocation('Thiruvananthapuram, Kerala')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition text-[11px]">Trivandrum</button>
+              <button type="button" onclick="setQuickScannerLocation('Bengaluru, Karnataka')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-sky-300 hover:text-white border border-neutral-800 transition text-[11px]">Bengaluru</button>
+              <button type="button" onclick="setQuickScannerLocation('Hyderabad, Telangana')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition text-[11px]">Hyderabad</button>
+              <button type="button" onclick="setQuickScannerLocation('Pune, Maharashtra')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition text-[11px]">Pune</button>
+              <button type="button" onclick="setQuickScannerLocation('Chennai, Tamil Nadu')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition text-[11px]">Chennai</button>
+              <button type="button" onclick="setQuickScannerLocation('Noida, Uttar Pradesh (Delhi NCR)')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition text-[11px]">Delhi NCR</button>
+              <button type="button" onclick="setQuickScannerLocation('Mumbai, Maharashtra')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition text-[11px]">Mumbai</button>
+              <button type="button" onclick="setQuickScannerLocation('Kozhikode, Kerala')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition text-[11px]">Kozhikode</button>
+              <button type="button" onclick="setQuickScannerLocation('Coimbatore, Tamil Nadu')" class="px-2.5 py-1 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition text-[11px]">Coimbatore</button>
             </div>
 
             <!-- Action Buttons -->
-            <div class="md:col-span-3 flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
               <button type="submit" id="scan-jobs-btn" class="btn-mono w-full sm:w-auto px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-2">
-                <i class="fa-solid fa-radar text-emerald-400"></i> Scan Local Opportunities
+                <i class="fa-solid fa-radar text-emerald-400"></i> Scan Indian Opportunities
               </button>
               <span id="scanner-match-badge" class="text-xs font-mono text-neutral-400 flex items-center gap-2">
-                <i class="fa-solid fa-circle-info text-sky-400"></i> Keywords derived automatically from your Academic Record
+                <i class="fa-solid fa-circle-info text-sky-400"></i> Auto-aligned with your Academic Vault records
               </span>
             </div>
 
@@ -3251,6 +3327,13 @@
     // ACCOUNT SETTINGS MODAL & SECURITY HANDLERS
     // ==========================================
     function openSettingsModal() {
+      if (!currentUser) {
+        try {
+          const saved = localStorage.getItem('hestia_user');
+          if (saved) currentUser = JSON.parse(saved);
+        } catch(err) {}
+      }
+
       const modal = document.getElementById('settings-modal');
       const userInput = document.getElementById('settings-username-input');
       const statusSelect = document.getElementById('settings-status-select');
@@ -3262,6 +3345,11 @@
         if (statusSelect) statusSelect.value = currentUser.studentStatus || 'PRE_GRADUATE';
         if (instInput) instInput.value = currentUser.institution || document.getElementById('academic-institution-name')?.value || '';
         if (degreeInput) degreeInput.value = currentUser.degreeName || document.getElementById('academic-degree-name')?.value || '';
+      }
+
+      const passUserHidden = document.getElementById('settings-pass-user-hidden');
+      if (passUserHidden) {
+        passUserHidden.value = currentUser?.email || currentUser?.username || '';
       }
 
       const aiKeyInput = document.getElementById('settings-ai-key-input');
@@ -3285,10 +3373,16 @@
 
       linked.forEach(em => {
         if (em && em.trim() && em.trim().toLowerCase() !== primaryEmail.toLowerCase()) {
+          const cleanEm = em.trim();
           html += `
             <div class="text-[11px] text-neutral-300 flex items-center justify-between bg-neutral-900/80 p-2.5 rounded-lg border border-neutral-800 font-mono">
-              <span><i class="fa-solid fa-envelope text-purple-400 mr-1.5"></i> <strong>${em.trim()}</strong> (Professional)</span>
-              <span class="text-[10px] text-sky-400 font-bold">LINKED</span>
+              <span><i class="fa-solid fa-envelope text-purple-400 mr-1.5"></i> <strong>${cleanEm}</strong> (Professional)</span>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-sky-400 font-bold">LINKED</span>
+                <button type="button" onclick="handleUnlinkEmail('${cleanEm}')" class="text-neutral-500 hover:text-rose-400 transition ml-1" title="Unlink Email">
+                  <i class="fa-solid fa-trash text-[11px]"></i>
+                </button>
+              </div>
             </div>
           `;
         }
@@ -3338,10 +3432,29 @@
     }
 
     async function handleLinkEmail(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
+      if (!currentUser) {
+        try {
+          const saved = localStorage.getItem('hestia_user');
+          if (saved) currentUser = JSON.parse(saved);
+        } catch(err) {}
+      }
+
       const input = document.getElementById('settings-link-email-input');
       const newEmail = input ? input.value.trim() : '';
-      if (!newEmail || !currentUser) return;
+      if (!newEmail) {
+        alert('Please enter a valid secondary Gmail address.');
+        return;
+      }
+      if (!currentUser) {
+        alert('Please log in first to link secondary email accounts.');
+        return;
+      }
+
+      if (currentUser.email && newEmail.toLowerCase() === currentUser.email.toLowerCase()) {
+        alert('This email is already your primary login account.');
+        return;
+      }
 
       try {
         const res = await fetch(`${API_BASE}/auth/link-email`, {
@@ -3366,6 +3479,43 @@
         localStorage.setItem('hestia_user', JSON.stringify(currentUser));
         alert(`✅ Professional Gmail (${newEmail}) linked!`);
         input.value = '';
+        openSettingsModal();
+      }
+    }
+
+    async function handleUnlinkEmail(emailToUnlink) {
+      if (!confirm(`Are you sure you want to unlink ${emailToUnlink}?`)) return;
+      if (!currentUser) {
+        try {
+          const saved = localStorage.getItem('hestia_user');
+          if (saved) currentUser = JSON.parse(saved);
+        } catch(err) {}
+      }
+      if (!currentUser) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/unlink-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id, email: currentUser.email, removeEmail: emailToUnlink })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'SUCCESS') {
+          currentUser.linkedEmails = data.linkedEmails;
+          localStorage.setItem('hestia_user', JSON.stringify(currentUser));
+          openSettingsModal();
+        } else {
+          let list = currentUser.linkedEmails ? currentUser.linkedEmails.split(',') : [];
+          list = list.filter(e => e.trim().toLowerCase() !== emailToUnlink.toLowerCase());
+          currentUser.linkedEmails = list.join(',');
+          localStorage.setItem('hestia_user', JSON.stringify(currentUser));
+          openSettingsModal();
+        }
+      } catch (err) {
+        let list = currentUser.linkedEmails ? currentUser.linkedEmails.split(',') : [];
+        list = list.filter(e => e.trim().toLowerCase() !== emailToUnlink.toLowerCase());
+        currentUser.linkedEmails = list.join(',');
+        localStorage.setItem('hestia_user', JSON.stringify(currentUser));
         openSettingsModal();
       }
     }
@@ -4659,6 +4809,14 @@
       }
     }
 
+    function setQuickScannerLocation(loc) {
+      const input = document.getElementById('scanner-location-input');
+      if (input) {
+        input.value = loc;
+        handleScanJobs();
+      }
+    }
+
     function renderJobCards(jobs) {
       const container = document.getElementById('jobs-grid-container');
       const countEl = document.getElementById('jobs-count');
@@ -4671,8 +4829,8 @@
         container.innerHTML = `
           <div class="col-span-full p-8 text-center bg-neutral-950 border border-neutral-800 rounded-2xl space-y-3 font-mono">
             <i class="fa-solid fa-folder-open text-3xl text-neutral-600"></i>
-            <h4 class="text-sm font-bold text-white uppercase">No Job Opportunities Found</h4>
-            <p class="text-xs text-neutral-400">Try adjusting your location or search keywords to scan more remote or regional listings.</p>
+            <h4 class="text-sm font-bold text-white uppercase">No Indian Job Opportunities Found</h4>
+            <p class="text-xs text-neutral-400">Try selecting or typing another Indian district (e.g. Ernakulam, Bengaluru, Pune, Hyderabad) or choose Remote (Pan-India).</p>
           </div>
         `;
         return;
@@ -4683,36 +4841,69 @@
         if (job.employmentType === 'Part-Time') badgeColor = 'bg-amber-950 border-amber-800 text-amber-300';
         if (job.employmentType === 'Internship') badgeColor = 'bg-sky-950 border-sky-800 text-sky-300';
 
+        const salaryBadge = job.salaryPackage ? `
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/70 border border-emerald-800/80 text-emerald-300 text-xs font-mono font-bold">
+            <i class="fa-solid fa-indian-rupee-sign text-emerald-400"></i> ${escapeHtml(job.salaryPackage)}
+          </div>
+        ` : '';
+
+        const expBadge = job.experienceLevel ? `
+          <div class="inline-flex items-center gap-1.5 text-[11px] font-mono text-neutral-400">
+            <i class="fa-solid fa-user-graduate text-neutral-500"></i> ${escapeHtml(job.experienceLevel)}
+          </div>
+        ` : '';
+
+        const portalBadge = job.portalSource ? `
+          <span class="text-[10px] font-mono text-sky-400 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/60 font-semibold">
+            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] mr-1"></i>${escapeHtml(job.portalSource)}
+          </span>
+        ` : '';
+
         const cardHtml = `
-          <div class="bg-neutral-950 border border-neutral-800 hover:border-neutral-600 transition-all duration-300 rounded-2xl p-6 flex flex-col justify-between space-y-5 shadow-xl group">
+          <div class="bg-neutral-950 border border-neutral-800 hover:border-neutral-600 transition-all duration-300 rounded-2xl p-6 flex flex-col justify-between space-y-4 shadow-xl group">
             
             <div class="space-y-3">
+              <!-- Top Row: Title, Company & Badges -->
               <div class="flex items-start justify-between gap-3">
                 <div class="space-y-1">
                   <h4 class="text-base font-bold text-white group-hover:text-emerald-400 transition-colors leading-snug">
                     ${escapeHtml(job.jobTitle || 'Job Opportunity')}
                   </h4>
-                  <div class="text-xs font-semibold text-neutral-400 flex items-center gap-1.5 font-mono">
+                  <div class="text-xs font-semibold text-neutral-300 flex items-center gap-1.5 font-mono">
                     <i class="fa-solid fa-building text-neutral-500"></i> ${escapeHtml(job.companyName || 'Company')}
                   </div>
                 </div>
-                <span class="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${badgeColor} shrink-0 uppercase tracking-wider">
-                  ${escapeHtml(job.employmentType || 'Full-Time')}
-                </span>
+                <div class="flex flex-col items-end gap-1 shrink-0">
+                  <span class="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${badgeColor} uppercase tracking-wider">
+                    ${escapeHtml(job.employmentType || 'Full-Time')}
+                  </span>
+                  ${portalBadge}
+                </div>
               </div>
 
+              <!-- Location Tag -->
               <div class="text-xs text-neutral-400 font-mono flex items-center gap-1.5">
-                <i class="fa-solid fa-location-dot text-rose-400"></i> ${escapeHtml(job.location || 'Remote')}
+                <i class="fa-solid fa-location-dot text-rose-400 shrink-0"></i> 
+                <span class="truncate">${escapeHtml(job.location || 'India')}</span>
               </div>
 
-              <p class="text-xs text-neutral-300 leading-relaxed font-sans line-clamp-3">
-                ${escapeHtml(job.descriptionSnippet || 'No detailed snippet available.')}
+              <!-- Compensation & Experience Badges -->
+              <div class="flex flex-wrap items-center gap-2 pt-1">
+                ${salaryBadge}
+                ${expBadge}
+              </div>
+
+              <!-- Description Snippet -->
+              <p class="text-xs text-neutral-300 leading-relaxed font-sans line-clamp-3 pt-1">
+                ${escapeHtml(job.descriptionSnippet || 'Active verified opening matched to your academic qualifications.')}
               </p>
             </div>
 
+            <!-- Apply Button -->
             <div class="pt-3 border-t border-neutral-900">
-              <a href="${escapeHtml(job.applyUrl || '#')}" target="_blank" rel="noopener noreferrer" class="btn-mono w-full py-3 rounded-xl text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-2 group-hover:bg-white transition-all">
-                View & Apply <i class="fa-solid fa-arrow-up-right-from-square text-xs text-emerald-500 group-hover:text-black transition-colors"></i>
+              <a href="${escapeHtml(job.applyUrl || '#')}" target="_blank" rel="noopener noreferrer" class="btn-mono w-full py-2.5 rounded-xl text-xs uppercase font-bold tracking-wider flex items-center justify-center gap-2 group-hover:bg-white group-hover:text-black transition-all">
+                <span>View & Apply</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs text-emerald-400 group-hover:text-black transition-colors"></i>
               </a>
             </div>
 

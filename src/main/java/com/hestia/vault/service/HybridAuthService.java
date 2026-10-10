@@ -324,12 +324,28 @@ public class HybridAuthService {
         }
 
         Optional<User> userOpt = findUser(userId, email, null);
-        if (userOpt.isEmpty()) {
+        User user;
+        if (userOpt.isPresent()) {
+            user = userOpt.get();
+        } else if (email != null && !email.trim().isBlank()) {
+            // Graceful auto-provisioning if account is verified but session had DB restart
+            String cleanedEmail = email.trim().toLowerCase();
+            user = new User();
+            String baseUsername = cleanedEmail.split("@")[0];
+            String finalUsername = baseUsername;
+            int counter = 1;
+            while (userRepository.existsByUsername(finalUsername)) {
+                finalUsername = baseUsername + "_" + counter++;
+            }
+            user.setUsername(finalUsername);
+            user.setEmail(cleanedEmail);
+            user.setAuthProvider("google");
+            user.setCreatedAt(LocalDateTime.now());
+        } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("detail", "User account not found."));
         }
 
         String cleaned = newEmail.trim().toLowerCase();
-        User user = userOpt.get();
         String currentLinked = user.getLinkedEmails() != null ? user.getLinkedEmails() : "";
         List<String> list = new ArrayList<>(Arrays.asList(currentLinked.split(",")));
         list.removeIf(String::isBlank);
@@ -349,6 +365,42 @@ public class HybridAuthService {
             "status", "SUCCESS",
             "message", "Email linked successfully! Professional Gmail added to account.",
             "primaryEmail", user.getEmail(),
+            "linkedEmails", updatedLinked,
+            "displayEmail", user.getDisplayEmail() != null ? user.getDisplayEmail() : user.getEmail()
+        ));
+    }
+
+    /**
+     * Multi-Gmail Unlinking Endpoint.
+     */
+    public ResponseEntity<?> unlinkEmail(Object userId, String email, String removeEmail) {
+        if (removeEmail == null || removeEmail.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("detail", "Email to unlink is required."));
+        }
+
+        Optional<User> userOpt = findUser(userId, email, null);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("detail", "User account not found."));
+        }
+
+        User user = userOpt.get();
+        String currentLinked = user.getLinkedEmails() != null ? user.getLinkedEmails() : "";
+        List<String> list = new ArrayList<>(Arrays.asList(currentLinked.split(",")));
+        list.removeIf(String::isBlank);
+
+        String target = removeEmail.trim().toLowerCase();
+        list.removeIf(em -> em.equalsIgnoreCase(target));
+
+        String updatedLinked = String.join(",", list);
+        user.setLinkedEmails(updatedLinked);
+        if (user.getDisplayEmail() != null && user.getDisplayEmail().equalsIgnoreCase(target)) {
+            user.setDisplayEmail(user.getEmail());
+        }
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of(
+            "status", "SUCCESS",
+            "message", "Email unlinked successfully.",
             "linkedEmails", updatedLinked,
             "displayEmail", user.getDisplayEmail() != null ? user.getDisplayEmail() : user.getEmail()
         ));

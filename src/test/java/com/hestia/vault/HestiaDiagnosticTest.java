@@ -237,7 +237,15 @@ public class HestiaDiagnosticTest {
         assertNotNull(linkBody);
         assertEquals("SUCCESS", linkBody.get("status"));
 
-        System.out.println("✅ DIAGNOSTIC 7 PASSED — Master Developer Account Deletion Protection & Multi-Email Linking operational.");
+        // 3. Unlink Professional Gmail
+        Map<String, Object> unlinkReq = Map.of("userId", 99L, "removeEmail", "nichu.pro@gmail.com");
+        var unlinkRes = authController.unlinkEmail(unlinkReq);
+        assertEquals(200, unlinkRes.getStatusCode().value());
+        Map unlinkBody = (Map) unlinkRes.getBody();
+        assertNotNull(unlinkBody);
+        assertEquals("SUCCESS", unlinkBody.get("status"));
+
+        System.out.println("✅ DIAGNOSTIC 7 PASSED — Master Developer Account Deletion Protection, Multi-Email Linking & Unlinking operational.");
     }
 
     @Test
