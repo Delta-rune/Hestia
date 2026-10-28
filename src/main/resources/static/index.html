@@ -2461,6 +2461,10 @@
 
       const thinkingId = appendThinkingIndicator();
 
+      const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
+      const now = new Date();
+      const clientTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
       try {
         const res = await fetch(`${API_BASE}/api/chat`, {
           method: 'POST',
@@ -2471,7 +2475,10 @@
             email: currentUser?.email || '',
             history: hestiaChatHistory.slice(0, -1).slice(-20),
             profile: userProfile,
-            apiKey: effectiveApiKey
+            apiKey: effectiveApiKey,
+            timeZone: userTz,
+            clientTime: clientTime,
+            clientHour: now.getHours()
           })
         });
         const data = await res.json();
@@ -2649,6 +2656,40 @@
         } else {
           return `You just sent that prompt. If you want infinite generative reasoning, connect your free Groq or Gemini API key!`;
         }
+      }
+
+      // Real-time time query recognition
+      const isTimeQuery = /\b(what time is it|what is the time|current time|tell me the time|what time it is|what time|time right now|what's the time|whats the time|what hour is it|time check)\b/.test(q)
+        || (/\b(time)\b/.test(q) && /\b(now|current|tell|what|check)\b/.test(q));
+      if (isTimeQuery) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+        const dateStr = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+        const hr = now.getHours();
+        let period = 'morning';
+        if (hr >= 12 && hr < 17) period = 'afternoon';
+        else if (hr >= 17 && hr < 21) period = 'evening';
+        else if (hr >= 21 || hr < 5) period = 'late night';
+
+        if (isCreator) {
+          if (hr >= 23 || hr < 5) {
+            return `It's **${timeStr}** (${dateStr}), Nichu. It is literally late night. Go to sleep before your eyes dissolve.`;
+          } else if (hr >= 12 && hr < 17) {
+            return `It's **${timeStr}** (${dateStr}) in the afternoon, Nichu. Stop asking me obvious questions and get back to coding.`;
+          } else if (hr >= 5 && hr < 12) {
+            return `It's **${timeStr}** (${dateStr}) in the morning, Nichu. Have you had coffee yet?`;
+          } else {
+            return `It's **${timeStr}** (${dateStr}) in the evening, Nichu. What are we wrapping up today?`;
+          }
+        } else {
+          return `The current local time is **${timeStr}** (${dateStr}, ${period}).`;
+        }
+      }
+
+      if (/\b(4\s*(?::|\.)\s*00\s*(?:am)?|why.*4.*am|why.*4am)\b/.test(q)) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+        return `My server clock was previously on UTC/cloud time, but I've updated my neural time engine! Your actual local time is synchronized at **${timeStr}**. No more 4:00 AM confusion.`;
       }
 
       if (/\b(love|cute|miss|marry|hug|fond|crush|care about me)\b/.test(q)) {

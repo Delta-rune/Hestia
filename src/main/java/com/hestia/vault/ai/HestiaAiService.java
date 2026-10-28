@@ -55,6 +55,15 @@ public class HestiaAiService {
                                                          List<Map<String, String>> history, 
                                                          Map<String, Object> profile,
                                                          String customApiKey) {
+        return generateEnrichedResponse(query, username, email, history, profile, customApiKey, null, null);
+    }
+
+    public Map<String, Object> generateEnrichedResponse(String query, String username, String email, 
+                                                         List<Map<String, String>> history, 
+                                                         Map<String, Object> profile,
+                                                         String customApiKey,
+                                                         String timeZone,
+                                                         String clientTime) {
         String effectiveUserIdentifier = (email != null && !email.isBlank()) ? email : (username != null ? username : "Friend");
         
         boolean isCreator = (email != null && email.equalsIgnoreCase("nichuag33@gmail.com")) || 
@@ -62,8 +71,18 @@ public class HestiaAiService {
                             (username != null && username.equalsIgnoreCase("nichuag33")) ||
                             (username != null && username.equalsIgnoreCase("Nichu"));
 
-        int currentHour = LocalDateTime.now().getHour();
+        int currentHour = HestiaTimeService.now(timeZone).getHour();
         HestiaPersonaConfig.MoodState activeMood = HestiaPersonaConfig.inferMoodFromQuery(query, isCreator, currentHour);
+
+        // REAL-TIME TIME SENSING & RECOGNITION: Instant accurate temporal grounded responses
+        if (HestiaTimeService.isTimeQuery(query)) {
+            HestiaNeuralSimulator.SimulationResult simResult = HestiaTimeService.buildTimeResponse(query, timeZone, isCreator, username);
+            String timeReply = simResult.getReply();
+            if (memoryService != null) {
+                memoryService.logConversationTurn(effectiveUserIdentifier, null, query, timeReply, "TIME_AWARE");
+            }
+            return createResponseMap(timeReply, simResult.getMood(), simResult.getSuggestedFollowUps(), simResult.getTypingSpeedMs());
+        }
 
         // DYNAMIC PREFERENCE LEARNING: Check if creator is updating keys or system preferences
         if (isCreator && query != null) {
@@ -153,8 +172,8 @@ public class HestiaAiService {
             }
         }
 
-        // 3. Construct System Prompt with Persona & Memory & Conversational Trajectory
-        String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail, memoryContext, academicVaultContext, activeMood, cleanHistory);
+        // 3. Construct System Prompt with Persona & Memory & Conversational Trajectory & User TimeZone
+        String systemPromptText = HestiaPromptBuilder.buildSystemPrompt(username, email, profile, activeSupportEmail, memoryContext, academicVaultContext, activeMood, cleanHistory, timeZone);
 
         // Check if user explicitly toggled Live AI OFF / Local Simulation
         boolean liveAiDisabled = customApiKey != null && (
@@ -215,7 +234,7 @@ public class HestiaAiService {
         // --- Provider 4: Dynamic Cold Sarcastic Fallback (No creepy predetermined lines) ---
         HestiaNeuralSimulator.SimulationResult simResult = null;
         if (rawResponse == null || rawResponse.isBlank()) {
-            simResult = HestiaNeuralSimulator.simulateResponse(query, cleanHistory, username, email, isCreator, profile, memoryContext, academicVaultContext);
+            simResult = HestiaNeuralSimulator.simulateResponse(query, cleanHistory, username, email, isCreator, profile, memoryContext, academicVaultContext, timeZone, clientTime);
             rawResponse = simResult.getReply();
             activeMood = simResult.getMood();
         }

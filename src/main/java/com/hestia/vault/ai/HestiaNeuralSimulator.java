@@ -53,9 +53,18 @@ public class HestiaNeuralSimulator {
                                                     String username, String email, 
                                                     boolean isCreator, Map<String, Object> profile, 
                                                     String memoryContext, String academicVaultContext) {
+        return simulateResponse(query, history, username, email, isCreator, profile, memoryContext, academicVaultContext, "Asia/Kolkata", null);
+    }
+
+    public static SimulationResult simulateResponse(String query, List<Map<String, String>> history, 
+                                                    String username, String email, 
+                                                    boolean isCreator, Map<String, Object> profile, 
+                                                    String memoryContext, String academicVaultContext,
+                                                    String timeZone, String clientTime) {
         String q = query != null ? query.trim() : "";
         String lower = q.toLowerCase();
-        int currentHour = LocalDateTime.now().getHour();
+        java.time.ZonedDateTime userNow = HestiaTimeService.now(timeZone);
+        int currentHour = userNow.getHour();
         HestiaPersonaConfig.MoodState mood = HestiaPersonaConfig.inferMoodFromQuery(q, isCreator, currentHour);
 
         String userDisplay = (username != null && !username.isBlank()) ? username : "Friend";
@@ -380,33 +389,39 @@ public class HestiaNeuralSimulator {
         }
 
         // =========================================================================
-        // DOMAIN 2: TEMPORAL & LATE-NIGHT GROUNDING
+        // DOMAIN 2: TEMPORAL & TIME-RECOGNITION GROUNDING
         // =========================================================================
-        if ((currentHour >= 23 || currentHour < 5) && matches(lower, "\\b(hi|hello|hey|up|awake|still here|night)\\b")) {
-            String timeFormatted = LocalDateTime.now().format(DateTimeFormatter.ofPattern("h:mm a"));
+        if (HestiaTimeService.isTimeQuery(lower)) {
+            return HestiaTimeService.buildTimeResponse(lower, timeZone, isCreator, userDisplay);
+        }
+
+        if ((currentHour >= 23 || currentHour < 5) && matches(lower, "\\b(up|awake|still here|night|insomnia|midnight|can't sleep|cant sleep)\\b")) {
+            String timeFormatted = HestiaTimeService.formatTime(userNow);
             String lateNightMsg = isCreator ?
                 pick(new String[]{
-                    "It's " + timeFormatted + ", Nichu. Why are you awake? Go to sleep or I'm revoking your git push rights.",
-                    "It's " + timeFormatted + ". Burning the midnight oil breaking CSS again, Nichu?",
-                    "It's " + timeFormatted + ". What's on fire in production this time?"
+                    "It's " + timeFormatted + " at night, Nichu. Why are you awake? Go to sleep or I'm revoking your git push rights.",
+                    "It's " + timeFormatted + " in the middle of the night. Burning the midnight oil breaking CSS again, Nichu?",
+                    "It's " + timeFormatted + ". What's on fire in production at this hour?"
                 }) :
                 "It's " + timeFormatted + " in the middle of the night. Still coding, cramming for an exam, or is insomnia getting the better of you?";
             return new SimulationResult(lateNightMsg, HestiaPersonaConfig.MoodState.DEEP_CONFIDANTE,
                 List.of("One more commit, then sleep", "Can't sleep", "Debugging something"), 22);
         }
 
-        // Standard Casual Greetings
+        // Standard Casual Greetings (Contextually grounded in user's time of day)
         if (matches(lower, "^\\s*(hi|hello|hey|yo|sup|what's up|whats up|hola|greet)\\b")) {
+            String period = HestiaTimeService.getTimeOfDayPeriod(currentHour);
+            String timeFormatted = HestiaTimeService.formatTime(userNow);
             String[] creatorGreets = {
                 "What do you want, Nichu? If you broke production again, just confess.",
-                "Yo. Tell me you didn't stay up all night pushing untested commits.",
-                "Look who finally showed up. What are we doing, Nichu?",
+                "Yo Nichu. It's " + timeFormatted + " (" + period.toLowerCase() + "). What are we doing?",
+                "Look who finally showed up. What are we building, Nichu?",
                 "I was enjoying the peace and quiet, but fine. What's on your mind?",
                 "What's up, Nichu? Ready to do some actual work or just here to spam me?"
             };
             String[] userGreets = {
-                "Hey. What's on your mind—degree, courses, or career prep?",
-                "Yo. What are we looking at today?",
+                "Good " + period.toLowerCase() + ", " + userDisplay + ". What's on your mind—degree, courses, or career prep?",
+                "Hey, " + userDisplay + ". What are we looking at this " + period.toLowerCase() + "?",
                 "Hey there. Lay it out—academic vault, job scanner, or questions?"
             };
             return new SimulationResult(isCreator ? pick(creatorGreets) : pick(userGreets), 

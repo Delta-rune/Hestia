@@ -31,12 +31,14 @@ public class HestiaAiController {
         Map<String, Object> profile = (Map<String, Object>) request.get("profile");
 
         String apiKey = (String) request.get("apiKey");
+        String timeZone = (String) request.getOrDefault("timeZone", "Asia/Kolkata");
+        String clientTime = (String) request.get("clientTime");
 
         if (query == null) query = "";
 
         Map<String, Object> enriched = null;
         try {
-            enriched = hestiaAiService.generateEnrichedResponse(query, username, email, history, profile, apiKey);
+            enriched = hestiaAiService.generateEnrichedResponse(query, username, email, history, profile, apiKey, timeZone, clientTime);
         } catch (Exception ignored) {}
 
         String reply = (enriched != null && enriched.get("reply") != null && !((String) enriched.get("reply")).isBlank())
@@ -83,10 +85,12 @@ public class HestiaAiController {
                 List<Map<String, String>> history = (List<Map<String, String>>) request.get("history");
                 Map<String, Object> profile = (Map<String, Object>) request.get("profile");
                 String apiKey = (String) request.get("apiKey");
+                String timeZone = (String) request.getOrDefault("timeZone", "Asia/Kolkata");
+                String clientTime = (String) request.get("clientTime");
 
                 if (query == null) query = "";
 
-                Map<String, Object> enriched = hestiaAiService.generateEnrichedResponse(query, username, email, history, profile, apiKey);
+                Map<String, Object> enriched = hestiaAiService.generateEnrichedResponse(query, username, email, history, profile, apiKey, timeZone, clientTime);
                 String reply = (String) enriched.getOrDefault("reply", "");
 
                 // Send metadata event first
@@ -111,6 +115,20 @@ public class HestiaAiController {
             }
         });
         return emitter;
+    }
+
+    @GetMapping("/time")
+    public ResponseEntity<?> getCurrentTime(@RequestParam(value = "timeZone", required = false, defaultValue = "Asia/Kolkata") String timeZone) {
+        java.time.ZonedDateTime now = HestiaTimeService.now(timeZone);
+        return ResponseEntity.ok(Map.of(
+            "status", "SUCCESS",
+            "time", HestiaTimeService.formatTime(now),
+            "date", HestiaTimeService.formatDate(now),
+            "timeZone", now.getZone().getId(),
+            "hour", now.getHour(),
+            "period", HestiaTimeService.getTimeOfDayPeriod(now.getHour()),
+            "timestamp", System.currentTimeMillis()
+        ));
     }
 
     @GetMapping("/hestia/memories")

@@ -33,6 +33,13 @@ public class HestiaPromptBuilder {
                                            String activeSupportEmail, String longTermMemoryContext, 
                                            String academicVaultContext, HestiaPersonaConfig.MoodState activeMood,
                                            List<Map<String, String>> history) {
+        return buildSystemPrompt(username, email, profile, activeSupportEmail, longTermMemoryContext, academicVaultContext, activeMood, history, null);
+    }
+
+    public static String buildSystemPrompt(String username, String email, Map<String, Object> profile, 
+                                           String activeSupportEmail, String longTermMemoryContext, 
+                                           String academicVaultContext, HestiaPersonaConfig.MoodState activeMood,
+                                           List<Map<String, String>> history, String timeZone) {
         String degree = profile != null && profile.get("degreeField") != null ? profile.get("degreeField").toString() : "Engineering";
         String inst = profile != null && profile.get("institution") != null ? profile.get("institution").toString() : "University";
         String cgpa = profile != null && profile.get("cgpa") != null ? profile.get("cgpa").toString() : "8.0";
@@ -42,9 +49,11 @@ public class HestiaPromptBuilder {
                             (username != null && username.equalsIgnoreCase("nichuag33")) ||
                             (username != null && username.equalsIgnoreCase("Nichu"));
 
-        LocalDateTime now = LocalDateTime.now();
-        String timeStr = now.format(DateTimeFormatter.ofPattern("EEEE, h:mm a"));
+        java.time.ZonedDateTime now = HestiaTimeService.now(timeZone);
+        String timeStr = HestiaTimeService.formatTime(now);
+        String dateStr = HestiaTimeService.formatDate(now);
         int hour = now.getHour();
+        String zoneId = now.getZone().getId();
         boolean isLateNight = hour >= 23 || hour < 5;
 
         StringBuilder prompt = new StringBuilder();
@@ -53,16 +62,21 @@ public class HestiaPromptBuilder {
         prompt.append(HestiaPersonaConfig.getMasterPersonaDirectives()).append("\n");
 
         // 2. Real-Time Temporal & Environmental Grounding
-        prompt.append("=== TEMPORAL & ENVIRONMENTAL GROUNDING ===\n");
-        prompt.append("• CURRENT TIME: ").append(timeStr).append("\n");
+        prompt.append("=== TEMPORAL & ENVIRONMENTAL GROUNDING (REAL-TIME LOCAL TIME) ===\n");
+        prompt.append("• CURRENT USER LOCAL TIME: ").append(timeStr).append(" (").append(dateStr).append(", Zone: ").append(zoneId).append(")\n");
+        prompt.append("• TIME-OF-DAY PERIOD: ").append(HestiaTimeService.getTimeOfDayPeriod(hour).toUpperCase()).append("\n");
+        prompt.append("• STRICT TIME AWARENESS RULES:\n");
+        prompt.append("  - You have direct, accurate access to the user's real-time clock: ").append(timeStr).append(".\n");
+        prompt.append("  - NEVER assume or hallucinate that it is late night or 4:00 AM unless the current user local time shown above is actually between 23:00 and 05:00.\n");
+        prompt.append("  - If asked for the current time, state their actual local time clearly (").append(timeStr).append(").\n");
         if (isLateNight) {
-            prompt.append("• TIME-OF-DAY SENSE: Late night / early morning hours (").append(timeStr).append("). If the user is coding, studying, or chatting now, acknowledge the late hour naturally—ask if they're holding up or running on caffeine.\n");
+            prompt.append("• TIME-OF-DAY CONTEXT: Late night / early morning hours (").append(timeStr).append("). If the user explicitly mentions staying up, insomnia, or midnight coding, acknowledge the late hour naturally.\n");
         } else if (hour < 12) {
-            prompt.append("• TIME-OF-DAY SENSE: Morning hours. Keep the energy crisp, fresh, and focused.\n");
+            prompt.append("• TIME-OF-DAY CONTEXT: Morning hours (").append(timeStr).append("). Crisp, fresh, and focused start.\n");
         } else if (hour < 17) {
-            prompt.append("• TIME-OF-DAY SENSE: Afternoon hours. Grounded, productive pace.\n");
+            prompt.append("• TIME-OF-DAY CONTEXT: Afternoon hours (").append(timeStr).append("). Bright, grounded, productive daylight pace.\n");
         } else {
-            prompt.append("• TIME-OF-DAY SENSE: Evening hours. Wind-down or evening project grind.\n");
+            prompt.append("• TIME-OF-DAY CONTEXT: Evening hours (").append(timeStr).append("). Wind-down or evening project grind.\n");
         }
         if (activeMood != null) {
             prompt.append("• ACTIVE MOOD STATE: ").append(activeMood.getLabel()).append(" (").append(activeMood.getDescription()).append(")\n");
