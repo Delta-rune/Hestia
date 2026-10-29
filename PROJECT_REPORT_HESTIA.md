@@ -18,14 +18,14 @@ in partial fulfilment of the requirements for the award of the Degree of
 
 ## CERTIFICATE
 
-This is to certify that the macro project report entitled **"HESTIA"** submitted by **Nripan Satheesh (MBC25CA063)** and **Muhammed Afrithkhan (MBC25CA057)** to **APJ Abdul Kalam Kerala Technological University** in partial fulfilment of the requirements for the award of the **Degree of Bachelor of Technology in Computer Science and Engineering (AI)** is a bonafide record of the macro project work carried out by them under my guidance and supervision. This report in any form has not been submitted to any other University or Institute for any purpose.
+This is to certify that the micro project report entitled **"HESTIA"** submitted by **Nripan Satheesh (MBC25CA063)** and **Muhammed Afrithkhan (MBC25CA057)** to **APJ Abdul Kalam Kerala Technological University** in partial fulfilment of the requirements for the award of the **Degree of Bachelor of Technology in Computer Science and Engineering (AI)** is a bonafide record of the micro project work carried out by them under my guidance and supervision. This report in any form has not been submitted to any other University or Institute for any purpose.
 
-**Macro Project Guide:**  
+**Project Guide:**  
 **Dr. Annie Chacko**  
 Head of the Department, Associate Professor  
 Department of Computer Science and Engineering (AI), MBCCET  
 
-**Macro Project Coordinator:**  
+**Project Coordinator:**  
 **Dr. Annie Chacko**  
 Head of the Department, Associate Professor  
 Department of Computer Science and Engineering (AI), MBCCET  
@@ -34,7 +34,7 @@ Department of Computer Science and Engineering (AI), MBCCET
 
 ## DECLARATION
 
-I hereby declare that this report entitled **"HESTIA"** is a bonafide record of the macro project work carried out by us under the supervision of **Dr. Annie Chacko** in the Department of Computer Science and Engineering (AI), MBCCET, Peermade. The macro project proposal presented in this report have not been presented for the award of any other degree(s).
+I hereby declare that this report entitled **"HESTIA"** is a bonafide record of the micro project work carried out by us under the supervision of **Dr. Annie Chacko** in the Department of Computer Science and Engineering (AI), MBCCET, Peermade. The micro project proposal presented in this report have not been presented for the award of any other degree(s).
 
 **Peermade**  
 **23-10-2026**  
@@ -46,18 +46,42 @@ I hereby declare that this report entitled **"HESTIA"** is a bonafide record of 
 
 ## ACKNOWLEDGEMENT
 
-The success and final outcome of this macro project required a lot of guidance and assistance from many people and we are extremely privileged to have got this, all along the completion of our macro project. All that we have done is only due to such supervision and assistance and we would not forget to thank them.
+The success and final outcome of this micro project required a lot of guidance and assistance from many people and we are extremely privileged to have got this, all along the completion of our micro project. All that we have done is only due to such supervision and assistance and we would not forget to thank them.
 
-We respect and thank the Management of **Mar Baselios Christian College of Engineering and Technology** for providing me an opportunity and platform for doing the macro project. We are extremely thankful to our beloved Principal, **Dr. Santhosh Simon** for providing such a nice support and facilities to carry out this macro project.
+We respect and thank the Management of **Mar Baselios Christian College of Engineering and Technology** for providing me an opportunity and platform for doing the micro project. We are extremely thankful to our beloved Principal, **Dr. Santhosh Simon** for providing such a nice support and facilities to carry out this micro project.
 
-We are extremely indebted to our Head of the Department, **Dr. Annie Chacko**, Department of Computer Science and Engineering (AI), for her valuable suggestions and encouragement during the course of our macro project work.
+We are extremely indebted to our Head of the Department, **Dr. Annie Chacko**, Department of Computer Science and Engineering (AI), for her valuable suggestions and encouragement during the course of our micro project work.
 
-We owe our deep gratitude to my Macro Project guide **Dr. Annie Chacko** Associate Professor, Department of Computer Science and Engineering (AI) who took keen interest on our macro project and guided me all along, till the completion of our macro project by providing all the necessary information for developing a good presentation.
+We owe our deep gratitude to our Project Guide **Dr. Annie Chacko** Associate Professor, Department of Computer Science and Engineering (AI) who took keen interest on our micro project and guided me all along, till the completion of our micro project by providing all the necessary information for developing a good presentation.
 
-We are thankful to and fortunate enough to get constant encouragement, support and guidance from all the faculty members of Department of Computer Science and Engineering, which helped our in successfully completing our macro project work.
+We are thankful to and fortunate enough to get constant encouragement, support and guidance from all the faculty members of Department of Computer Science and Engineering, which helped our in successfully completing our micro project work.
 
 - **Nripan Satheesh (MBC25CA063)**  
 - **Muhammed Afrithkhan (MBC25CA057)**  
+
+---
+
+## INSTITUTION AND DEPARTMENT VISION AND MISSION
+
+### INSTITUTION VISION AND MISSION
+**VISION**  
+An Engineering Institute with global quality to groom competent engineers equipped to address the changing needs of society.
+
+**MISSION**  
+Our efforts are dedicated for developing a learner centric education environment to:  
+- Provide value-based technical learning  
+- Practice real world problem solving  
+- Foster teamwork in engineering design  
+- Inspire innovations and R&D  
+
+### DEPARTMENT VISION AND MISSION
+**VISION**  
+To evolve as a Centre of Excellence in Artificial Intelligence, fostering a collaborative culture and shaping industry-ready engineers committed to serving society.
+
+**MISSION**  
+- To provide advanced AI training, emphasizing modern technologies and research to solve real-world problems.  
+- To create a strong entrepreneurial ecosystem that unites industry and academia to drive innovation  
+- To inspire students to develop professional behaviour and ethical values for the betterment of society.
 
 ---
 
@@ -74,7 +98,8 @@ Security and user autonomy are enforced via a resilient hybrid dual-authenticati
 ## TABLE OF CONTENTS
 
 - ACKNOWLEDGEMENT (p. iii)
-- ABSTRACT (p. iv)
+- VISION AND MISSION (p. iv)
+- ABSTRACT (p. v)
 - 1. INTRODUCTION (p. 1)
 - 2. MODULE DESCRIPTION (p. 2)
   - 2.1 Foundational Principles of Modern Academic Credential Management (p. 2)
@@ -85,7 +110,7 @@ Security and user autonomy are enforced via a resilient hybrid dual-authenticati
   - 2.6 Autonomous AI Companion & Persistent Neural Memory Management (p. 4)
   - 2.7 Usability, Cyberpunk Aesthetics, and Guided User Experience (p. 5)
   - 2.8 High-Availability Infrastructure & Background Telemetry (p. 6)
-  - 2.9 Conclusion: Macro Project Contribution and Research Significance (p. 7)
+  - 2.9 Conclusion: Micro Project Contribution and Research Significance (p. 7)
 - 3. SYSTEM ARCHITECTURE (p. 8)
   - 3.1 Problem Description (p. 8)
   - 3.2 Methodology (p. 8)
