@@ -1,13 +1,13 @@
 # HESTIA
 
 **PROJECT REPORT**  
-*submitted by*  
+submitted by  
 - **Nripan Satheesh** (MBC25CA063)  
 - **Muhammed Afrithkhan** (MBC25CA057)  
 
-*to*  
+to  
 **APJ Abdul Kalam Kerala Technological University**  
-*in partial fulfilment of the requirements for the award of the Degree of*  
+in partial fulfilment of the requirements for the award of the Degree of  
 **Bachelor of Technology in Computer Science and Engineering (AI)**  
 
 **Department of Computer Science and Engineering (AI)**  
@@ -18,7 +18,7 @@
 
 ## CERTIFICATE
 
-This is to certify that the macro project report entitled **"HESTIA"** submitted by **Nripan Satheesh (MBC25CA063)** and **Muhammed Afrithkhan (MBC25CA057)** to *APJ Abdul Kalam Kerala Technological University* in partial fulfilment of the requirements for the award of the Degree of **Bachelor of Technology in Computer Science and Engineering (AI)** is a bonafide record of the macro project work carried out by them under my guidance and supervision. This report in any form has not been submitted to any other University or Institute for any purpose.
+This is to certify that the macro project report entitled **"HESTIA"** submitted by **Nripan Satheesh (MBC25CA063)** and **Muhammed Afrithkhan (MBC25CA057)** to APJ Abdul Kalam Kerala Technological University in partial fulfilment of the requirements for the award of the Degree of **Bachelor of Technology in Computer Science and Engineering (AI)** is a bonafide record of the macro project work carried out by them under my guidance and supervision. This report in any form has not been submitted to any other University or Institute for any purpose.
 
 **Macro Project Guide:**  
 **Dr. Annie Chacko**  
@@ -65,7 +65,7 @@ We are thankful to and fortunate enough to get constant encouragement, support a
 
 The **Hestia Career Prosperity & Academic Credential Vault Platform** is an integrated enterprise web application engineered to bridge the growing disconnect between academic achievement validation and professional career opportunity discovery. In traditional educational settings, students grapple with fragmented, paper-bound grade cards, vulnerability to credential fraud, and inefficient job searches that lack alignment with verified curricular outcomes. Hestia addresses these inefficiencies by delivering a unified, tamper-resistant digital vault alongside an autonomous AI career acceleration engine.
 
-Developed using **Spring Boot 4.x** and **Java 21** on the backend with a high-performance modern responsive frontend, the system provides four synergistic core modules: (1) an *Academic Grade Card Vault* that automatically parses PDF transcripts, computes cumulative CGPA, and identifies academic focus areas; (2) a *Multi-Tier Certificate Authenticator* supporting cryptographic QR-PKI signature verification, PDFBox forensic inspection, and integration hooks for national registries (APAAR, ABC, and DigiLocker); (3) a *Pan-India District-Wise Job Radar* that scores applicant eligibility against verified academic qualifications and presents transparent compensation data in LPA (Lakhs Per Annum); and (4) an autonomous *Hestia Frontier AI Career Companion* powered by Groq Cloud ultra-fast Llama-3.3-70B inference, Google Gemini, and a persistent neural memory repository for hyper-personalized, context-grounded mentorship.
+Developed using **Spring Boot 4.x** and **Java 21** on the backend with a high-performance modern responsive frontend, the system provides four synergistic core modules: (1) "Module 1: User Management & Authentication"; (2) "Module 2: Multi-Tier Document Verification Engine" supporting cryptographic QR-PKI signature verification and PDFBox forensic inspection; (3) "Module 3: Academic Credential Vault" that parses PDF transcripts and computes cumulative CGPA; (4) "Module 4: AI Job Evaluation & Career Matching Engine" featuring a Pan-India district-wise radar and LPA compensation benchmarks; and (5) the autonomous "Hestia Frontier AI Career Companion" powered by Groq Cloud ultra-fast Llama-3.3-70B inference, Google Gemini, and a persistent neural memory repository for hyper-personalized, context-grounded mentorship.
 
 Security and user autonomy are enforced via a resilient hybrid dual-authentication architecture uniting Google OAuth 2.0 Single Sign-On (SSO), Supabase Auth, and synchronized local credential hashing. Dual-engine persistence accommodates both zero-dependency embedded H2 databases and enterprise cloud PostgreSQL platforms. Empirical evaluation reveals sub-second cryptographic verification latency, high-accuracy resume ATS scoring, and exceptional user satisfaction, proving Hestia to be a transformative foundation for next-generation academic credential governance and intelligent career placement.
 
@@ -169,7 +169,7 @@ Higher education and professional recruitment ecosystems are currently experienc
 
 Concurrently, graduating students face significant obstacles transitioning from academic environments into modern industry roles. Generic job search engines bombard candidates with opaque listings that lack transparency regarding geographic placement, required prerequisite competencies, or realistic compensation benchmarks. Furthermore, existing Applicant Tracking Systems (ATS) evaluate candidate resumes through rigid keyword filtering algorithms that frequently reject highly qualified students due to minor syntactical variances, without providing actionable diagnostic feedback or remediation strategies.
 
-To comprehensively solve these intertwined crises, **HESTIA** was conceived, designed, and developed as an autonomous, high-security *Academic Credential Vault and Career Prosperity Ecosystem*. Engineered using modern enterprise software engineering paradigms—anchored by **Spring Boot 4.x**, **Java 21**, and modern client architecture—Hestia bridges the divide between verified institutional merit and industrial placement. The platform integrates four foundational pillars:
+To comprehensively solve these intertwined crises, **HESTIA** was conceived, designed, and developed as an autonomous, high-security "Academic Credential Vault and Career Prosperity Ecosystem". Engineered using modern enterprise software engineering paradigms—anchored by **Spring Boot 4.x**, **Java 21**, and modern client architecture—Hestia bridges the divide between verified institutional merit and industrial placement. The platform integrates four foundational pillars:
 
 1. **An Academic Grade Card Vault:** Empowering students to manage their academic records with zero manual input through automated PDF parsing, dynamic semester-wise credit aggregation, and predictive target SGPA/CGPA recovery modeling.
 2. **A Multi-Tier Cryptographic Certificate Verifier:** Ensuring non-repudiation of academic credentials through QR code extraction, Public Key Infrastructure (PKI) digital signature validation, PDFBox forensic inspection, and architectural readiness for national initiatives including APAAR (Automated Permanent Academic Account Registry) and DigiLocker.
@@ -210,9 +210,9 @@ The job evaluation engine integrates Applicant Tracking System (ATS) matching al
 
 ### 2.5 Cryptographic Certificate Verification & Institutional Linking
 #### 2.5.1 Multi-Tier Credential Validation Architecture
-1. *Tier-1 (Forensic Document Inspection):* Analyzes uploaded PDF binary metadata via Apache PDFBox, extracting creator signatures and embedded font registries.
-2. *Tier-2 (Cryptographic QR & PKI Signature Decoupling):* Utilizes ZXing image recognition to decode embedded high-density QR matrices, extracting cryptographic certificate hashes and validating them against institutional public keys.
-3. *Tier-3 (National Registry Integration Readiness):* Built-in hooks within `ApaarOtpService` align with APAAR and Academic Bank of Credits (ABC) data specifications.
+1. "Tier-1 (Forensic Document Inspection)": Analyzes uploaded PDF binary metadata via Apache PDFBox, extracting creator signatures and embedded font registries.
+2. "Tier-2 (Cryptographic QR & PKI Signature Decoupling)": Utilizes ZXing image recognition to decode embedded high-density QR matrices, extracting cryptographic certificate hashes and validating them against institutional public keys.
+3. "Tier-3 (National Registry Integration Readiness)": Built-in hooks within `ApaarOtpService` align with APAAR and Academic Bank of Credits (ABC) data specifications.
 
 ### 2.6 Autonomous AI Companion & Persistent Neural Memory Management
 #### 2.6.1 Frontier Cloud Intelligence & Fallback Neural Simulation
