@@ -1,6 +1,6 @@
 # HESTIA
 
-**PROJECT REPORT**  
+**MICRO PROJECT REPORT**  
 submitted by  
 - **Nripan Satheesh** (MBC25CA063)  
 - **Muhammed Afrithkhan** (MBC25CA057)  
@@ -34,7 +34,7 @@ Department of Computer Science and Engineering (AI), MBCCET
 
 ## DECLARATION
 
-I hereby declare that this report entitled **"HESTIA"** is a bonafide record of the micro project work carried out by us under the supervision of **Dr. Annie Chacko** in the Department of Computer Science and Engineering (AI), MBCCET, Peermade. The micro project proposal presented in this report have not been presented for the award of any other degree(s).
+I hereby declare that this project report entitled **"HESTIA"** is a bonafide record of the micro project work carried out by us under the supervision of **Dr. Annie Chacko** in the Department of Computer Science and Engineering (AI), MBCCET, Peermade. The micro project proposal presented in this report have not been presented for the award of any other degree(s).
 
 **Peermade**  
 **23-10-2026**  
