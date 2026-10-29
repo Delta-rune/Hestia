@@ -18,7 +18,7 @@ in partial fulfilment of the requirements for the award of the Degree of
 
 ## CERTIFICATE
 
-This is to certify that the macro project report entitled **"HESTIA"** submitted by **Nripan Satheesh (MBC25CA063)** and **Muhammed Afrithkhan (MBC25CA057)** to APJ Abdul Kalam Kerala Technological University in partial fulfilment of the requirements for the award of the Degree of **Bachelor of Technology in Computer Science and Engineering (AI)** is a bonafide record of the macro project work carried out by them under my guidance and supervision. This report in any form has not been submitted to any other University or Institute for any purpose.
+This is to certify that the macro project report entitled **"HESTIA"** submitted by **Nripan Satheesh (MBC25CA063)** and **Muhammed Afrithkhan (MBC25CA057)** to **APJ Abdul Kalam Kerala Technological University** in partial fulfilment of the requirements for the award of the **Degree of Bachelor of Technology in Computer Science and Engineering (AI)** is a bonafide record of the macro project work carried out by them under my guidance and supervision. This report in any form has not been submitted to any other University or Institute for any purpose.
 
 **Macro Project Guide:**  
 **Dr. Annie Chacko**  
@@ -39,8 +39,8 @@ I hereby declare that this report entitled **"HESTIA"** is a bonafide record of 
 **Peermade**  
 **23-10-2026**  
 
-- Nripan Satheesh (MBC25CA063)  
-- Muhammed Afrithkhan (MBC25CA057)  
+- **Nripan Satheesh (MBC25CA063)**  
+- **Muhammed Afrithkhan (MBC25CA057)**  
 
 ---
 
@@ -56,8 +56,8 @@ We owe our deep gratitude to my Macro Project guide **Dr. Annie Chacko** Associa
 
 We are thankful to and fortunate enough to get constant encouragement, support and guidance from all the faculty members of Department of Computer Science and Engineering, which helped our in successfully completing our macro project work.
 
-- Nripan Satheesh (MBC25CA063)  
-- Muhammed Afrithkhan (MBC25CA057)  
+- **Nripan Satheesh (MBC25CA063)**  
+- **Muhammed Afrithkhan (MBC25CA057)**  
 
 ---
 
@@ -284,9 +284,10 @@ Hestia demonstrates that academic credential management and career acceleration 
 ## CHAPTER 7: REFERENCES
 
 1. **GitHub Repository:** https://github.com/Delta-rune/Hestia
-2. **Spring Boot 4.x Reference Documentation:** https://docs.spring.io/spring-boot/docs/current/reference/html/
-3. **Apache PDFBox 3.0:** https://pdfbox.apache.org/
-4. **ZXing Barcode & QR Processing:** https://github.com/zxing/zxing
-5. **Groq Cloud Llama-3.3-70B API:** https://console.groq.com/docs
-6. **National Education Policy (NEP 2020) APAAR Guidelines:** https://apaar.education.gov.in/
-7. **PostgreSQL 16 Documentation:** https://www.postgresql.org/docs/
+2. **Render Cloud Application Platform:** https://render.com/docs | **Live Deployment:** https://hestia-kw5k.onrender.com
+3. **Spring Boot 4.x Reference Documentation:** https://docs.spring.io/spring-boot/docs/current/reference/html/
+4. **Apache PDFBox 3.0:** https://pdfbox.apache.org/
+5. **ZXing Barcode & QR Processing:** https://github.com/zxing/zxing
+6. **Groq Cloud Llama-3.3-70B API:** https://console.groq.com/docs
+7. **National Education Policy (NEP 2020) APAAR Guidelines:** https://apaar.education.gov.in/
+8. **PostgreSQL 16 Documentation:** https://www.postgresql.org/docs/
