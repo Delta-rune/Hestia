@@ -1,6 +1,6 @@
 # HESTIA
 
-**MACRO PROJECT REPORT**  
+**PROJECT REPORT**  
 *submitted by*  
 - **Nripan Satheesh** (MBC25CA063)  
 - **Muhammed Afrithkhan** (MBC25CA057)  
