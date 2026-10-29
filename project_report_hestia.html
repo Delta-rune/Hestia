@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Hestia</title>
+<title></title>
 <style>
   @page {
     size: A4 portrait;
-    margin: 18mm 18mm 16mm 22mm;
+    margin: 0;
   }
 
   * {
@@ -23,13 +23,18 @@
     color: #000000;
     background: #ffffff;
     text-align: justify;
+    margin: 0;
+    padding: 0;
   }
 
   .page {
+    box-sizing: border-box;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 18mm 18mm 16mm 22mm;
     page-break-after: always;
     break-after: page;
     position: relative;
-    padding-bottom: 6mm;
   }
 
   .page:last-child {
