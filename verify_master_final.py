@@ -100,3 +100,4 @@ for p in doc:
         fonts.add(f[3])
 for f in sorted(fonts):
     print(f"- {f}")
+

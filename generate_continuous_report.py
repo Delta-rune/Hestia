@@ -56,6 +56,14 @@ for k in bp_dict:
     bp_dict[k] = bp_dict[k].replace('{fig65_img}', fig65_img).replace('{fig66_img}', fig66_img)
     bp_dict[k] = bp_dict[k].replace('{fig67_img}', fig67_img).replace('{fig68_img}', fig68_img)
 
+
+# Clean up bp_dict[12] so Table 4.1 stays on Body Page 10 with no split
+bp_dict[12] = re.sub(
+    r'<div style="font-weight: bold; font-size: 11pt; text-align: center; margin-top: 1mm; margin-bottom: 1.5mm;">Table 4.1: Multi-Tier Verification &amp; System Performance Metrics</div>\s*<table class="report-table" style="font-size: 10pt; margin-bottom: 2.5mm;">',
+    '''<div style="font-weight: bold; font-size: 10.5pt; text-align: center; margin-top: 1.5mm; margin-bottom: 1.2mm;">Table 4.1: Multi-Tier Verification &amp; System Performance Metrics</div>\n    <table class="report-table" style="font-size: 8.8pt; margin-bottom: 1.5mm;">''',
+    bp_dict[12]
+)
+
 # Combine chapters into continuous strips!
 ch1 = f"""<div class="chapter-flow" id="ch1">
 {bp_dict[1]}
@@ -489,6 +497,14 @@ full_html = f"""<!DOCTYPE html>
     line-height: 1.32 !important;
     margin-bottom: 1.2mm !important;
   }}
+
+  #ch4 h1.chapter-num {{ margin-top: 1.5mm !important; margin-bottom: 1mm !important; }}
+  #ch4 h1.chapter-title {{ margin-bottom: 2.5mm !important; }}
+  #ch4 h2.section-title {{ margin-top: 2mm !important; margin-bottom: 1mm !important; }}
+  #ch4 p {{ margin-bottom: 1.3mm !important; line-height: 1.40 !important; }}
+  #ch4 table.report-table {{ font-size: 8.8pt !important; margin-top: 1mm !important; margin-bottom: 1.5mm !important; }}
+  #ch4 table.report-table th, #ch4 table.report-table td {{ padding: 1mm 2mm !important; }}
+
 </style>
 </head>
 <body>
