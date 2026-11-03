@@ -1002,9 +1002,14 @@
                   <i class="fa-solid fa-circle-check text-emerald-400"></i>
                   <span id="cert-file-name-text" class="truncate font-semibold text-white">document.pdf</span>
                 </div>
-                <button type="button" onclick="clearStandaloneCertFile()" class="text-neutral-500 hover:text-rose-400 text-xs px-2 py-1">
-                  <i class="fa-solid fa-xmark"></i> Clear
-                </button>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button type="button" onclick="chooseAnotherCertificate()" class="text-cyan-400 hover:text-cyan-300 text-xs px-2 py-1 flex items-center gap-1 transition">
+                    <i class="fa-solid fa-folder-open"></i> Change File
+                  </button>
+                  <button type="button" onclick="clearStandaloneCertFile()" class="text-neutral-500 hover:text-rose-400 text-xs px-2 py-1 flex items-center gap-1 transition">
+                    <i class="fa-solid fa-xmark"></i> Clear
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1049,6 +1054,16 @@
               <div class="flex justify-between items-center"><span class="text-neutral-500">Credential ID:</span> <span id="cert-id-val" class="text-neutral-200">HST-CERT-100293</span></div>
               <div class="flex justify-between items-center"><span class="text-neutral-500">Issuer Authority:</span> <span id="cert-issuer-val" class="text-neutral-200 font-semibold">Universal Issuer Registry</span></div>
               <div id="cert-proof-note" class="text-emerald-400 mt-2 p-3 bg-neutral-900/80 rounded-lg border border-neutral-800 font-sans text-xs">Image Proof Inspected & Validated</div>
+            </div>
+
+            <!-- Action buttons for Verified Certificate -->
+            <div class="pt-4 border-t border-neutral-800 flex flex-col sm:flex-row gap-3">
+              <button type="button" id="btn-save-to-vault" onclick="saveCurrentCertToVault()" class="btn-mono flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Add to Academic Vault
+              </button>
+              <button type="button" id="btn-verify-another" onclick="chooseAnotherCertificate()" class="btn-outline-mono flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrow-rotate-right text-cyan-400"></i> Verify Another Certificate
+              </button>
             </div>
           </div>
         </div>
@@ -2240,10 +2255,25 @@
 
     // CERTIFICATE AUTHENTICATOR ENGINE (1-CLICK PDF DROP & MULTI-TIER AUTHENTICATOR)
     let standaloneCertImageData = '';
+    let currentVerifiedCertData = null; // Store current verified certificate for explicit user saving
 
     function handleStandaloneCertFileSelect(input) {
       if (input.files && input.files[0]) {
         const file = input.files[0];
+
+        // CRITICAL FIX: Clear stale input fields from previous certificates
+        const certIdInput = document.getElementById('cert-input-id');
+        const nameInput = document.getElementById('cert-input-name');
+        const issuerInput = document.getElementById('cert-input-issuer');
+        if (certIdInput) certIdInput.value = '';
+        if (nameInput) nameInput.value = '';
+        if (issuerInput) issuerInput.value = '';
+
+        // Hide previous result box while new document is scanning
+        const box = document.getElementById('cert-result-box');
+        if (box) box.classList.add('hidden');
+        currentVerifiedCertData = null;
+
         const reader = new FileReader();
         reader.onload = function(e) {
           standaloneCertImageData = e.target.result;
@@ -2261,12 +2291,31 @@
 
     function clearStandaloneCertFile() {
       standaloneCertImageData = '';
+      currentVerifiedCertData = null;
       const fileInput = document.getElementById('standalone-cert-file');
       if (fileInput) fileInput.value = '';
       const badge = document.getElementById('cert-file-badge');
       if (badge) badge.classList.add('hidden');
       const box = document.getElementById('cert-result-box');
       if (box) box.classList.add('hidden');
+
+      const certIdInput = document.getElementById('cert-input-id');
+      const nameInput = document.getElementById('cert-input-name');
+      const issuerInput = document.getElementById('cert-input-issuer');
+      if (certIdInput) certIdInput.value = '';
+      if (nameInput) nameInput.value = '';
+      if (issuerInput) issuerInput.value = '';
+
+      const btn = document.getElementById('btn-verify-cert');
+      if (btn) btn.innerText = 'Verify Certificate Authenticity';
+    }
+
+    function chooseAnotherCertificate() {
+      clearStandaloneCertFile();
+      const fileInput = document.getElementById('standalone-cert-file');
+      if (fileInput) {
+        fileInput.click();
+      }
     }
 
     async function runCertificateVerification() {
@@ -2298,39 +2347,107 @@
         });
         const data = await res.json();
         
-        // Auto-fill extracted values into input fields if empty
-        if (data.certificateId && certIdInput && !certIdInput.value) {
+        // Auto-fill freshly extracted values into input fields for this specific document
+        if (data.certificateId && certIdInput) {
           certIdInput.value = data.certificateId;
         }
-        if (data.certificateName && nameInput && !nameInput.value) {
+        if (data.certificateName && nameInput) {
           nameInput.value = data.certificateName;
         }
-        if (data.issuer && issuerInput && !issuerInput.value) {
+        if (data.issuer && issuerInput) {
           issuerInput.value = data.issuer;
         }
+
+        // Cache the verified data for explicit saving if user chooses to add to vault
+        currentVerifiedCertData = {
+          ...data,
+          imageData: imageData,
+          userId: String(activeUserId)
+        };
 
         renderCertResult(data);
 
         if (data.status && (data.status.startsWith('VERIFIED') || data.status === 'SUCCESS')) {
-          showHestiaToast(`✅ Certificate Verified! Archived to your Cloud Vault.`, 'success');
-          if (typeof fetchAndRenderCloudDocuments === 'function') {
-            setTimeout(fetchAndRenderCloudDocuments, 500);
-          }
+          showHestiaToast(`✅ Certificate Verified (${data.issuer || 'Accredited'})! Click 'Add to Academic Vault' if you want to store it.`, 'success');
+        } else if (data.status && data.status.startsWith('SUSPICIOUS')) {
+          showHestiaToast(`⚠️ Document flagged for inspection: ${data.auditNote}`, 'warning');
         }
       } catch (err) {
+        currentVerifiedCertData = null;
         renderCertResult({
           status: 'REJECTED_UNVERIFIED_SOURCE',
           trustScore: '0.0%',
           tier: 'UNVERIFIED',
           certificateId: certId || 'UNVERIFIED',
-          certificateName: name || 'Unverified Screenshot',
+          certificateName: name || 'Unverified Document',
           issuer: issuer || 'Unrecognized Source',
           verificationHash: 'INVALID_HASH_REJECTED',
           hasImageProof: false,
-          auditNote: 'Verification Failed: Image or screenshot contains no cryptographically verifiable QR code or accredited registry proof.'
+          auditNote: 'Verification Failed: Document contains no cryptographically verifiable QR code or accredited registry proof.'
         });
       } finally {
         if (btn) btn.innerText = 'Verify Certificate Authenticity';
+      }
+    }
+
+    async function saveCurrentCertToVault() {
+      if (!currentVerifiedCertData) {
+        showHestiaToast('No verified certificate to save. Please upload and verify a certificate first.', 'warning');
+        return;
+      }
+
+      const saveBtn = document.getElementById('btn-save-to-vault');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-emerald-400"></i> Saving to Vault...';
+      }
+
+      try {
+        const payload = {
+          userId: currentVerifiedCertData.userId || String(currentUser?.id || '1'),
+          certId: currentVerifiedCertData.certificateId || '',
+          certName: currentVerifiedCertData.certificateName || 'Verified Certificate',
+          issuer: currentVerifiedCertData.issuer || 'Accredited Authority',
+          imageData: currentVerifiedCertData.imageData || standaloneCertImageData
+        };
+
+        const res = await fetch(`${API_BASE}/api/certificates/archive-to-vault`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+
+        if (result.status === 'SUCCESS') {
+          showHestiaToast('✅ Certificate successfully archived to your Academic Vault!', 'success');
+          if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.className = 'btn-outline-mono flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 border-emerald-500/40 text-emerald-400 bg-emerald-500/10 cursor-default';
+            saveBtn.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Saved in Vault';
+          }
+          if (typeof fetchAndRenderCloudDocuments === 'function') {
+            fetchAndRenderCloudDocuments();
+          }
+        } else if (result.status === 'ALREADY_EXISTS') {
+          showHestiaToast('ℹ️ This certificate is already in your Academic Cloud Vault.', 'info');
+          if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.className = 'btn-outline-mono flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 border-emerald-500/40 text-emerald-400 bg-emerald-500/10 cursor-default';
+            saveBtn.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Already in Vault';
+          }
+        } else {
+          showHestiaToast(`Failed to archive: ${result.message || 'Server error'}`, 'error');
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Add to Academic Vault';
+          }
+        }
+      } catch (err) {
+        showHestiaToast('Network error while saving to vault.', 'error');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Add to Academic Vault';
+        }
       }
     }
 
@@ -2382,6 +2499,24 @@
           proofNote.className = 'text-amber-400 mt-2 p-3 bg-amber-950/30 rounded-lg border border-amber-800/40 font-sans text-xs';
         } else {
           proofNote.className = 'text-emerald-400 mt-2 p-3 bg-emerald-950/30 rounded-lg border border-emerald-800/40 font-sans text-xs';
+        }
+      }
+
+      // Configure save-to-vault button based on verification outcome and existing vault status
+      const saveBtn = document.getElementById('btn-save-to-vault');
+      if (saveBtn) {
+        if (data.alreadyInVault) {
+          saveBtn.disabled = true;
+          saveBtn.className = 'btn-outline-mono flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 border-emerald-500/40 text-emerald-400 bg-emerald-500/10 cursor-default';
+          saveBtn.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Already in Vault';
+        } else if (data.status && (data.status.startsWith('VERIFIED') || data.status === 'SUCCESS')) {
+          saveBtn.disabled = false;
+          saveBtn.className = 'btn-mono flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2';
+          saveBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Add to Academic Vault';
+        } else {
+          saveBtn.disabled = true;
+          saveBtn.className = 'btn-outline-mono flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 opacity-50 cursor-not-allowed';
+          saveBtn.innerHTML = '<i class="fa-solid fa-ban text-rose-400"></i> Verification Required to Save';
         }
       }
     }

@@ -223,10 +223,15 @@ public class JobEvaluationController {
         boolean hasDocumentData = imageData != null && imageData.startsWith("data:");
         
         // 1. TIER 2: QR CODE & PKI DIGITAL SIGNATURE EXTRACTION
+        // If an actual document is provided, NEVER let manual text override document scanning!
         QrPkiVerificationService.QrResult qrResult = null;
         if (hasDocumentData) {
             try {
-                qrResult = qrPkiService.extractAndVerifyQrCode(imageData, cleanedId.isBlank() ? null : cleanedId);
+                qrResult = qrPkiService.extractAndVerifyQrCode(imageData, null);
+            } catch (Exception ignored) {}
+        } else if (!cleanedId.isBlank()) {
+            try {
+                qrResult = qrPkiService.extractAndVerifyQrCode(null, cleanedId);
             } catch (Exception ignored) {}
         }
 
@@ -238,7 +243,37 @@ public class JobEvaluationController {
             } catch (Exception ignored) {}
         }
 
-        // AUTO-EXTRACT FIELDS FROM QR AND PDF TEXT IF USER LEFT THEM BLANK
+        // COMPUTE REAL CRYPTOGRAPHIC SHA-256 HASH OF UPLOADED DOCUMENT BYTES
+        String shaHash;
+        if (hasDocumentData) {
+            try {
+                String cleanB64 = imageData.contains(",") ? imageData.substring(imageData.indexOf(",") + 1) : imageData;
+                cleanB64 = cleanB64.replaceAll("\\s+", "");
+                byte[] fileBytes = Base64.getMimeDecoder().decode(cleanB64);
+                java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                byte[] digest = md.digest(fileBytes);
+                StringBuilder sb = new StringBuilder("SHA256:");
+                for (byte b : digest) sb.append(String.format("%02X", b));
+                shaHash = sb.toString();
+            } catch (Exception e) {
+                shaHash = "SHA256:" + Integer.toHexString((cleanedId + cleanedIssuer + System.currentTimeMillis()).hashCode()).toUpperCase();
+            }
+        } else {
+            shaHash = "SHA256:" + Integer.toHexString((cleanedId + cleanedIssuer).hashCode()).toUpperCase();
+        }
+
+        // CHECK IF ALREADY ARCHIVED IN VAULT FOR THIS USER
+        boolean isAlreadyInVault = false;
+        Long parsedUid = parseUserId(request.get("userId"));
+        if (documentVaultRepository != null && hasDocumentData) {
+            try {
+                String lowerHash = shaHash.toLowerCase();
+                isAlreadyInVault = documentVaultRepository.findByUserIdAndFileHash(parsedUid, lowerHash).isPresent() ||
+                                  documentVaultRepository.findByUserIdAndFileHash(parsedUid, "sha256:" + lowerHash.replace("sha256:", "")).isPresent();
+            } catch (Exception ignored) {}
+        }
+
+        // AUTO-EXTRACT FIELDS FROM QR AND PDF TEXT (PRIORITIZE NEW DOCUMENT DATA)
         if (qrResult != null && qrResult.found() && qrResult.issuerInfo() != null && !qrResult.issuerInfo().isBlank()) {
             if (cleanedIssuer.isBlank() || cleanedIssuer.equalsIgnoreCase("Accredited Issuing Authority") || cleanedIssuer.equalsIgnoreCase("Unrecognized Source")) {
                 cleanedIssuer = qrResult.issuerInfo();
@@ -249,52 +284,88 @@ public class JobEvaluationController {
             String extracted = auditResult.extractedText();
             String extractedLower = extracted.toLowerCase();
 
-            // Extract Issuer Authority
-            if (cleanedIssuer.isBlank() || cleanedIssuer.equalsIgnoreCase("Accredited Issuing Authority") || cleanedIssuer.equalsIgnoreCase("Unrecognized Source") || cleanedIssuer.equalsIgnoreCase("Verified Digital Credential Issuer")) {
-                if (extractedLower.contains("mycaptain")) {
-                    cleanedIssuer = "MyCaptain (NSDC Partner)";
-                } else if (extractedLower.contains("skill india") || extractedLower.contains("nsdc") || extractedLower.contains("national skill development")) {
-                    cleanedIssuer = "National Skill Development Corporation (NSDC)";
+            // Extract Issuer Authority & Course Name with comprehensive recognizers
+            if (extractedLower.contains("nptel") || extractedLower.contains("swayam") || extractedLower.contains("national programme on technology enhanced learning")) {
+                cleanedIssuer = "NPTEL (Swayam / IIT)";
+                
+                Matcher mRoll = Pattern.compile("(?i)(roll\\s*no|cert\\s*id|registration\\s*no|credential\\s*id)\\s*[:=.-]?\\s*([A-Za-z0-9_-]+)").matcher(extracted);
+                if (mRoll.find()) {
+                    cleanedId = mRoll.group(2).trim();
                 } else {
-                    for (String u : RECOGNIZED_UNIVERSITIES) {
-                        if (extractedLower.contains(u)) {
-                            cleanedIssuer = Character.toUpperCase(u.charAt(0)) + u.substring(1);
-                            break;
-                        }
+                    Matcher mNptel = Pattern.compile("\\b(NPTEL[0-9A-Za-z]+)\\b").matcher(extracted);
+                    if (mNptel.find()) {
+                        cleanedId = mNptel.group(1).trim();
                     }
                 }
-            }
 
-            // Extract Certificate Title / Course Name
-            if (cleanedName.isBlank() || cleanedName.equalsIgnoreCase("Unverified Screenshot") || cleanedName.equalsIgnoreCase("Verified Qualification Credential")) {
-                if (extractedLower.contains("python programming")) {
-                    cleanedName = "Python Programming Course";
-                } else if (extractedLower.contains("bachelor of technology") || extractedLower.contains("b.tech")) {
-                    cleanedName = "Bachelor of Technology (B.Tech)";
-                } else if (extractedLower.contains("master of computer applications") || extractedLower.contains("mca")) {
-                    cleanedName = "Master of Computer Applications (MCA)";
-                } else if (extractedLower.contains("bachelor of science") || extractedLower.contains("b.sc")) {
-                    cleanedName = "Bachelor of Science (B.Sc)";
-                } else if (extractedLower.contains("bachelor of engineering") || extractedLower.contains("b.e")) {
-                    cleanedName = "Bachelor of Engineering (B.E)";
-                } else if (extractedLower.contains("certificate of participation")) {
-                    cleanedName = "Certificate of Participation";
-                } else if (extractedLower.contains("certificate of completion")) {
-                    cleanedName = "Certificate of Completion";
-                } else if (extractedLower.contains("degree") || extractedLower.contains("diploma")) {
-                    cleanedName = "Verified Academic Degree Certificate";
+                Matcher mCourse = Pattern.compile("(?i)(completing the course|course name|course title|for successfully completing)\\s*[:=.-]?\\s*([^\\n\\r]{3,60})").matcher(extracted);
+                if (mCourse.find()) {
+                    cleanedName = mCourse.group(2).trim();
+                } else if (extractedLower.contains("cloud computing")) {
+                    cleanedName = "Cloud Computing";
+                } else if (extractedLower.contains("machine learning")) {
+                    cleanedName = "Machine Learning";
+                } else if (extractedLower.contains("programming in java") || extractedLower.contains("java programming")) {
+                    cleanedName = "Programming in Java";
+                } else if (extractedLower.contains("python")) {
+                    cleanedName = "Python for Data Science";
+                } else if (extractedLower.contains("deep learning")) {
+                    cleanedName = "Deep Learning";
+                } else {
+                    cleanedName = "NPTEL Online Certification";
+                }
+            } else if (extractedLower.contains("coursera")) {
+                cleanedIssuer = "Coursera";
+                Matcher mCoursera = Pattern.compile("(?i)(course on|authorized by|specialization in|certificate in)\\s*[:=.-]?\\s*([^\\n\\r]{3,60})").matcher(extracted);
+                cleanedName = mCoursera.find() ? mCoursera.group(2).trim() : "Coursera Verified Credential";
+            } else if (extractedLower.contains("udemy")) {
+                cleanedIssuer = "Udemy";
+                cleanedName = "Udemy Course Completion Certificate";
+            } else if (extractedLower.contains("ibm") || extractedLower.contains("skillsbuild")) {
+                cleanedIssuer = "IBM";
+                cleanedName = "IBM Skill Certificate";
+            } else if (extractedLower.contains("amazon web services") || extractedLower.contains("aws certified")) {
+                cleanedIssuer = "Amazon Web Services (AWS)";
+                cleanedName = "AWS Certified Credential";
+            } else if (extractedLower.contains("google cloud") || extractedLower.contains("google certified")) {
+                cleanedIssuer = "Google Cloud";
+                cleanedName = "Google Cloud Certification";
+            } else if (extractedLower.contains("microsoft certified") || extractedLower.contains("microsoft")) {
+                cleanedIssuer = "Microsoft";
+                cleanedName = "Microsoft Certified Professional";
+            } else if (extractedLower.contains("apj abdul kalam") || extractedLower.contains("ktu")) {
+                cleanedIssuer = "APJ Abdul Kalam Technological University (KTU)";
+                cleanedName = extractedLower.contains("mca") ? "Master of Computer Applications (MCA)" : "University Degree / Transcript";
+            } else if (extractedLower.contains("mar baselios christian") || extractedLower.contains("mbccet")) {
+                cleanedIssuer = "Mar Baselios Christian College of Engineering & Technology";
+                cleanedName = "Institutional Academic Certificate";
+            } else if (extractedLower.contains("mycaptain")) {
+                cleanedIssuer = "MyCaptain (NSDC Partner)";
+            } else if (extractedLower.contains("skill india") || extractedLower.contains("nsdc") || extractedLower.contains("national skill development")) {
+                cleanedIssuer = "National Skill Development Corporation (NSDC)";
+            } else {
+                for (String u : RECOGNIZED_UNIVERSITIES) {
+                    if (extractedLower.contains(u)) {
+                        cleanedIssuer = Character.toUpperCase(u.charAt(0)) + u.substring(1);
+                        break;
+                    }
+                }
+                if (cleanedName.isBlank() || cleanedName.equalsIgnoreCase("Verified Academic & Skill Certificate")) {
+                    if (extractedLower.contains("certificate of completion")) cleanedName = "Certificate of Completion";
+                    else if (extractedLower.contains("certificate of participation")) cleanedName = "Certificate of Participation";
+                    else if (extractedLower.contains("degree") || extractedLower.contains("diploma")) cleanedName = "Academic Degree / Diploma";
                 }
             }
 
-            // Extract Credential ID / Registration / Certificate ID using regex
+            // Extract Credential ID if still blank
             if (cleanedId.isBlank() || cleanedId.equalsIgnoreCase("UNVERIFIED")) {
-                java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)(certificate\\s*id|credential\\s*id|cert\\s*id|roll\\s*no|register\\s*no)\\s*[:=.-]?\\s*([a-zA-Z0-9]{5,20})").matcher(extracted);
-                if (m.find()) {
-                    cleanedId = m.group(2).toUpperCase();
+                Matcher mId = Pattern.compile("(?i)(certificate\\s*id|credential\\s*id|cert\\s*id|roll\\s*no|register\\s*no|reg\\s*no)\\s*[:=.-]?\\s*([a-zA-Z0-9_-]{4,25})").matcher(extracted);
+                if (mId.find()) {
+                    cleanedId = mId.group(2).toUpperCase();
                 } else {
-                    java.util.regex.Matcher m2 = java.util.regex.Pattern.compile("\\b([A-Z0-9]{8,12})\\b").matcher(extracted);
-                    if (m2.find()) {
-                        cleanedId = m2.group(1).toUpperCase();
+                    Matcher mHex = Pattern.compile("\\b([A-Z0-9]{8,12})\\b").matcher(extracted);
+                    if (mHex.find()) {
+                        cleanedId = mHex.group(1).toUpperCase();
                     }
                 }
             }
@@ -315,20 +386,18 @@ public class JobEvaluationController {
                 "issuer", cleanedIssuer,
                 "hasImageProof", hasDocumentData,
                 "verificationHash", "INVALID_HASH_REJECTED",
+                "alreadyInVault", isAlreadyInVault,
                 "auditNote", "Verification Rejected: Credential ID or Issuer contains invalid gibberish string patterns."
             ));
         }
 
         // SCENARIO 1: QR CODE / PKI CRYPTOGRAPHICALLY SIGNED (TIER 2 - 99.8% TRUST)
         if (qrResult != null && qrResult.found()) {
-            String hashInput = (cleanedId.isBlank() ? "QR" : cleanedId) + (cleanedIssuer.isBlank() ? "ISSUER" : cleanedIssuer) + qrResult.qrText();
-            String shaHash = "SHA256:" + Integer.toHexString(hashInput.hashCode()).toUpperCase();
             String finalIssuer = (!cleanedIssuer.isBlank() && !cleanedIssuer.equals("Verified Digital Credential Issuer")) ? cleanedIssuer : (qrResult.issuerInfo() != null ? qrResult.issuerInfo() : "Verified Digital Issuer");
             String finalCertId = !cleanedId.isBlank() ? cleanedId : "HST-CERT-" + Math.abs(shaHash.hashCode() % 899999 + 100000);
             String finalName = !cleanedName.isBlank() ? cleanedName : "Cryptographically Verified Certificate";
 
-            saveVerifiedCertificateToProfile(request.get("userId"), finalName, finalIssuer, finalCertId, imageData);
-
+            // Note: Does NOT auto-save to vault! User must explicitly click 'Add to Academic Vault'
             return ResponseEntity.ok(Map.of(
                 "status", "VERIFIED_AUTHENTIC",
                 "trustScore", "99.8%",
@@ -338,6 +407,7 @@ public class JobEvaluationController {
                 "issuer", finalIssuer,
                 "hasImageProof", true,
                 "verificationHash", shaHash,
+                "alreadyInVault", isAlreadyInVault,
                 "auditNote", "Cryptographically Verified: Embedded QR Code / Digital Signature Payload Validated (" + finalIssuer + ").",
                 "verifiedAt", System.currentTimeMillis()
             ));
@@ -351,10 +421,8 @@ public class JobEvaluationController {
                                      extracted.contains("participation") || extracted.contains("university") || 
                                      extracted.contains("institute") || extracted.contains("certify") || 
                                      extracted.contains("transcript") || extracted.contains("course") ||
-                                     extracted.contains("passed") || extracted.contains("credits");
-
-            String hashInput = (cleanedId.isBlank() ? "PDF" : cleanedId) + (cleanedIssuer.isBlank() ? "AUTH" : cleanedIssuer) + imageData.length();
-            String shaHash = "SHA256:" + Integer.toHexString(hashInput.hashCode()).toUpperCase();
+                                     extracted.contains("passed") || extracted.contains("credits") ||
+                                     extracted.contains("nptel") || extracted.contains("swayam");
 
             if (auditResult.metadataTamperWarning()) {
                 return ResponseEntity.ok(Map.of(
@@ -366,6 +434,7 @@ public class JobEvaluationController {
                     "issuer", cleanedIssuer.isBlank() ? "Unknown Source" : cleanedIssuer,
                     "hasImageProof", true,
                     "verificationHash", shaHash,
+                    "alreadyInVault", isAlreadyInVault,
                     "auditNote", "Tamper Warning: PDF metadata shows editing software traces: " + String.join(", ", auditResult.detectedEditingTools()),
                     "verifiedAt", System.currentTimeMillis()
                 ));
@@ -374,8 +443,7 @@ public class JobEvaluationController {
                 String finalName = !cleanedName.isBlank() ? cleanedName : "Verified Academic & Skill Certificate";
                 String finalCertId = !cleanedId.isBlank() ? cleanedId : "HST-CERT-" + Math.abs(shaHash.hashCode() % 899999 + 100000);
 
-                saveVerifiedCertificateToProfile(request.get("userId"), finalName, finalIssuer, finalCertId, imageData);
-
+                // Note: Does NOT auto-save to vault! User must explicitly click 'Add to Academic Vault'
                 return ResponseEntity.ok(Map.of(
                     "status", "VERIFIED_AUTHENTIC",
                     "trustScore", (recognizedIssuer || !cleanedIssuer.isBlank()) ? "98.5%" : "96.5%",
@@ -385,7 +453,8 @@ public class JobEvaluationController {
                     "issuer", finalIssuer,
                     "hasImageProof", true,
                     "verificationHash", shaHash,
-                    "auditNote", "Document Forensic Audit Verified: PDF structure & certificate text clean with 0 tamper flags.",
+                    "alreadyInVault", isAlreadyInVault,
+                    "auditNote", "Document Forensic Audit Verified: PDF structure & certificate text clean with 0 tamper flags (" + finalIssuer + ").",
                     "verifiedAt", System.currentTimeMillis()
                 ));
             }
@@ -393,11 +462,7 @@ public class JobEvaluationController {
 
         // SCENARIO 3: CREDENTIAL REGISTRY LOOKUP (NO FILE, BUT VALID RECOGNIZED ACCREDITED ISSUER + ID)
         if (recognizedIssuer && !cleanedId.isBlank() && cleanedId.length() >= 4) {
-            String hashInput = cleanedId + cleanedIssuer;
-            String shaHash = "SHA256:" + Integer.toHexString(hashInput.hashCode()).toUpperCase();
             String certTitle = cleanedName.isBlank() ? "Verified Academic Certificate" : cleanedName;
-
-            saveVerifiedCertificateToProfile(request.get("userId"), certTitle, cleanedIssuer, cleanedId, null);
 
             return ResponseEntity.ok(Map.of(
                 "status", "VERIFIED_REGISTRY_RECORD",
@@ -408,7 +473,8 @@ public class JobEvaluationController {
                 "issuer", cleanedIssuer,
                 "hasImageProof", false,
                 "verificationHash", shaHash,
-                "auditNote", "Credentials Verified against Institutional Accreditation Registry Records.",
+                "alreadyInVault", isAlreadyInVault,
+                "auditNote", "Credentials Verified against Institutional Accreditation Registry Records (" + cleanedIssuer + ").",
                 "verifiedAt", System.currentTimeMillis()
             ));
         }
@@ -427,8 +493,91 @@ public class JobEvaluationController {
             "issuer", cleanedIssuer.isBlank() ? "Unrecognized Source" : cleanedIssuer,
             "hasImageProof", hasDocumentData,
             "verificationHash", "INVALID_HASH_REJECTED",
+            "alreadyInVault", false,
             "auditNote", rejectNote
         ));
+    }
+
+    /**
+     * Explicit Endpoint: User asks to archive a verified certificate to Cloud Vault.
+     * Prevents automatic duplicate insertions and enforces user permission.
+     */
+    @PostMapping("/certificates/archive-to-vault")
+    public ResponseEntity<?> saveCertificateToVault(@RequestBody Map<String, String> request) {
+        String userIdStr = request.get("userId");
+        String title = request.get("certName");
+        String issuer = request.get("issuer");
+        String certId = request.get("certId");
+        String documentBase64 = request.get("imageData");
+
+        if (userIdStr == null || userIdStr.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("status", "ERROR", "message", "User ID is required."));
+        }
+        if (documentBase64 == null || documentBase64.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("status", "ERROR", "message", "Document data is required to archive."));
+        }
+
+        Long userId = parseUserId(userIdStr);
+        String finalTitle = (title != null && !title.isBlank()) ? title.trim() : "Verified Academic Certificate";
+        String finalIssuer = (issuer != null && !issuer.isBlank()) ? issuer.trim() : "Accredited Authority";
+        String finalCertId = (certId != null && !certId.isBlank()) ? certId.trim() : "HST-CERT-" + (System.currentTimeMillis() % 1000000);
+
+        try {
+            String clean = documentBase64.contains(",") ? documentBase64.substring(documentBase64.indexOf(",") + 1) : documentBase64;
+            clean = clean.replaceAll("\\s+", "");
+            byte[] bytes = java.util.Base64.getMimeDecoder().decode(clean);
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(bytes);
+            StringBuilder sb = new StringBuilder("sha256:");
+            for (byte b : hash) sb.append(String.format("%02x", b));
+            String fHash = sb.toString();
+
+            // Check if already in vault to prevent duplicates
+            if (documentVaultRepository != null) {
+                Optional<com.hestia.vault.model.DocumentVault> existing = documentVaultRepository.findByUserIdAndFileHash(userId, fHash);
+                if (existing.isPresent()) {
+                    return ResponseEntity.ok(Map.of(
+                            "status", "ALREADY_EXISTS",
+                            "message", "This certificate is already saved in your Academic Cloud Vault.",
+                            "documentId", existing.get().getId(),
+                            "alreadyInVault", true
+                    ));
+                }
+
+                boolean isPdf = documentBase64.contains("application/pdf") || clean.startsWith("JVBERi");
+                String cType = isPdf ? "application/pdf" : "image/png";
+                String fName = (finalTitle.replaceAll("[^a-zA-Z0-9_-]", "_") + (isPdf ? ".pdf" : ".png"));
+
+                com.hestia.vault.model.DocumentVault doc = new com.hestia.vault.model.DocumentVault(
+                        userId, "", "CERTIFICATE", finalTitle, finalIssuer, fName, cType, (long) bytes.length, clean, fHash, finalCertId);
+                com.hestia.vault.model.DocumentVault saved = documentVaultRepository.save(doc);
+
+                // Update user profile certificates list
+                if (userProfileRepository != null) {
+                    Optional<UserProfile> pOpt = userProfileRepository.findFirstByUserIdOrderByIdDesc(userId);
+                    if (pOpt.isPresent()) {
+                        UserProfile p = pOpt.get();
+                        String existingCerts = p.getCertificates() != null ? p.getCertificates() : "";
+                        String entry = finalTitle + " (" + finalIssuer + " #" + finalCertId + ")";
+                        if (!existingCerts.contains(finalCertId)) {
+                            p.setCertificates(existingCerts.isBlank() ? entry : existingCerts + " | " + entry);
+                            userProfileRepository.save(p);
+                        }
+                    }
+                }
+
+                return ResponseEntity.ok(Map.of(
+                        "status", "SUCCESS",
+                        "message", "Certificate archived securely to your Academic Cloud Vault!",
+                        "documentId", saved.getId(),
+                        "alreadyInVault", true
+                ));
+            }
+
+            return ResponseEntity.status(500).body(Map.of("status", "ERROR", "message", "Vault repository is unavailable."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("status", "ERROR", "message", "Failed to archive certificate: " + e.getMessage()));
+        }
     }
 
     private void saveVerifiedCertificateToProfile(String userIdStr, String title, String issuer, String certId, String documentBase64) {
@@ -457,13 +606,17 @@ public class JobEvaluationController {
                     for (byte b : hash) sb.append(String.format("%02x", b));
                     String fHash = sb.toString();
 
-                    boolean isPdf = documentBase64.contains("application/pdf") || clean.startsWith("JVBERi");
-                    String cType = isPdf ? "application/pdf" : "image/png";
-                    String fName = (title.replaceAll("[^a-zA-Z0-9_-]", "_") + (isPdf ? ".pdf" : ".png"));
+                    // Check for existing document to prevent duplicate rows
+                    Optional<com.hestia.vault.model.DocumentVault> existingDoc = documentVaultRepository.findByUserIdAndFileHash(userId, fHash);
+                    if (existingDoc.isEmpty()) {
+                        boolean isPdf = documentBase64.contains("application/pdf") || clean.startsWith("JVBERi");
+                        String cType = isPdf ? "application/pdf" : "image/png";
+                        String fName = (title.replaceAll("[^a-zA-Z0-9_-]", "_") + (isPdf ? ".pdf" : ".png"));
 
-                    com.hestia.vault.model.DocumentVault doc = new com.hestia.vault.model.DocumentVault(
-                            userId, "", "CERTIFICATE", title, issuer, fName, cType, (long) bytes.length, clean, fHash, certId);
-                    documentVaultRepository.save(doc);
+                        com.hestia.vault.model.DocumentVault doc = new com.hestia.vault.model.DocumentVault(
+                                userId, "", "CERTIFICATE", title, issuer, fName, cType, (long) bytes.length, clean, fHash, certId);
+                        documentVaultRepository.save(doc);
+                    }
                 } catch (Exception docEx) {
                     System.err.println("DocumentVault certificate archive warning: " + docEx.getMessage());
                 }

@@ -24,7 +24,8 @@ public class QrPkiVerificationService {
      * Decodes embedded QR codes from base64 PDF or Image data.
      */
     public QrResult extractAndVerifyQrCode(String base64Data, String overrideQrData) {
-        if (overrideQrData != null && !overrideQrData.isBlank()) {
+        // Only use overrideQrData if base64Data is NOT present (i.e. manual string input without a file)
+        if ((base64Data == null || base64Data.isBlank()) && overrideQrData != null && !overrideQrData.isBlank()) {
             return processQrPayload(overrideQrData);
         }
 
@@ -35,11 +36,12 @@ public class QrPkiVerificationService {
         try {
             byte[] bytes = decodeBase64(base64Data);
             
-            // Try as PDF first (Memory-safe rendering: 96 DPI, page 0 only)
+            // Try as PDF first (150 DPI for high-accuracy QR matrix resolution)
             try (PDDocument document = Loader.loadPDF(bytes)) {
                 PDFRenderer renderer = new PDFRenderer(document);
-                if (document.getNumberOfPages() > 0) {
-                    BufferedImage pageImage = renderer.renderImageWithDPI(0, 96);
+                int pagesToScan = Math.min(document.getNumberOfPages(), 2);
+                for (int pageIdx = 0; pageIdx < pagesToScan; pageIdx++) {
+                    BufferedImage pageImage = renderer.renderImageWithDPI(pageIdx, 150);
                     String qrContent = scanImageForQr(pageImage);
                     if (qrContent != null) {
                         return processQrPayload(qrContent);
