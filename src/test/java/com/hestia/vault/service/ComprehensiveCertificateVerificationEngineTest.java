@@ -270,4 +270,59 @@ public class ComprehensiveCertificateVerificationEngineTest {
         assertFalse(engine.isRecognizedAuthority("Fake Random Institute 9982"));
         assertFalse(engine.isRecognizedAuthority("asdfasdf"));
     }
+
+    @Test
+    @DisplayName("Verify Real-World Official MyCaptain Python Programming Certificate")
+    public void testVerifyRealMyCaptainPythonCertificate() throws Exception {
+        String testPdfPath = "C:/Users/zyber/.gemini/antigravity/brain/a2cf0fe6-3cd2-4c3c-8093-1959ff56f46f/.user_uploaded/media_1793673826215_e1d4a800.pdf";
+        File f = new File(testPdfPath);
+
+        if (f.exists()) {
+            byte[] bytes = Files.readAllBytes(f.toPath());
+            String base64Data = "data:application/pdf;base64," + Base64.getEncoder().encodeToString(bytes);
+
+            var result = engine.verifyDocument(
+                    base64Data,
+                    null,
+                    null,
+                    null,
+                    "nripansatheesh@gmail.com",
+                    "Nripan Satheesh"
+            );
+
+            System.out.println("=== REAL MYCAPTAIN PYTHON VERIFICATION RESULT ===");
+            System.out.println("Status: " + result.status());
+            System.out.println("Trust Score: " + result.trustScore());
+            System.out.println("Tier: " + result.tier());
+            System.out.println("Classification: " + result.classification());
+            System.out.println("Recipient Name: " + result.entity().recipientName());
+            System.out.println("Course Title: " + result.entity().certificateTitle());
+            System.out.println("Issuer Authority: " + result.entity().issuerAuthority());
+            System.out.println("Credential ID: " + result.entity().credentialId());
+            System.out.println("Session: " + result.entity().issueSessionOrDate());
+            System.out.println("Audit Note: " + result.diagnosticAuditNote());
+
+            assertEquals("VERIFIED_AUTHENTIC", result.status());
+            assertEquals("98.5%", result.trustScore());
+            assertEquals("TIER_3_OCR_METADATA", result.tier());
+            assertEquals(ComprehensiveCertificateVerificationEngine.DocumentClassification.TECHNICAL_CERTIFICATION, result.classification());
+            assertEquals("Nripan Satheesh", result.entity().recipientName());
+            assertEquals("Python Programming Course", result.entity().certificateTitle());
+            assertEquals("2Q45VNNER", result.entity().credentialId());
+            assertEquals("February 2026 Batch", result.entity().issueSessionOrDate());
+            assertTrue(result.entity().issuerAuthority().contains("MyCaptain"));
+        } else {
+            // In CI without local file, test text extraction directly
+            String sampleText = "Nripan Satheesh\nPython Programming Course\nFebruary 2026 Batch\n2Q45VNNER";
+            var entity = engine.extractCertificateEntities(sampleText, null, null, null, null, "Nripan Satheesh");
+            var classification = engine.classifyDocument(sampleText, true, null, entity);
+
+            assertEquals("Nripan Satheesh", entity.recipientName());
+            assertEquals("Python Programming Course", entity.certificateTitle());
+            assertEquals("2Q45VNNER", entity.credentialId());
+            assertEquals("February 2026 Batch", entity.issueSessionOrDate());
+            assertTrue(entity.issuerAuthority().contains("MyCaptain"));
+            assertEquals(ComprehensiveCertificateVerificationEngine.DocumentClassification.TECHNICAL_CERTIFICATION, classification);
+        }
+    }
 }

@@ -983,7 +983,7 @@
                 <span class="text-[11px] text-neutral-400 font-mono">Supports PDF, PNG, JPG</span>
               </label>
               
-              <div class="border-2 border-dashed border-neutral-800 hover:border-neutral-600 rounded-xl p-6 text-center transition bg-neutral-950/80">
+              <div id="cert-dropzone" ondragover="handleCertDropOver(event)" ondragleave="handleCertDropLeave(event)" ondrop="handleCertDrop(event)" class="border-2 border-dashed border-neutral-800 hover:border-neutral-600 rounded-xl p-6 text-center transition bg-neutral-950/80">
                 <input type="file" id="standalone-cert-file" accept="image/*,.pdf,application/pdf" onchange="handleStandaloneCertFileSelect(this)" class="hidden">
                 <label for="standalone-cert-file" class="cursor-pointer space-y-2 block">
                   <div class="w-12 h-12 mx-auto rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white transition">
@@ -2260,36 +2260,62 @@
     let standaloneCertImageData = '';
     let currentVerifiedCertData = null; // Store current verified certificate for explicit user saving
 
+    function handleCertDropOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const dz = document.getElementById('cert-dropzone');
+      if (dz) dz.classList.add('border-emerald-500', 'bg-emerald-950/20');
+    }
+
+    function handleCertDropLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const dz = document.getElementById('cert-dropzone');
+      if (dz) dz.classList.remove('border-emerald-500', 'bg-emerald-950/20');
+    }
+
+    function handleCertDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const dz = document.getElementById('cert-dropzone');
+      if (dz) dz.classList.remove('border-emerald-500', 'bg-emerald-950/20');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+        processCertificateFile(e.dataTransfer.files[0]);
+      }
+    }
+
     function handleStandaloneCertFileSelect(input) {
       if (input.files && input.files[0]) {
-        const file = input.files[0];
-
-        // CRITICAL FIX: Clear stale input fields from previous certificates
-        const certIdInput = document.getElementById('cert-input-id');
-        const nameInput = document.getElementById('cert-input-name');
-        const issuerInput = document.getElementById('cert-input-issuer');
-        if (certIdInput) certIdInput.value = '';
-        if (nameInput) nameInput.value = '';
-        if (issuerInput) issuerInput.value = '';
-
-        // Hide previous result box while new document is scanning
-        const box = document.getElementById('cert-result-box');
-        if (box) box.classList.add('hidden');
-        currentVerifiedCertData = null;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          standaloneCertImageData = e.target.result;
-          const badge = document.getElementById('cert-file-badge');
-          if (badge) badge.classList.remove('hidden');
-          const nameText = document.getElementById('cert-file-name-text');
-          if (nameText) nameText.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-          
-          // Auto-trigger verification upon file drop/selection!
-          runCertificateVerification();
-        };
-        reader.readAsDataURL(file);
+        processCertificateFile(input.files[0]);
       }
+    }
+
+    function processCertificateFile(file) {
+      // Clear stale input fields from previous certificates
+      const certIdInput = document.getElementById('cert-input-id');
+      const nameInput = document.getElementById('cert-input-name');
+      const issuerInput = document.getElementById('cert-input-issuer');
+      if (certIdInput) certIdInput.value = '';
+      if (nameInput) nameInput.value = '';
+      if (issuerInput) issuerInput.value = '';
+
+      // Hide previous result box while new document is scanning
+      const box = document.getElementById('cert-result-box');
+      if (box) box.classList.add('hidden');
+      currentVerifiedCertData = null;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        standaloneCertImageData = e.target.result;
+        const badge = document.getElementById('cert-file-badge');
+        if (badge) badge.classList.remove('hidden');
+        const nameText = document.getElementById('cert-file-name-text');
+        if (nameText) nameText.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        
+        // Auto-trigger verification upon file drop/selection!
+        runCertificateVerification();
+      };
+      reader.readAsDataURL(file);
     }
 
     function clearStandaloneCertFile() {

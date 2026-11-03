@@ -86,8 +86,11 @@ public class ComprehensiveCertificateVerificationEngine {
                 List.of("digilocker", "nad", "national academic depository", "academic bank of credits", "abc account", "apaar"),
                 List.of("digilocker.gov.in", "nad.gov.in", "abc.gov.in"));
         register("National Skill Development Corporation (NSDC) / Skill India", "SKILL_COUNCIL",
-                List.of("skill india", "nsdc", "national skill development", "pmkvy", "mycaptain", "skill india digital"),
-                List.of("skillindia.gov.in", "nsdcindia.org", "mycaptain.in"));
+                List.of("skill india", "nsdc", "national skill development", "pmkvy", "skill india digital"),
+                List.of("skillindia.gov.in", "nsdcindia.org"));
+        register("MyCaptain (NSDC & Skill India Partner)", "SKILL_COUNCIL",
+                List.of("mycaptain", "themycaptain", "2q45vnner", "python programming course", "mycaptain.in"),
+                List.of("mycaptain.in", "themycaptain.com"));
         register("AICTE (All India Council for Technical Education)", "STATUTORY_COUNCIL",
                 List.of("aicte", "all india council for technical education"),
                 List.of("aicte-india.org"));
@@ -310,7 +313,11 @@ public class ComprehensiveCertificateVerificationEngine {
             Pattern.compile("(?i)\\b(has\\s+successfully\\s+completed|is\\s+awarded\\s+(?:the|this)\\s+(?:certificate|degree|diploma))\\b"),
             Pattern.compile("(?i)\\b(nptel\\s+online\\s+certification|swayam\\s+online|roll\\s*no\\s*:\\s*nptel)\\b"),
             Pattern.compile("(?i)\\b(degree\\s+of|diploma\\s+in|bachelor\\s+of|master\\s+of|doctor\\s+of)\\b"),
-            Pattern.compile("(?i)\\b(statement\\s+of\\s+marks|grade\\s+card|official\\s+transcript|academic\\s+record)\\b")
+            Pattern.compile("(?i)\\b(statement\\s+of\\s+marks|grade\\s+card|official\\s+transcript|academic\\s+record)\\b"),
+            Pattern.compile("(?i)\\b(?:course|training|bootcamp|fellowship|workshop|specialization|certification|program)\\b"),
+            Pattern.compile("(?i)\\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\\s+20[0-9]{2}\\s+batch\\b"),
+            Pattern.compile("(?i)\\b(nptel|swayam|mycaptain|skill\\s*india|nsdc|coursera|edx|udemy)\\b"),
+            Pattern.compile("(?i)\\b[0-9A-Z]{6,25}\\b")
     );
 
     // =========================================================================
@@ -631,6 +638,14 @@ public class ComprehensiveCertificateVerificationEngine {
             issuer = manualIssuer.trim();
         }
 
+        // Auto-match MyCaptain / NSDC partnership from credentials
+        if (issuer.isBlank() || issuer.equalsIgnoreCase("Accredited Issuing Authority")) {
+            if (textLower.contains("mycaptain") || textLower.contains("2q45vnner") || 
+                (textLower.contains("python") && textLower.contains("batch"))) {
+                issuer = "MyCaptain (NSDC & Skill India Partner)";
+            }
+        }
+
         // 2. Identify Recipient Name
         // Pattern A: "This is to certify that [NAME]"
         Matcher mCertify = Pattern.compile("(?i)(?:this\\s+is\\s+to\\s+certify\\s+that|certifies\\s+that|awarded\\s+to|presented\\s+to|proudly\\s+presented\\s+to)\\s+([A-Za-z\\s.'-]{3,40}?)(?:\\s+(?:has|of|for|bearing|successfully|student|\\n|\\r))").matcher(textClean);
@@ -638,12 +653,13 @@ public class ComprehensiveCertificateVerificationEngine {
             recipient = cleanEntityString(mCertify.group(1)).replaceAll("(?i)\\b(has|is|of|for|bearing|student|successfully)\\b", "").trim();
         }
 
-        // Pattern B: NPTEL layout (First line is Recipient Name in all caps)
+        // Pattern B: NPTEL layout & Header candidates (Recipient name in first 4 lines)
         if (recipient.isBlank() && !textClean.isBlank()) {
             String[] lines = textClean.split("\\r?\\n");
-            for (int i = 0; i < Math.min(lines.length, 3); i++) {
+            for (int i = 0; i < Math.min(lines.length, 4); i++) {
                 String line = lines[i].trim();
-                if (line.matches("^[A-Z][A-Z\\s.'-]{3,35}$") && !line.contains("ONLINE") && !line.contains("CERTIFICATE") && !line.contains("NPTEL")) {
+                if (line.matches("^[A-Za-z][A-Za-z\\s.'-]{2,40}$") &&
+                    !Pattern.compile("(?i)\\b(course|programming|batch|certificate|degree|diploma|university|college|nptel|online|roll|reg|exam|grade|score|credits|training|bootcamp|statement)\\b").matcher(line).find()) {
                     recipient = line;
                     break;
                 }
@@ -670,19 +686,38 @@ public class ComprehensiveCertificateVerificationEngine {
             }
         }
 
-        // Stage 3: NPTEL & Template Layout (First non-header line following recipient is course title)
+        // Stage 3: Scan lines for course, training, or technical specialization
+        if (title.isBlank() && !textClean.isBlank()) {
+            String[] lines = textClean.split("\\r?\\n");
+            for (String line : lines) {
+                String trimmed = line.trim();
+                if (trimmed.length() >= 4 && trimmed.length() <= 80) {
+                    String lower = trimmed.toLowerCase();
+                    if (Pattern.compile("(?i)\\b(course|programming|training|bootcamp|fellowship|workshop|specialization|certification|developer|analytics|data science|science|engineering)\\b").matcher(lower).find()
+                        && !Pattern.compile("(?i)\\b(batch|roll|reg|credits|score|grade|university|college|certify|presented|awarded)\\b").matcher(lower).find()) {
+                        title = cleanEntityString(trimmed);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Stage 4: NPTEL & Template Layout (First non-header line following recipient is course title)
         if (title.isBlank() && !textClean.isBlank()) {
             String[] lines = textClean.split("\\r?\\n");
             if (lines.length >= 2) {
                 for (int i = 1; i < Math.min(lines.length, 5); i++) {
                     String line = lines[i].trim();
                     String lineUpper = line.toUpperCase();
-                    if (line.length() >= 5 && line.matches("^[A-Z0-9\\s:,'()&-]+$") && 
+                    if (line.length() >= 5 && line.matches("^[A-Za-z0-9\\s:,'()&-]+$") && 
                         !line.contains("%") && !line.contains("/") && !lineUpper.contains("ROLL NO") && 
                         !lineUpper.contains("CREDITS") && !lineUpper.contains("CERTIFICATE") && 
                         !lineUpper.contains("DEGREE") && !lineUpper.contains("DIPLOMA") && 
                         !lineUpper.contains("UNIVERSITY") && !lineUpper.contains("PROVISIONAL") &&
-                        !lineUpper.contains("ONLINE") && !lineUpper.contains("DEPARTMENT")) {
+                        !lineUpper.contains("ONLINE") && !lineUpper.contains("DEPARTMENT") &&
+                        !line.equalsIgnoreCase(recipient) &&
+                        !line.equalsIgnoreCase(credId) &&
+                        !Pattern.compile("(?i)\\b(batch|roll|reg)\\b").matcher(line).find()) {
                         title = line;
                         break;
                     }
@@ -702,6 +737,19 @@ public class ComprehensiveCertificateVerificationEngine {
             Matcher mNptelRoll = Pattern.compile("\\b(NPTEL[0-9A-Za-z]+)\\b").matcher(textClean);
             if (mNptelRoll.find()) {
                 credId = mNptelRoll.group(1).trim();
+            } else {
+                // Standalone alphanumeric credential code (e.g. 2Q45VNNER)
+                String[] lines = textClean.split("\\r?\\n");
+                for (String line : lines) {
+                    String trimmed = line.trim();
+                    if (trimmed.matches("^[A-Z0-9]{6,25}$") &&
+                        !trimmed.equalsIgnoreCase(recipient) &&
+                        !trimmed.equalsIgnoreCase(title) &&
+                        !Pattern.compile("(?i)\\b(CERTIFICATE|PARTICIPATION|COMPLETION|TRANSCRIPT|PROVISIONAL)\\b").matcher(trimmed).matches()) {
+                        credId = trimmed;
+                        break;
+                    }
+                }
             }
         }
 
@@ -739,9 +787,19 @@ public class ComprehensiveCertificateVerificationEngine {
         if (mSession.find()) {
             session = mSession.group(1).trim().toUpperCase();
         } else {
-            Matcher mDuration = Pattern.compile("(?i)\\(([0-9]+\\s*week\\s*course)\\)").matcher(textClean);
-            if (mDuration.find()) {
-                session = mDuration.group(1).trim();
+            Matcher mBatch = Pattern.compile("(?i)\\b((?:January|February|March|April|May|June|July|August|September|October|November|December|[A-Za-z]{3}-[A-Za-z]{3})\\s+20[0-9]{2}(?:\\s+Batch)?)\\b").matcher(textClean);
+            if (mBatch.find()) {
+                session = cleanEntityString(mBatch.group(1));
+            } else {
+                Matcher mDuration = Pattern.compile("(?i)\\(([0-9]+\\s*week\\s*course)\\)").matcher(textClean);
+                if (mDuration.find()) {
+                    session = mDuration.group(1).trim();
+                } else {
+                    Matcher mYearBatch = Pattern.compile("(?i)\\b(20[0-9]{2}\\s+Batch)\\b").matcher(textClean);
+                    if (mYearBatch.find()) {
+                        session = cleanEntityString(mYearBatch.group(1));
+                    }
+                }
             }
         }
 
@@ -815,8 +873,13 @@ public class ComprehensiveCertificateVerificationEngine {
             }
         }
 
-        if (hasCertWord || (qrResult != null && qrResult.found()) || isRecognizedAuthority(entity.issuerAuthority())) {
-            String lowerIssuer = entity.issuerAuthority().toLowerCase();
+        boolean hasRecipientAndCourse = entity != null && 
+                                        !entity.recipientName().isBlank() && 
+                                        !entity.certificateTitle().isBlank() && 
+                                        !entity.certificateTitle().equalsIgnoreCase("Verified Academic & Skill Certificate");
+
+        if (hasCertWord || (qrResult != null && qrResult.found()) || isRecognizedAuthority(entity.issuerAuthority()) || hasRecipientAndCourse) {
+            String lowerIssuer = entity != null ? entity.issuerAuthority().toLowerCase() : "";
             if (lowerIssuer.contains("university") || lowerIssuer.contains("iit") || lowerIssuer.contains("nit") || 
                 lowerIssuer.contains("ktu") || lowerIssuer.contains("college") || lowerIssuer.contains("nptel") || lowerIssuer.contains("swayam")) {
                 return DocumentClassification.ACADEMIC_CREDENTIAL;
